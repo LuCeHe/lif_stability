@@ -6,7 +6,7 @@ from ndatasets import load_dataset as true_load_dataset
 # from transformers import MarianTokenizer
 import numpy as np
 
-from stochastic_spiking.generate_data.translation_load import load_dataset
+from sg_design_lif.generate_data.translation_load import load_dataset
 
 CDIR = os.path.dirname(os.path.realpath(__file__))
 DATAPATH = os.path.abspath(os.path.join(CDIR, '..', 'data', 'translate'))

@@ -6,7 +6,7 @@ import tensorflow as tf
 from matplotlib.ticker import MaxNLocator
 
 from GenericTools.stay_organized.plot_tricks import large_num_to_reasonable_string
-from stochastic_spiking.generate_data.ptb_get_statistics import get_probabilities
+from sg_design_lif.generate_data.ptb_get_statistics import get_probabilities
 
 logger = logging.getLogger('mylogger')
 

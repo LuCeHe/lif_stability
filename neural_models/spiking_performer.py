@@ -1,8 +1,8 @@
 import tensorflow as tf
 import numpy as np
 from GenericTools.keras_tools.esoteric_layers.positional_embedding import SymbolAndPositionEmbedding
-from stochastic_spiking.neural_models.configuration_performer_attention_spiking import SpikingPerformerAttentionConfig
-from stochastic_spiking.neural_models.modeling_tf_performer_attention_spiking import TFSpikingPerformerAttention
+from sg_design_lif.neural_models.configuration_performer_attention_spiking import SpikingPerformerAttentionConfig
+from sg_design_lif.neural_models.modeling_tf_performer_attention_spiking import TFSpikingPerformerAttention
 from transformers.modeling_tf_utils import TFConv1D
 
 tf.config.run_functions_eagerly(True)

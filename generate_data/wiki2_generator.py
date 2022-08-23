@@ -5,7 +5,7 @@ from ndatasets import load_dataset as true_load_dataset
 # from transformers import MarianTokenizer
 import numpy as np
 
-from stochastic_spiking.generate_data.base_generator import BaseGenerator
+from sg_design_lif.generate_data.base_generator import BaseGenerator
 from transformers import GPT2Tokenizer
 import ndatasets
 

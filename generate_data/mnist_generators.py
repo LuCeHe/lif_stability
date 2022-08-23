@@ -6,7 +6,7 @@ import tensorflow as tf
 from tensorflow.keras.datasets import mnist
 
 from GenericTools.keras_tools.esoteric_tasks.mnist import getMNIST
-from stochastic_spiking.generate_data.base_generator import BaseGenerator
+from sg_design_lif.generate_data.base_generator import BaseGenerator
 
 CDIR = os.path.dirname(os.path.realpath(__file__))
 DATAPATH = os.path.abspath(os.path.join(CDIR, '..', 'data', 'mnist'))

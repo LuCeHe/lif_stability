@@ -1,6 +1,6 @@
 import numpy as np
 
-from stochastic_spiking.visualization_tools.theoretical_tools import isi, signal_definition, hit, mutau_step, \
+from sg_design_lif.visualization_tools.theoretical_tools import isi, signal_definition, hit, mutau_step, \
     mutau_step_infinitesimal
 
 

@@ -1,5 +1,5 @@
 import os
-from stochastic_spiking.generate_data import ptb_reader
+from sg_design_lif.generate_data import ptb_reader
 import numpy as np
 import tensorflow as tf
 

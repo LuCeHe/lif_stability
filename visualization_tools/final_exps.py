@@ -1,7 +1,7 @@
 import numpy as np
 import os, itertools, argparse, time, json, datetime
 from GenericTools.stay_organized.submit_jobs import run_experiments
-from stochastic_spiking.neural_models import possible_pseudod
+from sg_design_lif.neural_models import possible_pseudod
 
 
 def final_experiments(seed):

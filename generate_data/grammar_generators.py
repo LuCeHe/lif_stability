@@ -11,10 +11,10 @@ from nltk.grammar import Nonterminal, CFG
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 # grammar cannot have recursion!
-from stochastic_spiking.generate_data.base_generator import BaseGenerator
-from stochastic_spiking.generate_data.nlp import Vocabulary, postprocessSentence
-from stochastic_spiking.generate_data.random_context_free import RandomGrammar
-from stochastic_spiking.generate_data.utils import unpackbits
+from sg_design_lif.generate_data.base_generator import BaseGenerator
+from sg_design_lif.generate_data.nlp import Vocabulary, postprocessSentence
+from sg_design_lif.generate_data.random_context_free import RandomGrammar
+from sg_design_lif.generate_data.utils import unpackbits
 
 np.set_printoptions(threshold=sys.maxsize)
 

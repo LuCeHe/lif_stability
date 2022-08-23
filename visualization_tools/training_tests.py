@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-from stochastic_spiking.visualization_tools.plotting_tools import smart_plot, bpc_prior
-from stochastic_spiking.visualization_tools.save_text import save_sentences
-from stochastic_spiking.neural_models.full_model import build_model
+from sg_design_lif.visualization_tools.plotting_tools import smart_plot, bpc_prior
+from sg_design_lif.visualization_tools.save_text import save_sentences
+from sg_design_lif.neural_models.full_model import build_model
 
 logger = logging.getLogger('mylogger')
 exclude_layers = ['Squeeze', 'multiply', 'add_loss_layer', 'add_metrics_layer', 'softmax', 'target_words', 'dropout',

@@ -1,6 +1,6 @@
 import tensorflow as tf
-from stochastic_spiking.neural_models.lsnn import baseLSNN as LSNN
-from stochastic_spiking.neural_models.wta import WTA
+from sg_design_lif.neural_models.lsnn import baseLSNN as LSNN
+from sg_design_lif.neural_models.wta import WTA
 
 
 # TODO

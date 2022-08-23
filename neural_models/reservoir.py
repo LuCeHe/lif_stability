@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from stochastic_spiking.neural_models import baseLSNN
+from sg_design_lif.neural_models import baseLSNN
 
 
 class Reservoir(baseLSNN):

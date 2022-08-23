@@ -4,7 +4,7 @@ import nltk
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 from GenericTools.LeanguageTreatmentTools.nlp import Vocabulary
-from stochastic_spiking.generate_data.utils import unpackbits
+from sg_design_lif.generate_data.utils import unpackbits
 
 nltk.download('gutenberg')
 nltk.download('punkt')
@@ -12,7 +12,7 @@ nltk.download('punkt')
 from nltk.corpus import gutenberg
 from nltk.util import ngrams
 
-from stochastic_spiking.generate_data.kneser_ney import KneserNeyLM
+from sg_design_lif.generate_data.kneser_ney import KneserNeyLM
 
 
 

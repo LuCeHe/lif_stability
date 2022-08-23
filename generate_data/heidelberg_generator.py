@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from GenericTools.stay_organized.download_utils import download_and_unzip
-from stochastic_spiking.generate_data.base_generator import BaseGenerator
-from stochastic_spiking.generate_data.heidelberg_preprocess import generate_dataset
+from sg_design_lif.generate_data.base_generator import BaseGenerator
+from sg_design_lif.generate_data.heidelberg_preprocess import generate_dataset
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)

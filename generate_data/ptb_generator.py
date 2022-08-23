@@ -3,9 +3,9 @@ import numpy as np
 import tensorflow as tf
 
 from GenericTools.stay_organized.download_utils import download_and_unzip
-from stochastic_spiking.generate_data import ptb_reader
-from stochastic_spiking.generate_data.base_generator import BaseGenerator
-from stochastic_spiking.generate_data.tensorlayer_ptb import ptb_iterator
+from sg_design_lif.generate_data import ptb_reader
+from sg_design_lif.generate_data.base_generator import BaseGenerator
+from sg_design_lif.generate_data.tensorlayer_ptb import ptb_iterator
 
 CDIR = os.path.dirname(os.path.realpath(__file__))
 DATAPATH = os.path.abspath(os.path.join(CDIR, '..', 'data', 'ptb'))

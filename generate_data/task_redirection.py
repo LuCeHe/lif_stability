@@ -1,16 +1,16 @@
 import os
-# from stochastic_spiking.generate_data.bit_generator import OneBitTimeDependentGenerator
-# from stochastic_spiking.generate_data.grammar_generators import CFG_AutoEncoding_Generator, MergeSearch
-from stochastic_spiking.generate_data.heidelberg_generator import SpokenHeidelbergDigits
-# from stochastic_spiking.generate_data.huggingface_generator import HuggingfaceGenerator
-# from stochastic_spiking.generate_data.lca_generator import LCAGenerator
-from stochastic_spiking.generate_data.mnist_generators import SeqMNIST
-# from stochastic_spiking.generate_data.monkey_generator import MonkeyGenerator
-from stochastic_spiking.generate_data.ptb_generator import PTBGenerator
+# from sg_design_lif.generate_data.bit_generator import OneBitTimeDependentGenerator
+# from sg_design_lif.generate_data.grammar_generators import CFG_AutoEncoding_Generator, MergeSearch
+from sg_design_lif.generate_data.heidelberg_generator import SpokenHeidelbergDigits
+# from sg_design_lif.generate_data.huggingface_generator import HuggingfaceGenerator
+# from sg_design_lif.generate_data.lca_generator import LCAGenerator
+from sg_design_lif.generate_data.mnist_generators import SeqMNIST
+# from sg_design_lif.generate_data.monkey_generator import MonkeyGenerator
+from sg_design_lif.generate_data.ptb_generator import PTBGenerator
 
-# from stochastic_spiking.generate_data.random_generator import RandomGenerator
-# from stochastic_spiking.generate_data.xor import XorGenerator
-from stochastic_spiking.generate_data.random_generator import RandomGenerator
+# from sg_design_lif.generate_data.random_generator import RandomGenerator
+# from sg_design_lif.generate_data.xor import XorGenerator
+from sg_design_lif.generate_data.random_generator import RandomGenerator
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)

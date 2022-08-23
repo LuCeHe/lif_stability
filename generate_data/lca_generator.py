@@ -3,7 +3,7 @@ import numpy as np
 
 import tensorflow as tf
 from GenericTools.keras_tools.esoteric_tasks.numpy_generator import NumpyClassificationGenerator
-from stochastic_spiking.generate_data.lca_utils import norm_spikegram
+from sg_design_lif.generate_data.lca_utils import norm_spikegram
 
 CDIR = os.path.dirname(os.path.realpath(__file__))
 DATAPATH = os.path.abspath(os.path.join(CDIR, '..', 'data', 'lca_hd_700'))

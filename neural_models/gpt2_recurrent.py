@@ -7,7 +7,7 @@ from tensorflow.python.ops import array_ops, gen_linalg_ops, math_ops
 
 from GenericTools.keras_tools.esoteric_layers.positional_embedding import EmbeddingLayer, PositionEmbeddingLayer
 from GenericTools.keras_tools.esoteric_layers.stochastic_depth import StochasticDepth
-from stochastic_spiking.neural_models import SpikeFunction
+from sg_design_lif.neural_models import SpikeFunction
 
 """
 sources:

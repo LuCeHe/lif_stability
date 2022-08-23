@@ -9,10 +9,9 @@ from GenericTools.keras_tools.esoteric_optimizers.optimizer_selection import get
 from GenericTools.stay_organized.utils import str2val
 from GenericTools.keras_tools.esoteric_losses.loss_redirection import get_loss
 from GenericTools.keras_tools.esoteric_losses.advanced_losses import *
-from GenericTools.keras_tools.esoteric_optimizers.AdaBelief import AdaBelief
 
-import stochastic_spiking.neural_models as models
-from stochastic_spiking.generate_data.task_redirection import language_tasks
+import sg_design_lif.neural_models as models
+from sg_design_lif.generate_data.task_redirection import language_tasks
 
 metrics = [
     sparse_categorical_accuracy,

@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-from stochastic_spiking.generate_data.base_generator import BaseGenerator
+from sg_design_lif.generate_data.base_generator import BaseGenerator
 
 events = [
     'TS-ON', 'TS-OFF', 'WS-ON', 'WS-OFF', 'PG-ON', 'SG-ON',

@@ -1,4 +1,4 @@
-from stochastic_spiking.generate_data.task_redirection import language_tasks
+from sg_design_lif.generate_data.task_redirection import language_tasks
 
 
 def default_config(stack, batch_size, embedding, n_neurons, lr, task_name):

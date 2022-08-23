@@ -10,8 +10,8 @@ import tensorflow as tf
 
 from typing import Callable, Optional, Union
 
-from stochastic_spiking.neural_models import SpikeFunctionSigmoid, ChoosePseudoHeaviside
-from stochastic_spiking.neural_models.configuration_performer_attention_spiking import PerformerKernel, \
+from sg_design_lif.neural_models import SpikeFunctionSigmoid, ChoosePseudoHeaviside
+from sg_design_lif.neural_models.configuration_performer_attention_spiking import PerformerKernel, \
     OrthogonalFeatureAlgorithm, SpikingPerformerAttentionConfig
 
 KERNEL_CALLABLES = {

@@ -1,5 +1,5 @@
 import tensorflow as tf
-from stochastic_spiking.neural_models.lsnn import baseLSNN
+from sg_design_lif.neural_models.lsnn import baseLSNN
 
 
 class Izhikevich(baseLSNN):

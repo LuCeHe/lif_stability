@@ -3,7 +3,7 @@ import tensorflow as tf
 import sympy as sp
 import numpy as np
 
-from stochastic_spiking.neural_models.pseudoderivatives import SpikeFunctionDeltaDirac
+from sg_design_lif.neural_models.pseudoderivatives import SpikeFunctionDeltaDirac
 
 
 def ld_operations(library_derivatives):

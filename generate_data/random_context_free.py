@@ -6,7 +6,7 @@ import numpy as np
 import string
 import random
 
-from stochastic_spiking.generate_data.nlp import Vocabulary
+from sg_design_lif.generate_data.nlp import Vocabulary
 
 """
   - set increasing difficulty (each of them 3 times: RELAX/REBAR/REINFORCE), (words:w, loops:l, states:w, ors:o)

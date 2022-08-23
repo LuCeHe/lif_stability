@@ -7,7 +7,7 @@ import os
 
 from GenericTools.keras_tools.esoteric_layers.surrogated_step import *
 from GenericTools.stay_organized.utils import str2val
-from stochastic_spiking.neural_models.optimize_dampening_sharpness import optimize_dampening, optimize_sharpness, \
+from sg_design_lif.neural_models.optimize_dampening_sharpness import optimize_dampening, optimize_sharpness, \
     optimize_tail
 
 tfd = tfp.distributions
