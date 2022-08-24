@@ -339,9 +339,6 @@ def build_model(task_name, net_name, n_neurons, tau, lr, stack,
     if 'skipinout' in comments:
         output = Add()([output, rnn_input])
 
-    if 'sop' in comments:
-        output = SOP_loss()([sop_mask, output])
-
     if 'nonlinreadout' in comments:
         convread = Conv1D(64, int(out_len / 10), activation='relu', padding='causal', kernel_initializer=initializer)
         readout = Dense(n_out, name='decoder', kernel_initializer=initializer)

@@ -26,10 +26,10 @@ from GenericTools.stay_organized.statistics import significance_to_star
 from GenericTools.stay_organized.utils import timeStructured, str2val
 from GenericTools.stay_organized.mpl_tools import load_plot_settings
 
-from stochastic_spiking.generate_data.task_redirection import Task
+from sg_design_lif.generate_data.task_redirection import Task
 # from stochastic_spiking.language_main import build_model
-from stochastic_spiking.neural_models import clean_pseudo_name, pseudod_color
-from stochastic_spiking.visualization_tools.plotting_tools import smart_plot, postprocess_results
+from sg_design_lif.neural_models import clean_pseudo_name, pseudod_color
+from sg_design_lif.visualization_tools.plotting_tools import smart_plot, postprocess_results
 
 mpl, pd = load_plot_settings(mpl=mpl, pd=pd)
 

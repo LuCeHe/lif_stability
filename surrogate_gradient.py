@@ -5,10 +5,12 @@ import pandas as pd
 
 import tensorflow as tf
 
+from sg_design_lif.neural_models.find_sparsities import reduce_model_firing_activity
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from GenericTools.keras_tools.esoteric_callbacks.several_validations import MultipleValidationSets
-from stochastic_spiking.neural_models.config import default_config
+from sg_design_lif.neural_models.config import default_config
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 os.environ["TF_GPU_ALLOCATOR"] = "cuda_malloc_async"
@@ -27,9 +29,9 @@ from GenericTools.keras_tools.plot_tools import plot_history
 from GenericTools.stay_organized.VeryCustomSacred import CustomExperiment, ChooseGPU
 from GenericTools.stay_organized.utils import timeStructured, setReproducible, str2val, NumpyEncoder
 
-from stochastic_spiking.generate_data.task_redirection import Task, checkTaskMeanVariance, language_tasks
-from stochastic_spiking.visualization_tools.training_tests import Tests, check_assumptions
-from stochastic_spiking.neural_models.full_model import build_model
+from sg_design_lif.generate_data.task_redirection import Task, checkTaskMeanVariance, language_tasks
+from sg_design_lif.visualization_tools.training_tests import Tests, check_assumptions
+from sg_design_lif.neural_models.full_model import build_model
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)
@@ -64,7 +66,7 @@ def config():
     n_neurons = n_neurons if not net_name == 'spikingLSTM' else int(n_neurons * sLSTM_factor)
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
-    comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2'
+    comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfiring:.1_v0m'
 
     # optimizer properties
     lr = None  # 7e-4
@@ -201,6 +203,11 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
 
     # evaluation = train_model.evaluate(gen_val, return_dict=True, verbose=True)
 
+    if 'adjfiring' in comments:
+        target_firing_rate = str2val(comments, 'adjfiring', float, default=.1)
+        reduce_model_firing_activity(
+            train_model, target_firing_rate, gen_train, epochs=5
+        )
     train_model.fit(
         gen_train, batch_size=batch_size, validation_data=gen_val, epochs=final_epochs, steps_per_epoch=steps_per_epoch,
         callbacks=callbacks

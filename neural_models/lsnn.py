@@ -103,12 +103,6 @@ class baseLSNN(tf.keras.layers.Layer):
 
             recurrent_init = PluriInitializerI(mean=mean_rec, scale=tf.math.sqrt(var_rec))
 
-        if not 'feedforward' in self.config:
-            self.recurrent_weights = self.add_weight(shape=(n_rec, n_rec), initializer=recurrent_init,
-                                                     name='recurrent_weights')
-        else:
-            self.recurrent_weights = 0
-
         if 'conditionIII' in self.config:
             od_type = str2val(self.config, 'conditionIII', str, default='c')
             thr = self.thr if not 'multreset' in self.config else 0
@@ -129,8 +123,9 @@ class baseLSNN(tf.keras.layers.Layer):
             assert 'ntailpseudod' in self.config, \
                 "Condition IV optimizetail has been coded only for exponential SG !"
 
-            tail = optimize_tail(self.recurrent_weights, self.input_weights, decay_v, self.thr, dampening, sharpness_in,
-                                 dampening_in)
+            tail = optimize_tail(
+                self.recurrent_weights, self.input_weights, decay_v, self.thr, dampening, sharpness_in, dampening_in
+            )
 
             self.config = str2val(self.config, 'tailvalue', replace=np.mean(tail))
 
@@ -143,6 +138,15 @@ class baseLSNN(tf.keras.layers.Layer):
         spath = os.path.join(exp, 'trained_models', 'sharpness_stacki{}.npy'.format(stacki))
         np.save(spath, sharpness)
         self.spike_type = SurrogatedStep(config=self.config, dampening=dampening, sharpness=sharpness)
+
+        if 'wrecm' in self.config:
+            stacki = str2val(self.config, 'stacki', int, default=0)
+            wrecm = str2val(self.config, f'wrecm{stacki}', float, default=0)
+            recurrent_init = PluriInitializerI(mean=wrecm)
+
+        self.recurrent_weights = self.add_weight(shape=(n_rec, n_rec), initializer=recurrent_init,
+                                                 name='recurrent_weights')
+        # print(stacki, wrecm, np.mean(self.recurrent_weights))
 
     def recurrent_transform(self):
         return self.mask * self.recurrent_weights
@@ -277,7 +281,6 @@ class baseLSNN(tf.keras.layers.Layer):
 
         # self.add_loss()
         self.add_metric(tf.reduce_mean(z), aggregation='mean', name='firing_rate_' + self.name)
-
         return output, new_state
 
     def prepare_outputs(self, new_v, old_v, z, old_z, new_a, old_a, new_last_spike_distance, last_spike_distance, thr,
@@ -331,10 +334,15 @@ class aLSNN(baseLSNN):
             p = self.add_weight(shape=(self.num_neurons,), initializer=initializer, name=k, trainable=True)
             self.__dict__.update({k: p})
 
-        if '_learnv0' in self.config:
-            initializer = tf.keras.initializers.RandomNormal(stddev=1. / tf.sqrt(tf.cast(n_input, tf.float32)))
+        if '_learnv0' in self.config or 'v0m' in self.config:
+            stacki = str2val(self.config, 'stacki', int, default=0)
+            v0m = str2val(self.config, f'v0m{stacki}', float, default=0)
+            initializer = tf.keras.initializers.RandomNormal(mean=v0m)
+            # initializer = tf.keras.initializers.RandomUniform(minval=v0m - 0.05, maxval=v0m + 0.05, seed=None)
             self.internal_current = self.add_weight(shape=(self.num_neurons,), initializer=initializer,
                                                     name='internal_current', trainable=True)
+
+            print(stacki, v0m, np.mean(self.internal_current))
 
         if 'bistabilizer' in self.config:
             initializer = tf.keras.initializers.RandomNormal(stddev=1. / tf.sqrt(tf.cast(n_input, tf.float32)))
