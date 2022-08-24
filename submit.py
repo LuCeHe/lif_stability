@@ -12,7 +12,7 @@ CDIR = os.path.dirname(FILENAME)
 parser = argparse.ArgumentParser(description='main')
 
 # types: spiking_transformers, send, summary, scancel:x:y
-parser.add_argument('--type', default='initcond', type=str, help='main behavior')
+parser.add_argument('--type', default='send', type=str, help='main behavior')
 args = parser.parse_args()
 
 if args.type == 'send':
@@ -262,9 +262,15 @@ if args.type == 'send':
     if 'sparsity' in send_fs:
         incomplete_comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
 
+        incomplete_comments = [incomplete_comments + f'adjfi:{i}_' for i in [.01, .1, .3, .5, .7]]
+
+        comments = []
+        for ff in ['', 'adjff:.1', 'adjff:.01']:
+            comments.extend([c + ff for c in incomplete_comments])
+
         experiment = {
             'task_name': ['heidelberg'], 'net_name': ['maLSNN'],
-            'comments': comments, 'seed': seeds, 'lr': [3.16e-5, 3.16e-3]  # [1e-2, 1e-3, 3.16e-4, 1e-4, 1e-5]
+            'comments': comments, 'seed': seeds
         }
         experiments.append(experiment)
 

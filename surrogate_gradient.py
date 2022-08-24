@@ -208,6 +208,7 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
         reduce_model_firing_activity(
             train_model, target_firing_rate, gen_train, epochs=5
         )
+
     train_model.fit(
         gen_train, batch_size=batch_size, validation_data=gen_val, epochs=final_epochs, steps_per_epoch=steps_per_epoch,
         callbacks=callbacks
