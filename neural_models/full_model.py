@@ -187,13 +187,15 @@ def build_model(task_name, net_name, n_neurons, tau, lr, stack,
             for i in range(n_experts):
                 emb = SymbolAndPositionEmbedding(
                     maxlen=in_len, vocab_size=n_out, embed_dim=n_neurons, embeddings_initializer=initializer,
-                    from_string=embedding, name=embedding.replace(':', '_'))
+                    from_string=embedding, name=embedding.replace(':', '_')
+                )
                 embs.append(emb)
 
         else:
             emb = SymbolAndPositionEmbedding(
                 maxlen=in_len, vocab_size=n_out, embed_dim=n_neurons, embeddings_initializer=initializer,
-                from_string=embedding, name=embedding.replace(':', '_'))
+                from_string=embedding, name=embedding.replace(':', '_')
+            )
             embs.append(emb)
 
             emb.build((1, n_out))

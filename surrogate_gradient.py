@@ -66,7 +66,7 @@ def config():
     n_neurons = n_neurons if not net_name == 'spikingLSTM' else int(n_neurons * sLSTM_factor)
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
-    comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfiring:.1_v0m'
+    comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:.1_v0m'
 
     # optimizer properties
     lr = None  # 7e-4
@@ -203,8 +203,8 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
 
     # evaluation = train_model.evaluate(gen_val, return_dict=True, verbose=True)
 
-    if 'adjfiring' in comments:
-        target_firing_rate = str2val(comments, 'adjfiring', float, default=.1)
+    if 'adjfi' in comments:
+        target_firing_rate = str2val(comments, 'adjfi', float, default=.1)
         reduce_model_firing_activity(
             train_model, target_firing_rate, gen_train, epochs=5
         )

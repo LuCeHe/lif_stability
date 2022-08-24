@@ -140,12 +140,16 @@ class baseLSNN(tf.keras.layers.Layer):
         self.spike_type = SurrogatedStep(config=self.config, dampening=dampening, sharpness=sharpness)
 
         if 'wrecm' in self.config:
-            stacki = str2val(self.config, 'stacki', int, default=0)
             wrecm = str2val(self.config, f'wrecm{stacki}', float, default=0)
             recurrent_init = PluriInitializerI(mean=wrecm)
 
         self.recurrent_weights = self.add_weight(shape=(n_rec, n_rec), initializer=recurrent_init,
                                                  name='recurrent_weights')
+
+        self.loss_switch = self.add_weight(
+            name=f'switch_{stacki}', shape=(), initializer=tf.keras.initializers.Constant(1.),
+            trainable=False
+        )
         # print(stacki, wrecm, np.mean(self.recurrent_weights))
 
     def recurrent_transform(self):
@@ -281,6 +285,13 @@ class baseLSNN(tf.keras.layers.Layer):
 
         # self.add_loss()
         self.add_metric(tf.reduce_mean(z), aggregation='mean', name='firing_rate_' + self.name)
+        if 'adjff' in self.config:
+            target_firing_rate = str2val(self.config, 'adjff', float, default=.1)
+
+            loss = tf.square(tf.reduce_mean(z) - target_firing_rate)
+
+            self.add_loss(self.loss_switch * loss)
+            self.add_metric(self.loss_switch * loss, name='adjff', aggregation='mean')
         return output, new_state
 
     def prepare_outputs(self, new_v, old_v, z, old_z, new_a, old_a, new_last_spike_distance, last_spike_distance, thr,
@@ -301,7 +312,6 @@ class aLSNN(baseLSNN):
 
     def current_mod(self, i_in):
         if 'bistabilizer' in self.config:
-
             """
             Inspired by
             'A bio-inspired bistable recurrent cell allows for long-lasting memory'

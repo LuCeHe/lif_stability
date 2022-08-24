@@ -19,7 +19,7 @@ def reduce_model_firing_activity(
     initial_non_trainable = None
     for layer in new_model.layers:
         for i, w in enumerate(layer.trainable_weights):
-            if not 'internal_current' in w.name:
+            if not trainable_param_identifier in w.name:
                 w._trainable = False
                 if initial_non_trainable is None:
                     initial_non_trainable = w
@@ -27,6 +27,10 @@ def reduce_model_firing_activity(
                 if initial_trainable is None:
                     initial_trainable = w
 
+    for layer in new_model.layers:
+        for i, w in enumerate(layer.non_trainable_weights):
+            if 'switch' in w.name:
+                tf.keras.backend.set_value(w, 0)
     outs = []
     for i, out in enumerate(new_model.outputs):
         loss = lambda t, p: tf.square(tf.reduce_mean(t) - target_firing_rate)
@@ -39,16 +43,10 @@ def reduce_model_firing_activity(
 
     train_model.fit(generator, epochs=epochs)
 
-    final_trainable = None
-    final_non_trainable = None
-    for layer in train_model.layers:
-        for i, w in enumerate(layer.trainable_weights):
-            if not trainable_param_identifier in w.name:
-                if final_non_trainable is None:
-                    final_non_trainable = w
-            else:
-                if final_trainable is None:
-                    final_trainable = w
+    for layer in model.layers:
+        for i, w in enumerate(layer.non_trainable_weights):
+            if 'switch' in w.name:
+                tf.keras.backend.set_value(w, 1)
 
 
 if __name__ == '__main__':

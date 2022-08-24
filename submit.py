@@ -25,7 +25,7 @@ if args.type == 'send':
     save_model = False
     # final_experiments(seed)
     experiments = []
-    send_fs = [6]  # 1, 2, 3, 4, 5, 6 'extra'
+    send_fs = ['sparsity']  # 1, 2, 3, 4, 5, 6 'extra'
 
     # f1
     import numpy as np
@@ -258,6 +258,15 @@ if args.type == 'send':
             account='def-jrouat', env_name='denv2', n_gpus=1, id='sg'
         )
         experiments = []
+
+    if 'sparsity' in send_fs:
+        incomplete_comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
+
+        experiment = {
+            'task_name': ['heidelberg'], 'net_name': ['maLSNN'],
+            'comments': comments, 'seed': seeds, 'lr': [3.16e-5, 3.16e-3]  # [1e-2, 1e-3, 3.16e-4, 1e-4, 1e-5]
+        }
+        experiments.append(experiment)
 
     if 'extra' in send_fs:
         comments = ['6_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_tenb_' + p for p in
