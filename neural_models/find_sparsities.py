@@ -15,17 +15,10 @@ def reduce_model_firing_activity(
 ):
     new_model = expose_latent_model(model, include_layers=[layer_identifier], idx=output_index)
 
-    initial_trainable = None
-    initial_non_trainable = None
     for layer in new_model.layers:
         for i, w in enumerate(layer.trainable_weights):
             if not trainable_param_identifier in w.name:
                 w._trainable = False
-                if initial_non_trainable is None:
-                    initial_non_trainable = w
-            else:
-                if initial_trainable is None:
-                    initial_trainable = w
 
     for layer in new_model.layers:
         for i, w in enumerate(layer.non_trainable_weights):
@@ -48,6 +41,9 @@ def reduce_model_firing_activity(
             if 'switch' in w.name:
                 tf.keras.backend.set_value(w, 1)
 
+    for layer in model.layers:
+        for i, w in enumerate(layer.trainable_weights):
+            w._trainable = True
 
 if __name__ == '__main__':
 
