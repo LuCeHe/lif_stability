@@ -5,6 +5,7 @@ import pandas as pd
 
 import tensorflow as tf
 
+from alif_sg.initialization_plots import adapt_sg_shape
 from sg_design_lif.neural_models.find_sparsities import reduce_model_firing_activity
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -53,7 +54,7 @@ def config():
 
     # test configuration
     epochs = 3
-    steps_per_epoch = 2
+    steps_per_epoch = 1
     batch_size = 2
     stack = None
     n_neurons = 10
@@ -66,7 +67,7 @@ def config():
     n_neurons = n_neurons if not net_name == 'spikingLSTM' else int(n_neurons * sLSTM_factor)
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
-    comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:.1_v0m'
+    comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_readaptsg'
 
     # optimizer properties
     lr = None  # 7e-4
@@ -209,10 +210,30 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
             train_model, target_firing_rate, gen_train, epochs=5
         )
 
-    train_model.fit(
-        gen_train, batch_size=batch_size, validation_data=gen_val, epochs=final_epochs, steps_per_epoch=steps_per_epoch,
-        callbacks=callbacks
-    )
+    if 'readaptsg' in comments:
+        final_epochs = int(final_epochs / 3)
+        readapt = 3
+    else:
+        readapt = 1
+
+    for _ in range(readapt):
+        if 'adaptsg' in comments:
+            adapt_comments = adapt_sg_shape(gen_train, train_model, comments)
+            model_args['comments'] = adapt_comments
+
+            weights = train_model.get_weights()
+            tf.keras.backend.clear_session()
+            del train_model
+
+            train_model = build_model(**model_args)
+            train_model.set_weights(weights)
+
+
+        train_model.fit(
+            gen_train, batch_size=batch_size, validation_data=gen_val, epochs=final_epochs,
+            steps_per_epoch=steps_per_epoch,
+            callbacks=callbacks
+        )
 
     actual_epochs = 0
     if final_epochs > 0:
@@ -263,6 +284,7 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
     results['n_neurons'] = n_neurons
     results['stack'] = stack
     results['embedding'] = embedding
+    results['comments'] = comments
 
     results_filename = os.path.join(other_dir, 'results.json')
     json.dump(results, open(results_filename, "w"), cls=NumpyEncoder)

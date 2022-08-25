@@ -106,7 +106,8 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
 
     if 'LSNN' in net_name:
         stack_info = '_stacki:{}'.format(i)
-        cell = models.net(net_name)(num_neurons=n_neurons, tau=tau, tau_adaptation=tau_adaptation,
+        cell = models.net(net_name)(
+            num_neurons=n_neurons, tau=tau, tau_adaptation=tau_adaptation,
                                     initializer=initializer, config=comments + stack_info, thr=thr)
         rnn = RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij, stateful=stateful)
         batch_size = str2val(comments, 'batchsize', int, 1)
