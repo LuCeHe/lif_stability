@@ -188,6 +188,6 @@ def test_generator():
 
 
 if __name__ == '__main__':
-    # download_and_unzip(data_links, HEIDELBERGDIR)
-    test_generator()
+    download_and_unzip(data_links, HEIDELBERGDIR)
+    # test_generator()
     # test_non_spiking()
