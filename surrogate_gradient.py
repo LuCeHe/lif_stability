@@ -211,8 +211,8 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
         )
 
     if 'readaptsg' in comments:
-        final_epochs = int(final_epochs / 3)
-        readapt = 3
+        readapt = str2val(comments, 'readaptsg', int, default=3)
+        final_epochs = int(final_epochs / readapt)
     else:
         readapt = 1
 

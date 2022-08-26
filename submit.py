@@ -276,7 +276,7 @@ if args.type == 'send':
     if 'adaptsg' in send_fs:
         incomplete_comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
 
-        comments = [incomplete_comments + t for t in ['adaptsg', 'readaptsg']]
+        comments = [incomplete_comments + t for t in ['adaptsg', 'readaptsg:3', 'readaptsg:10']]
 
         experiment = {
             'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
