@@ -1,11 +1,13 @@
 from GenericTools.keras_tools.esoteric_initializers import PluriInitializerI
-from GenericTools.keras_tools.esoteric_layers import *
+from GenericTools.keras_tools.esoteric_layers import SurrogatedStep
 import tensorflow_probability as tfp
 import tensorflow as tf
 import numpy as np
 import os
 
-from GenericTools.keras_tools.esoteric_layers.surrogated_step import *
+
+
+# from GenericTools.keras_tools.esoteric_layers.surrogated_step import *
 from GenericTools.stay_organized.utils import str2val
 from sg_design_lif.neural_models.optimize_dampening_sharpness import optimize_dampening, optimize_sharpness, \
     optimize_tail

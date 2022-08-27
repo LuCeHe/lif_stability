@@ -133,7 +133,7 @@ def download():
 
 def plot_mnist_sl():
     import matplotlib.pyplot as plt
-    x, _ = getMNIST(categorical=False, sequential=False, original_size=True, training_set='train', spike_latency=False)
+    x, _ = getMNIST(categorical=False, sequential=False, original_size=True, data_split='train', spike_latency=False)
     # xs, _ = getMNIST(categorical=False, sequential=True, original_size=True, training_set='train', spike_latency=True)
 
     gen = SeqMNIST(repetitions=1, original_size=True, spike_latency=True)
