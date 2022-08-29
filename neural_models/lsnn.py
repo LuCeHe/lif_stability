@@ -5,8 +5,6 @@ import tensorflow as tf
 import numpy as np
 import os
 
-
-
 # from GenericTools.keras_tools.esoteric_layers.surrogated_step import *
 from GenericTools.stay_organized.utils import str2val
 from sg_design_lif.neural_models.optimize_dampening_sharpness import optimize_dampening, optimize_sharpness, \
@@ -266,9 +264,13 @@ class baseLSNN(tf.keras.layers.Layer):
         if not training is None:
             tf.keras.backend.set_learning_phase(training)
 
-        old_z = states[0]
         old_v = states[1]
         old_a = states[2]
+
+        if not 'reoldspike' in self.config:
+            old_z = states[0]
+        else:
+            old_z = self.spike_type(old_v - self.thr - old_a * self.beta_transform())
         last_spike_distance = states[3]
 
         i_in = self.currents_composition(inputs, old_z)

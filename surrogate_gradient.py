@@ -61,7 +61,7 @@ def config():
 
     # net
     # mn_aLSNN_2 mn_aLSNN_2_sig LSNN maLSNN spikingPerformer smallGPT2 aLSNN_noIC spikingLSTM
-    net_name = 'maLSNN'
+    net_name = 'LSTM'
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     sLSTM_factor = 2 / 3 if task_name == 'wordptb' else 1 / 3
     n_neurons = n_neurons if not net_name == 'spikingLSTM' else int(n_neurons * sLSTM_factor)
@@ -130,20 +130,16 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
 
     final_epochs = gen_train.epochs
     final_steps_per_epoch = gen_train.steps_per_epoch
-    tau_adaptation = str2val(comments, 'taub', float, default=int(gen_train.in_len / 2))
-    tau = str2val(comments, 'tauv', float, default=.1)
     # tau_adaptation = int(gen_train.in_len / 2)  # 200 800 4000
 
     if initializer in esoteric_initializers_list:
         initializer = get_initializer(initializer_name=initializer)
 
-    model_args = dict(task_name=task_name, net_name=net_name, n_neurons=n_neurons, tau=tau,
-                      lr=lr, stack=stack, loss_name=loss_name,
-                      embedding=embedding, optimizer_name=optimizer_name, lr_schedule=lr_schedule,
+    model_args = dict(task_name=task_name, net_name=net_name, n_neurons=n_neurons, lr=lr, stack=stack,
+                      loss_name=loss_name, embedding=embedding, optimizer_name=optimizer_name, lr_schedule=lr_schedule,
                       weight_decay=weight_decay, clipnorm=clipnorm, initializer=initializer, comments=comments,
                       in_len=gen_train.in_len, n_in=gen_train.in_dim, out_len=gen_train.out_len,
-                      n_out=gen_train.out_dim, tau_adaptation=tau_adaptation,
-                      final_epochs=gen_train.epochs)
+                      n_out=gen_train.out_dim, final_epochs=gen_train.epochs)
     train_model = build_model(**model_args)
 
     results = {}
@@ -227,7 +223,6 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
 
             train_model = build_model(**model_args)
             train_model.set_weights(weights)
-
 
         train_model.fit(
             gen_train, batch_size=batch_size, validation_data=gen_val, epochs=final_epochs,

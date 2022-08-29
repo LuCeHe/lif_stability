@@ -104,16 +104,16 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
     else:
         win = lambda x: x
 
+    batch_size = str2val(comments, 'batchsize', int, 1)
+    maxlen = str2val(comments, 'maxlen', int, 100)
+    nin = str2val(comments, 'nin', int, 1) if not 'convWin' in comments else n_neurons
+
     if 'LSNN' in net_name:
         stack_info = '_stacki:{}'.format(i)
         cell = models.net(net_name)(
             num_neurons=n_neurons, tau=tau, tau_adaptation=tau_adaptation,
                                     initializer=initializer, config=comments + stack_info, thr=thr)
         rnn = RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij, stateful=stateful)
-        batch_size = str2val(comments, 'batchsize', int, 1)
-        maxlen = str2val(comments, 'maxlen', int, 100)
-        nin = str2val(comments, 'nin', int, 1) if not 'convWin' in comments else n_neurons
-
         rnn.build((batch_size, maxlen, nin))
 
     elif 'Performer' in net_name or 'GPT' in net_name:
@@ -124,8 +124,8 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
         rnn = RNN(cell, return_sequences=True, name='encoder' + ij, stateful=stateful)
     else:
         cell = tf.keras.layers.LSTMCell(units=n_neurons)
-        rnn = RNN(cell, return_sequences=True, name='encoder' + ij, stateful=stateful)
-        # rnn = LSTM(n_neurons, return_sequences=True, name='encoder' + ij, stateful=stateful)
+        rnn = RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij, stateful=stateful)
+        rnn.build((batch_size, maxlen, nin))
 
     lsb = LayerSupervision(n_classes=n_out, name='b' + ij)
     lsv = LayerSupervision(n_classes=n_out, name='v' + ij)
@@ -155,19 +155,25 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
                 output_cell = v
             else:
                 output_cell = b
+        elif 'LSTM' in net_name:
+            all_out = rnn(inputs=skipped_connection_input, initial_state=initial_state)
+            output_cell, states = all_out[0], all_out[1:]
         else:
             output_cell = rnn(inputs=skipped_connection_input)
+
         return output_cell, states
 
     return call
 
 
-def build_model(task_name, net_name, n_neurons, tau, lr, stack,
-                loss_name, embedding, optimizer_name, tau_adaptation, lr_schedule, weight_decay, clipnorm,
+def build_model(task_name, net_name, n_neurons, lr, stack,
+                loss_name, embedding, optimizer_name, lr_schedule, weight_decay, clipnorm,
                 initializer, comments, in_len, n_in, out_len, n_out, final_epochs,
                 initial_state=None):
     comments = comments if task_name in language_tasks else comments.replace('embproj', 'simplereadout')
 
+    tau_adaptation = str2val(comments, 'taub', float, default=int(in_len / 2))
+    tau = str2val(comments, 'tauv', float, default=.1)
     drate = str2val(comments, 'dropout', float, .1)
     # network definition
     # weights initialization
@@ -264,6 +270,7 @@ def build_model(task_name, net_name, n_neurons, tau, lr, stack,
 
     all_states = []
     all_input_states = []
+    n_states = 4 if 'LSNN' in  net_name else 2
     for i, layer_width in enumerate(stack):
         skip_input = [skip_input] if not isinstance(skip_input, list) else skip_input
         os_e = []
@@ -297,7 +304,7 @@ def build_model(task_name, net_name, n_neurons, tau, lr, stack,
             if not initial_state is None:
                 initial_state = tuple([
                     Input([layer_width, ], name=f'state_{i}_{si}')
-                    for si in range(4)
+                    for si in range(n_states)
                 ])
             output_cell, states = expert(i, j, c, n=layer_width, init_s=initial_state)([expanded_input, output_words])
 
