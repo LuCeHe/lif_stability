@@ -223,7 +223,7 @@ if args.type == 'send':
 
         experiment = {
             'task_name': ['heidelberg', ], 'net_name': ['maLSNN'],
-            'comments': ['1_embproj_nogradreset_dropout:.3_timerepeat:2_' + p for p in possible_pseudod], 'seed': seeds,
+            'comments': ['6_embproj_nogradreset_dropout:.3_timerepeat:2_' + p for p in possible_pseudod], 'seed': seeds,
             'lr': [1e-2, 3.16e-3, 1e-3, 3.16e-4, 1e-4, 3.16e-5, 1e-5]
         }
         experiments.append(experiment)
@@ -241,7 +241,7 @@ if args.type == 'send':
         experiments = []
         experiment = {
             'task_name': ['heidelberg', ], 'net_name': ['spikingLSTM'],
-            'comments': ['1_embproj_dropout:.3_timerepeat:2_' + p for p in possible_pseudod], 'seed': seeds,
+            'comments': ['6_embproj_dropout:.3_timerepeat:2_' + p for p in possible_pseudod], 'seed': seeds,
             'lr': [1e-2, 3.16e-3, 1e-3, 3.16e-4, 1e-4, 3.16e-5, 1e-5]
         }
         experiments.append(experiment)
@@ -258,7 +258,7 @@ if args.type == 'send':
         experiments = []
 
     if 'sparsity' in send_fs:
-        incomplete_comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
+        incomplete_comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
 
         incomplete_comments = [incomplete_comments + f'adjfi:{i}_' for i in [.01, .1, .3, .5, .7]]
 
@@ -274,9 +274,20 @@ if args.type == 'send':
 
 
     if 'adaptsg' in send_fs:
+        incomplete_comments = '8_embproj_nogradreset_dropout:.3_timerepeat:2_'
+
+        comments = [incomplete_comments + t for t in ['', 'adaptsg', 'readaptsg:3', 'readaptsg:10']]
+
+        experiment = {
+            'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
+            'comments': comments, 'seed': seeds
+        }
+        experiments.append(experiment)
+
+
         incomplete_comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
 
-        comments = [incomplete_comments + t for t in ['adaptsg', 'readaptsg:3', 'readaptsg:10']]
+        comments = [incomplete_comments + t for t in ['']]
 
         experiment = {
             'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],

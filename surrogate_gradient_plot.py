@@ -17,7 +17,8 @@ import pickle
 import matplotlib.pyplot as plt
 
 from GenericTools.keras_tools.convergence_metric import convergence_estimation
-from GenericTools.keras_tools.esoteric_layers.surrogated_step import possible_pseudod, clean_pseudname
+from GenericTools.keras_tools.esoteric_layers.surrogated_step import possible_pseudod, clean_pseudname, \
+    clean_pseudo_name, pseudod_color
 from GenericTools.keras_tools.plot_tools import plot_history, TensorboardToNumpy
 # from GenericTools.PlotTools.mpl_tools import load_plot_settings
 from GenericTools.stay_organized.unzip import unzip_good_exps
@@ -28,7 +29,7 @@ from GenericTools.stay_organized.mpl_tools import load_plot_settings
 
 from sg_design_lif.generate_data.task_redirection import Task
 # from stochastic_spiking.language_main import build_model
-from sg_design_lif.neural_models import clean_pseudo_name, pseudod_color
+# from sg_design_lif.neural_models import clean_pseudo_name, pseudod_color
 from sg_design_lif.visualization_tools.plotting_tools import smart_plot, postprocess_results
 
 mpl, pd = load_plot_settings(mpl=mpl, pd=pd)
@@ -52,7 +53,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 GEXPERIMENTS = [
-    r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments',
+    r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
@@ -195,13 +196,13 @@ df = df.sort_values(by='val_ppl', ascending=False)
 # df = df[(df['comments'].str.contains('ptb2')) | (df['task_name'].str.contains('SHD')) | (
 #     df['task_name'].str.contains('sl-MNIST'))]
 df['comments'] = df['comments'].str.replace('_ptb2', '')
-df = df[~(df['d_name'].str.contains('2022-08-10--'))|(df['d_name'].str.contains('2022-08-11--'))]
+df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
 
 for ps in possible_pseudod:
-    df['comments'] = df['comments'].str.replace('timerepeat:2'+ps, 'timerepeat:2_'+ps)
+    df['comments'] = df['comments'].str.replace('timerepeat:2' + ps, 'timerepeat:2_' + ps)
 
 # df = df[(df['d_name'].str.contains('2022-08-12--'))|(df['d_name'].str.contains('2022-08-13--'))]
-# df = df[(df['d_name'].str.contains('2022-08-13--')) | (df['d_name'].str.contains('2022-08-14--'))]
+df = df[(df['d_name'].str.contains('2022-08-27--'))]
 
 df = df.dropna(subset=['t_ppl'])
 print(df.to_string())
@@ -388,7 +389,7 @@ elif args.type == 'lr_sg':
             for lr in lrs:
                 ldf = iidf[iidf['lr'] == lr]
                 accs.append(ldf['mean_val_' + metric].values[0])
-                stds.append(ldf['std_val_' + metric].values[0]/2)
+                stds.append(ldf['std_val_' + metric].values[0] / 2)
 
             stds = np.nan_to_num(stds)
             print(accs, stds, lrs)
