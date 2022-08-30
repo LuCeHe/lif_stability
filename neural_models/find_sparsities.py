@@ -15,6 +15,8 @@ def reduce_model_firing_activity(
 ):
     new_model = expose_latent_model(model, include_layers=[layer_identifier], idx=output_index)
 
+    names = [weight.name for layer in new_model.layers for weight in layer.weights]
+    print(names)
     for layer in new_model.layers:
         for i, w in enumerate(layer.trainable_weights):
             if not trainable_param_identifier in w.name:
@@ -24,6 +26,7 @@ def reduce_model_firing_activity(
         for i, w in enumerate(layer.non_trainable_weights):
             if 'switch' in w.name:
                 tf.keras.backend.set_value(w, 0)
+
     outs = []
     for i, out in enumerate(new_model.outputs):
         loss = lambda t, p: tf.square(tf.reduce_mean(t) - target_firing_rate)
@@ -33,6 +36,8 @@ def reduce_model_firing_activity(
 
     train_model = tf.keras.models.Model(new_model.inputs, outs, name='sparsifier')
     train_model.compile(optimizer='AdaM', loss=lambda x, y: 0)
+
+    train_model.summary()
 
     train_model.fit(generator, epochs=epochs)
 

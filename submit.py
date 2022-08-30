@@ -259,7 +259,7 @@ if args.type == 'send':
         experiments = []
 
     if 'sparsity' in send_fs:
-        incomplete_comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
+        incomplete_comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_v0m_'
 
         incomplete_comments = [incomplete_comments + f'adjfi:{i}_' for i in [.01, .1, .3, .5, .7]]
 

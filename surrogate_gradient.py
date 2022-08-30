@@ -50,7 +50,7 @@ def config():
     # task and net
     # ptb time_ae simplest_random time_ae_merge ps_mnist heidelberg wiki103 wmt14 s_mnist xor small_s_mnist
     # wordptb sl_mnist
-    task_name = 'wordptb'
+    task_name = 'heidelberg'
 
     # test configuration
     epochs = 3
@@ -61,13 +61,14 @@ def config():
 
     # net
     # mn_aLSNN_2 mn_aLSNN_2_sig LSNN maLSNN spikingPerformer smallGPT2 aLSNN_noIC spikingLSTM
-    net_name = 'LSTM'
+    net_name = 'maLSNN'
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     sLSTM_factor = 2 / 3 if task_name == 'wordptb' else 1 / 3
     n_neurons = n_neurons if not net_name == 'spikingLSTM' else int(n_neurons * sLSTM_factor)
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
-    comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_readaptsg'
+    # comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m'
+    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjff:.01'
 
     # optimizer properties
     lr = None  # 7e-4
@@ -97,12 +98,10 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
     exp_dir = os.path.join(*[CDIR, ex.observers[0].basedir])
     comments += '_**folder:' + exp_dir + '**_'
 
-    config_dir = os.path.join(*[exp_dir, '1'])
     images_dir = os.path.join(*[exp_dir, 'images'])
     other_dir = os.path.join(*[exp_dir, 'other_outputs'])
     models_dir = os.path.join(*[exp_dir, 'trained_models'])
-    # tracker = OfflineEmissionsTracker(country_iso_code="CAN", output_dir=other_dir)
-    # tracker.start()
+
     full_mean, full_var = checkTaskMeanVariance(task_name)
     print(comments)
     comments = comments + '_taskmean:{}_taskvar:{}'.format(full_mean, full_var)
