@@ -26,7 +26,7 @@ if args.type == 'send':
     save_model = False
     # final_experiments(seed)
     experiments = []
-    send_fs = ['adaptsg']  # 1, 2, 3, 4, 5, 6 'extra' sparsity adaptsg
+    send_fs = ['sparsity']  # 1, 2, 3, 4, 5, 6 'extra' sparsity adaptsg
 
     # f1
     if 1 in send_fs:
