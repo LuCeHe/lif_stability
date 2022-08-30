@@ -120,8 +120,9 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
         rnn = models.net(net_name)(num_neurons=n_neurons, comments=comments)
 
     elif not net_name == 'LSTM':
-        cell = models.net(net_name)(num_neurons=n_neurons, string_config=comments)
-        rnn = RNN(cell, return_sequences=True, name='encoder' + ij, stateful=stateful)
+        cell = models.net(net_name)(num_neurons=n_neurons, config=comments)
+        rnn = RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij, stateful=stateful)
+        rnn.build((batch_size, maxlen, nin))
     else:
         cell = tf.keras.layers.LSTMCell(units=n_neurons)
         rnn = RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij, stateful=stateful)

@@ -26,7 +26,7 @@ if args.type == 'send':
     save_model = False
     # final_experiments(seed)
     experiments = []
-    send_fs = ['sparsity']  # 1, 2, 3, 4, 5, 6 'extra' sparsity adaptsg
+    send_fs = [6]  # 1, 2, 3, 4, 5, 6 'extra' sparsity adaptsg
 
     # f1
     if 1 in send_fs:
@@ -216,29 +216,6 @@ if args.type == 'send':
         incomplete_comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
         comments = [incomplete_comments + p for p in possible_pseudod]
 
-        experiment = {
-            'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
-            'comments': comments, 'seed': seeds, 'lr': [3.16e-5, 3.16e-3]  # [1e-2, 1e-3, 3.16e-4, 1e-4, 1e-5]
-        }
-        experiments.append(experiment)
-
-        experiment = {
-            'task_name': ['heidelberg', ], 'net_name': ['maLSNN'],
-            'comments': ['6_embproj_nogradreset_dropout:.3_timerepeat:2_' + p for p in possible_pseudod], 'seed': seeds,
-            'lr': [1e-2, 3.16e-3, 1e-3, 3.16e-4, 1e-4, 3.16e-5, 1e-5]
-        }
-        experiments.append(experiment)
-
-        run_experiments(
-            experiments,
-            init_command='python surrogate_gradient.py with epochs=None steps_per_epoch=None batch_size=None '
-                         'stack=None n_neurons=None ',
-            run_string=None,
-            sh_location=os.path.join(CDIR, 'experiments'),
-            py_location=CDIR, duration={'days': 0, 'hours': 13, 'minutes': 0, 'prestop_training_hours': 3},
-            account='def-jrouat', env_name='denv2', n_gpus=1, id='sg'
-        )
-
         experiments = []
         experiment = {
             'task_name': ['heidelberg', ], 'net_name': ['spikingLSTM'],
@@ -253,7 +230,7 @@ if args.type == 'send':
                          'stack=None n_neurons=None ',
             run_string=None,
             sh_location=os.path.join(CDIR, 'experiments'),
-            py_location=CDIR, duration={'days': 0, 'hours': 48, 'minutes': 0, 'prestop_training_hours': 3},
+            py_location=CDIR, duration={'days': 0, 'hours': 13, 'minutes': 0, 'prestop_training_hours': 3},
             account='def-jrouat', env_name='denv2', n_gpus=1, id='sg'
         )
         experiments = []

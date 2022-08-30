@@ -61,14 +61,12 @@ def config():
 
     # net
     # mn_aLSNN_2 mn_aLSNN_2_sig LSNN maLSNN spikingPerformer smallGPT2 aLSNN_noIC spikingLSTM
-    net_name = 'maLSNN'
+    net_name = 'spikingLSTM'
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
-    sLSTM_factor = 2 / 3 if task_name == 'wordptb' else 1 / 3
-    n_neurons = n_neurons if not net_name == 'spikingLSTM' else int(n_neurons * sLSTM_factor)
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
     # comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m'
-    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjff:.01'
+    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2'
 
     # optimizer properties
     lr = None  # 7e-4
@@ -94,6 +92,8 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
          continue_training, save_model, seed, net_name, n_neurons, lr, stack, loss_name, embedding, optimizer_name,
          lr_schedule, weight_decay, clipnorm, initializer, stop_time, _log):
     stack, batch_size, embedding, n_neurons, lr = default_config(stack, batch_size, embedding, n_neurons, lr, task_name)
+    sLSTM_factor = 2 / 3 if task_name == 'wordptb' else 1 / 3
+    n_neurons = n_neurons if not 'LSTM' in net_name else int(n_neurons * sLSTM_factor)
 
     exp_dir = os.path.join(*[CDIR, ex.observers[0].basedir])
     comments += '_**folder:' + exp_dir + '**_'

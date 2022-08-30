@@ -9,15 +9,17 @@ class customLSTM(tf.keras.layers.Layer):
         return self.init_args
 
     def __init__(self, num_neurons=None, activation_gates='hard_sigmoid', activation_c='tanh', activation_h='tanh',
-                 initializer='glorot_uniform', string_config='', **kwargs):
+                 initializer='glorot_uniform', config='', **kwargs):
         self.init_args = dict(num_neurons=num_neurons, activation_gates=activation_gates, activation_c=activation_c,
-                              activation_h=activation_h, string_config=string_config)
+                              activation_h=activation_h, config=config)
         super().__init__(**kwargs)
         self.__dict__.update(self.init_args)
 
-        self.activation_gates = activation_gates
-        self.activation_c = activation_c
-        self.activation_h = activation_h
+        self.activation_c = Activation(activation_c)
+        self.activation_h = Activation(activation_h)
+        self.activation_i = Activation(activation_gates)
+        self.activation_o = Activation(activation_gates)
+        self.activation_f = Activation(activation_gates)
 
         self.state_size = (num_neurons, num_neurons)
 
@@ -39,13 +41,13 @@ class customLSTM(tf.keras.layers.Layer):
 
         old_c, old_h = states
 
-        f = Activation(self.activation_gates)(self.linear_f_input(inputs) + self.linear_f_h(old_h))
-        i = Activation(self.activation_gates)(self.linear_i_input(inputs) + self.linear_i_h(old_h))
-        o = Activation(self.activation_gates)(self.linear_o_input(inputs) + self.linear_o_h(old_h))
-        c_tilde = Activation(self.activation_c)(self.linear_c_input(inputs) + self.linear_c_h(old_h))
+        f = self.activation_f(self.linear_f_input(inputs) + self.linear_f_h(old_h))
+        i = self.activation_i(self.linear_i_input(inputs) + self.linear_i_h(old_h))
+        o = self.activation_o(self.linear_o_input(inputs) + self.linear_o_h(old_h))
+        c_tilde = self.activation_c(self.linear_c_input(inputs) + self.linear_c_h(old_h))
 
         c = f * old_c + i * c_tilde
-        h = o * Activation(self.activation_h)(c)
+        h = o * self.activation_h(c)
 
         output = h
         new_state = (c, h)
@@ -55,15 +57,16 @@ class customLSTM(tf.keras.layers.Layer):
 class spikingLSTM(customLSTM):
 
     def __init__(self, *args, **kwargs):
-        print(kwargs['string_config'])
-        activation_spikes_gates = lambda x: SurrogatedStep(string_config=self.string_config)(x)
-        activation_spikes_c = lambda x: 2 * SurrogatedStep(string_config=self.string_config)(x) - 1
-        activation_spikes_h = lambda x: 2 * SurrogatedStep(string_config=self.string_config)(x) - 1
-        kwargs['activation_gates'] = activation_spikes_gates
-        kwargs['activation_c'] = activation_spikes_c
-        kwargs['activation_h'] = activation_spikes_h
-
         super().__init__(*args, **kwargs)
+
+        self.activation_c = SurrogatedStep(config=self.config + '_tanhspike')
+        self.activation_h = SurrogatedStep(config=self.config + '_tanhspike')
+        self.activation_i = SurrogatedStep(config=self.config)
+        self.activation_o = SurrogatedStep(config=self.config)
+        self.activation_f = SurrogatedStep(config=self.config)
+
+
+sLSTM = spikingLSTM
 
 
 class gravesLSTM(tf.keras.layers.Layer):
