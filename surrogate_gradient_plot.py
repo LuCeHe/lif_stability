@@ -74,7 +74,8 @@ if not os.path.exists(CSVPATH):
 
     history_keys = [
         # 'bpc', 'val_bpc', 'val_accuracy', 'val_zeros_accuracy', 'perplexity',
-        'val_perplexity', 'val_sparse_mode_accuracy', 'v_perplexity', 'v_sparse_mode_accuracy', 'v_firing_rate',
+        # 'val_perplexity', 'val_sparse_mode_accuracy',
+        'v_perplexity', 'v_sparse_mode_accuracy', 'v_firing_rate',
         't_perplexity', 't_sparse_mode_accuracy', 't_firing_rate',
         # 'val_bpc_2', 'val_bound_a', 'val_bound_b', 'val_bound_c', 'val_entropy_data', 'val_entropy_model',
         # 'val_zeros_categorical_accuracy', 'val_mode_accuracy', 'val_second_half_mode_accuracy',
@@ -160,13 +161,6 @@ if not os.path.exists(CSVPATH):
     df.loc[df['task_name'].str.contains('heidelberg'), 'task_name'] = 'SHD'
     df.loc[df['task_name'].str.contains('sl_mnist'), 'task_name'] = 'sl-MNIST'
 
-    # use for val_macc: val_sparse_mode_accuracy val_perplexity sparse_categorical_accuracy_test
-    df = df.rename(
-        columns={'val_sparse_categorical_accuracy': 'val_zacc', 'val_sparse_mode_accuracy': 'val_macc',
-                 'sparse_categorical_accuracy_test': 'test_macc', 'val_perplexity': 'val_ppl',
-                 'perplexity_test': 'test_ppl'},
-        inplace=False)
-
     cols = list(df)
     cols.insert(0, cols.pop(cols.index('convergence')))
     df = df.loc[:, cols]
@@ -182,39 +176,46 @@ else:
         histories = json.load(f)
 
 df = df.rename(
-    columns={'val_sparse_categorical_accuracy': 'val_zacc', 'val_sparse_mode_accuracy': 'val_macc',
-             'sparse_categorical_accuracy_test': 'test_macc', 'val_perplexity': 'val_ppl', 't_perplexity': 't_ppl',
-             'perplexity_test': 'test_ppl'},
+    columns={
+        'val_sparse_categorical_accuracy': 'val_zacc', 'val_sparse_mode_accuracy': 'val_macc',
+             'sparse_categorical_accuracy_test': 'test_macc', 'val_perplexity': 'val_ppl',
+             'perplexity_test': 'test_ppl',
+             't_sparse_mode_accuracy': 't_macc', 't_perplexity': 't_ppl',
+             'v_sparse_mode_accuracy': 'v_macc', 'v_perplexity': 'v_ppl',
+             },
     inplace=False)
 
 # df = df[df['task_name'].str.contains('PTB')]
 # df = df[df['final_epochs'] == 3]
-df = df.sort_values(by='val_ppl', ascending=False)
+df = df.sort_values(by='v_ppl', ascending=False)
 
 # df['comments'] = df['comments'].str.replace('_dampf:.3', '')
 # df['comments'] = df['comments'].str.replace('_dropout:.3', '')
 # df = df[(df['comments'].str.contains('ptb2')) | (df['task_name'].str.contains('SHD')) | (
 #     df['task_name'].str.contains('sl-MNIST'))]
 df['comments'] = df['comments'].str.replace('_ptb2', '')
-df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
+# df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
 
 for ps in possible_pseudod:
     df['comments'] = df['comments'].str.replace('timerepeat:2' + ps, 'timerepeat:2_' + ps)
 
 # df = df[(df['d_name'].str.contains('2022-08-12--'))|(df['d_name'].str.contains('2022-08-13--'))]
-df = df[(df['d_name'].str.contains('2022-08-27--'))]
+# df = df[(df['d_name'].str.contains('2022-08-27--'))]
 
 df = df.dropna(subset=['t_ppl'])
 print(df.to_string())
 
-counts = df.groupby(['net_name', 'task_name', 'initializer', 'comments', 'lr']).size().reset_index(name='counts')
+group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
+
+
+counts = df.groupby(group_cols).size().reset_index(name='counts')
 
 # metrics_oi = ['val_ppl', 'val_macc', 'test_macc', 'test_ppl']
-metrics_oi = ['val_ppl', 'val_macc', 't_ppl']
+metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc']
 # metrics_oi = []
 
 mdf = df.groupby(
-    ['net_name', 'task_name', 'initializer', 'comments', 'lr'], as_index=False
+    group_cols, as_index=False
 ).agg({m: ['mean', 'std'] for m in metrics_oi})
 
 for metric in metrics_oi:
@@ -223,6 +224,7 @@ for metric in metrics_oi:
     mdf = mdf.drop([metric], axis=1)
 
 mdf['counts'] = counts['counts']
+print(mdf.to_string())
 
 _, ends_at_s = timeStructured(False, True)
 duration_experiment = timedelta(seconds=ends_at_s - starts_at_s)
@@ -364,17 +366,24 @@ elif args.type == 'sharpness_dampening':
 
 
 elif args.type == 'lr_sg':
-    metric = 'ppl'
-    tasks = np.unique(mdf['task_name'])
+    metric = 'v_ppl'
+    # tasks = np.unique(mdf['task_name'])
+    net_name = 'ALIF'
+    # tasks = ['sl-MNIST', 'SHD', 'PTB'] # for LIF
+    tasks = ['SHD']
     print(tasks)
     fig, axs = plt.subplots(1, len(tasks), gridspec_kw={'wspace': .5, 'hspace': 0.}, figsize=(8, 4))
 
+    if not isinstance(axs, list):
+        axs = [axs]
+
     for i, task in enumerate(tasks):
-        idf = mdf[mdf['comments'].str.contains('6_')]
-        idf = idf[idf['net_name'].str.contains('LIF')]
+        # idf = mdf[mdf['comments'].str.contains('6_')]
+        idf = mdf
+        idf = idf[idf['net_name'].eq(net_name)]
 
         idf = idf[idf['task_name'].str.contains(task)]
-        idf = idf.sort_values(by=['mean_val_ppl'], ascending=False)
+        idf = idf.sort_values(by=['mean_' + metric], ascending=False)
 
         print(idf.to_string(index=False))
 
@@ -388,8 +397,8 @@ elif args.type == 'lr_sg':
             stds = []
             for lr in lrs:
                 ldf = iidf[iidf['lr'] == lr]
-                accs.append(ldf['mean_val_' + metric].values[0])
-                stds.append(ldf['std_val_' + metric].values[0] / 2)
+                accs.append(ldf['mean_' + metric].values[0])
+                stds.append(ldf['std_' + metric].values[0] / 2)
 
             stds = np.nan_to_num(stds)
             print(accs, stds, lrs)
@@ -402,14 +411,16 @@ elif args.type == 'lr_sg':
         axs[i].set_xscale('log')
         axs[i].set_title(task)
 
-    axs[0].set_ylim([80, 800])
+    if len(tasks)>1 and tasks[2] == 'PTB':
+        axs[2].set_ylim([80, 800])
+
     for i in range(len(tasks)):
         axs[i].set_xticks([1e-2, 1e-3, 1e-4, 1e-5])
     # axs[0].set_yticks([100, 200, 800])
     # axs[1].set_yticks([100, 200, 800])
     # axs[2].set_yticks([100, 200, 800])
 
-    axs[-1].set_xlabel('learning rate')
+    axs[-1].set_xlabel('Learning rate')
     axs[0].set_ylabel('Perplexity')
 
     legend_elements = [Line2D([0], [0], color=pseudod_color(n), lw=4, label=clean_pseudname(n))
@@ -417,7 +428,7 @@ elif args.type == 'lr_sg':
     plt.legend(ncol=3, handles=legend_elements, loc='lower center', bbox_to_anchor=(-1.2, -.5))
 
     plt.show()
-    plot_filename = r'experiments/lr_sg.pdf'
+    plot_filename = f'experiments/lr_sg_{net_name}.pdf'
     fig.savefig(plot_filename, bbox_inches='tight')
 
 elif args.type == 'init_sg':
