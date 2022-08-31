@@ -252,7 +252,7 @@ if args.type == 'send':
 
 
     if 'adaptsg' in send_fs:
-        incomplete_comments = '8_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_movedgauss_'
+        incomplete_comments = '8_embproj_nogradreset_dropout:.3_timerepeat:2_movedgauss_readaptsg:3'
         # lif_comments = [incomplete_comments + t for t in ['', 'adaptsg', 'readaptsg:3', 'readaptsg:10']]
         lif_comments = [incomplete_comments + t for t in ['adaptsg', 'readaptsg:3']]
         alif_comments = [c.replace('noalif_', '') for c in lif_comments]
