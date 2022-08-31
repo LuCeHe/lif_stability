@@ -26,7 +26,7 @@ if args.type == 'send':
     save_model = False
     # final_experiments(seed)
     experiments = []
-    send_fs = ['sparsity']  # 1, 2, 3, 4, 5, 6 'extra' sparsity adaptsg
+    send_fs = ['adaptsg']  # 1, 2, 3, 4, 5, 6 'extra' sparsity adaptsg
 
     # f1
     if 1 in send_fs:
@@ -252,26 +252,15 @@ if args.type == 'send':
 
 
     if 'adaptsg' in send_fs:
-        incomplete_comments = '8_embproj_nogradreset_dropout:.3_timerepeat:2_'
-
-        comments = [incomplete_comments + t for t in ['', 'adaptsg', 'readaptsg:3', 'readaptsg:10']]
-
+        incomplete_comments = '8_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
+        lif_comments = [incomplete_comments + t for t in ['', 'adaptsg', 'readaptsg:3', 'readaptsg:10']]
+        alif_comments = [c.replace('noalif_', '') for c in lif_comments]
         experiment = {
             'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
-            'comments': comments, 'seed': seeds
+            'comments': lif_comments + alif_comments, 'seed': seeds
         }
         experiments.append(experiment)
 
-
-        incomplete_comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
-
-        comments = [incomplete_comments + t for t in ['']]
-
-        experiment = {
-            'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
-            'comments': comments, 'seed': seeds
-        }
-        experiments.append(experiment)
 
     if 'extra' in send_fs:
         comments = ['6_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_tenb_' + p for p in
