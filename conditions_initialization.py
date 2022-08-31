@@ -41,17 +41,17 @@ parser = argparse.ArgumentParser()
 
 # Required parameters
 parser.add_argument(
-    "--conditions", default='', type=str, help="Conditions to test: " + ", ".join(all_conditions) + " and 'all'",
+    "--conditions", default='all', type=str, help="Conditions to test: " + ", ".join(all_conditions) + " and 'all'",
 )
 parser.add_argument("--task_name", default='sl_mnist', type=str, help="Task to test")
 parser.add_argument("--steps_per_epoch", default=2, type=int, help="Steps per Epoch")
 parser.add_argument("--n_seeds", default=1, type=int, help="Steps per Epoch")
 parser.add_argument("--init_seed", default=1, type=int, help="Steps per Epoch")
-parser.add_argument("--plot", default=0, type=int, help="Plot")
-parser.add_argument("--plot_existing", default=0, type=int, help="Plot existing seeds, or create new seeds")
+parser.add_argument("--plot", default=1, type=int, help="Plot")
+parser.add_argument("--plot_existing", default=1, type=int, help="Plot existing seeds, or create new seeds")
 parser.add_argument("--histogram", default=1, type=int, help="Plot histogram or scatter")
 parser.add_argument("--redoseeds", default=1, type=int, help="Redo seeds that were already computed before")
-parser.add_argument("--tests", default=1, type=int, help="Test on smaller architectures for speed")
+parser.add_argument("--tests", default=0, type=int, help="Test on smaller architectures for speed")
 args = parser.parse_args()
 print(json.dumps(vars(args), sort_keys=True, indent=4))
 
@@ -198,18 +198,25 @@ if args.plot:
                                color='b')
         else:
             x = np.array(unconditioned[tag_conditions[i]])
-            q25, q75 = np.percentile(x, [25, 75])
-            bin_width = 2 * (q75 - q25) * len(x) ** (-1 / 3)
-            bins = round((x.max() - x.min()) / bin_width)
-            print("Freedman–Diaconis number of bins:", bins)
-            axs[i].hist(x, bins=bins, color="skyblue", lw=0, density=True, label='no c')
+            x = x[~np.isnan(x)]
+
+            if not x.size == 0:
+                q25, q75 = np.percentile(x, [25, 75])
+                bin_width = 2 * (q75 - q25) * len(x) ** (-1 / 3)
+                bins = round((x.max() - x.min()) / bin_width)
+                print("Freedman–Diaconis number of bins:", bins)
+                axs[i].hist(x, bins=bins, color="skyblue", lw=0, density=True, label='no c')
 
             x = np.array(conditioned[tag_conditions[i]])
-            q25, q75 = np.percentile(x, [25, 75])
-            bin_width = 2 * (q75 - q25) * len(x) ** (-1 / 3)
-            bins = round((x.max() - x.min()) / bin_width)
-            print("Freedman–Diaconis number of bins:", bins)
-            axs[i].hist(x, bins=bins, color="red", lw=0, density=True, label=tag_conditions[i])
+            x = x[~np.isnan(x)]
+
+
+            if not x.size == 0:
+                q25, q75 = np.percentile(x, [25, 75])
+                bin_width = 2 * (q75 - q25) * len(x) ** (-1 / 3)
+                bins = round((x.max() - x.min()) / bin_width)
+                print("Freedman–Diaconis number of bins:", bins)
+                axs[i].hist(x, bins=bins, color="red", lw=0, density=True, label=tag_conditions[i])
 
             axs[i].legend()
 
