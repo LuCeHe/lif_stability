@@ -252,8 +252,9 @@ if args.type == 'send':
 
 
     if 'adaptsg' in send_fs:
-        incomplete_comments = '8_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
-        lif_comments = [incomplete_comments + t for t in ['', 'adaptsg', 'readaptsg:3', 'readaptsg:10']]
+        incomplete_comments = '8_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_movedgauss_'
+        # lif_comments = [incomplete_comments + t for t in ['', 'adaptsg', 'readaptsg:3', 'readaptsg:10']]
+        lif_comments = [incomplete_comments + t for t in ['adaptsg', 'readaptsg:3', 'readaptsg:10']]
         alif_comments = [c.replace('noalif_', '') for c in lif_comments]
         experiment = {
             'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
