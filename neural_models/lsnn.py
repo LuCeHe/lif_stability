@@ -54,6 +54,7 @@ class baseLSNN(tf.keras.layers.Layer):
         return tf.exp(-1 / self.tau)
 
     def build(self, input_shape):
+
         n_in = input_shape[-1]
         n_rec = self.num_neurons
 
@@ -131,7 +132,6 @@ class baseLSNN(tf.keras.layers.Layer):
 
         # self.inh_exc = tf.ones(self.num_neurons)
         self._beta = tf.concat([tf.zeros(self.n_regular), tf.ones(n_rec - self.n_regular) * self.beta], axis=0)
-        self.built = True
 
         dpath = os.path.join(exp, 'trained_models', 'dampening_stacki{}.npy'.format(stacki))
         np.save(dpath, dampening)
@@ -146,11 +146,10 @@ class baseLSNN(tf.keras.layers.Layer):
         self.recurrent_weights = self.add_weight(shape=(n_rec, n_rec), initializer=recurrent_init,
                                                  name='recurrent_weights')
 
-        self.loss_switch = self.add_weight(
-            name=f'switch_{stacki}', shape=(), initializer=tf.keras.initializers.Constant(1.),
-            trainable=False
-        )
         # print(stacki, wrecm, np.mean(self.recurrent_weights))
+
+        self.built = True
+        super().build(input_shape)
 
     def recurrent_transform(self):
         return self.mask * self.recurrent_weights
@@ -284,18 +283,16 @@ class baseLSNN(tf.keras.layers.Layer):
 
         # refractoriness
         z, new_last_spike_distance = self.refract(z, last_spike_distance)
+
+        fr = tf.reduce_mean(z)
+        # ff_loss = tf.square(fr - self.target_firing_rate)
+        # print(self.target_firing_rate, fr, self.loss_switch)
+        self.add_metric(fr, aggregation='mean', name='firing_rate_' + self.name)
+        # self.add_loss(self.loss_switch * ff_loss)
+        # self.add_metric(self.loss_switch * ff_loss, aggregation='mean', name='adjff_' + self.name)
+
         output, new_state = self.prepare_outputs(new_v, old_v, z, old_z, new_a, old_a, new_last_spike_distance,
                                                  last_spike_distance, self.athr, v_sc)
-
-        # self.add_loss()
-        self.add_metric(tf.reduce_mean(z), aggregation='mean', name='firing_rate_' + self.name)
-        if 'adjff' in self.config:
-            target_firing_rate = str2val(self.config, 'adjff', float, default=.1)
-
-            loss = tf.square(tf.reduce_mean(z) - target_firing_rate)
-
-            self.add_loss(self.loss_switch * loss)
-            self.add_metric(self.loss_switch * loss, name='adjff', aggregation='mean')
         return output, new_state
 
     def prepare_outputs(self, new_v, old_v, z, old_z, new_a, old_a, new_last_spike_distance, last_spike_distance, thr,
@@ -349,6 +346,7 @@ class aLSNN(baseLSNN):
             self.__dict__.update({k: p})
 
         if '_learnv0' in self.config or 'v0m' in self.config:
+
             stacki = str2val(self.config, 'stacki', int, default=0)
             v0m = str2val(self.config, f'v0m{stacki}', float, default=0)
             initializer = tf.keras.initializers.RandomNormal(mean=v0m)

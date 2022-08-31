@@ -61,12 +61,12 @@ def config():
 
     # net
     # mn_aLSNN_2 mn_aLSNN_2_sig LSNN maLSNN spikingPerformer smallGPT2 aLSNN_noIC spikingLSTM
-    net_name = 'spikingLSTM'
+    net_name = 'maLSNN'
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
     # comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m'
-    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2'
+    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_v0m_adjfi:0.7_adjff:.01'
 
     # optimizer properties
     lr = None  # 7e-4

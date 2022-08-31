@@ -42,7 +42,7 @@ HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='lr_sg', type=str, help='main behavior',
+    '--type', default='nothing', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -75,8 +75,8 @@ if not os.path.exists(CSVPATH):
     history_keys = [
         # 'bpc', 'val_bpc', 'val_accuracy', 'val_zeros_accuracy', 'perplexity',
         # 'val_perplexity', 'val_sparse_mode_accuracy',
-        'v_perplexity', 'v_sparse_mode_accuracy', 'v_firing_rate',
-        't_perplexity', 't_sparse_mode_accuracy', 't_firing_rate',
+        'v_perplexity', 'v_sparse_mode_accuracy', 'v_firing_rate', 'v_loss',
+        't_perplexity', 't_sparse_mode_accuracy', 't_firing_rate', 't_loss',
         # 'val_bpc_2', 'val_bound_a', 'val_bound_b', 'val_bound_c', 'val_entropy_data', 'val_entropy_model',
         # 'val_zeros_categorical_accuracy', 'val_mode_accuracy', 'val_second_half_mode_accuracy',
         # 'val_sparse_categorical_accuracy', 'sparse_categorical_accuracy_test',
@@ -88,8 +88,7 @@ if not os.path.exists(CSVPATH):
     ]
     hyperparams_keys = [
         'n_params', 'final_epochs', 'duration_experiment', 'convergence', 'lr', 'stack', 'n_neurons', 'embedding',
-        'batch_size', 'sparse_categorical_accuracy_test_2', 'perplexity_test_2', 'bpc_test_2',
-        'sparse_categorical_crossentropy_test_2', 'sparse_mode_accuracy_test_2',
+        'batch_size',
     ]
     extras = ['d_name', 'where']  # , 'where', 'main_file','accumulated_epochs',
 
@@ -112,7 +111,7 @@ if not os.path.exists(CSVPATH):
 
             with open(history_path) as f:
                 history = json.load(f)
-                # print(history.keys())
+                print(history.keys())
 
             with open(run_path) as f:
                 run = json.load(f)
@@ -178,11 +177,11 @@ else:
 df = df.rename(
     columns={
         'val_sparse_categorical_accuracy': 'val_zacc', 'val_sparse_mode_accuracy': 'val_macc',
-             'sparse_categorical_accuracy_test': 'test_macc', 'val_perplexity': 'val_ppl',
-             'perplexity_test': 'test_ppl',
-             't_sparse_mode_accuracy': 't_macc', 't_perplexity': 't_ppl',
-             'v_sparse_mode_accuracy': 'v_macc', 'v_perplexity': 'v_ppl',
-             },
+        'sparse_categorical_accuracy_test': 'test_macc', 'val_perplexity': 'val_ppl',
+        'perplexity_test': 'test_ppl',
+        't_sparse_mode_accuracy': 't_macc', 't_perplexity': 't_ppl',
+        'v_sparse_mode_accuracy': 'v_macc', 'v_perplexity': 'v_ppl',
+    },
     inplace=False)
 
 # df = df[df['task_name'].str.contains('PTB')]
@@ -206,7 +205,6 @@ df = df.dropna(subset=['t_ppl'])
 print(df.to_string())
 
 group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
-
 
 counts = df.groupby(group_cols).size().reset_index(name='counts')
 
@@ -411,7 +409,7 @@ elif args.type == 'lr_sg':
         axs[i].set_xscale('log')
         axs[i].set_title(task)
 
-    if len(tasks)>1 and tasks[2] == 'PTB':
+    if len(tasks) > 1 and tasks[2] == 'PTB':
         axs[2].set_ylim([80, 800])
 
     for i in range(len(tasks)):

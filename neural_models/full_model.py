@@ -108,8 +108,8 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
     maxlen = str2val(comments, 'maxlen', int, 100)
     nin = str2val(comments, 'nin', int, 1) if not 'convWin' in comments else n_neurons
 
+    stack_info = '_stacki:{}'.format(i)
     if 'LSNN' in net_name:
-        stack_info = '_stacki:{}'.format(i)
         cell = models.net(net_name)(
             num_neurons=n_neurons, tau=tau, tau_adaptation=tau_adaptation,
                                     initializer=initializer, config=comments + stack_info, thr=thr)
@@ -132,8 +132,8 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
     lsv = LayerSupervision(n_classes=n_out, name='v' + ij)
     lst = LayerSupervision(n_classes=n_out, name='t' + ij)
 
-    if 'regularize' in comments:
-        reg = models.RateVoltageRegularization(1., type=comments + task_name, name='reg' + ij)
+    if 'regularize' in comments or 'adjff' in comments:
+        reg = models.RateVoltageRegularization(1., config=comments + task_name + stack_info, name='reg' + ij)
 
     def call(inputs):
         skipped_connection_input, output_words = inputs
@@ -143,7 +143,7 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
             outputs, states = all_out[:4], all_out[4:]
             b, v, thr, v_sc = outputs
 
-            if 'regularize' in comments:
+            if 'regularize' in comments or 'adjff' in comments:
                 b = reg([b, v_sc])
 
             if 'layersup' in comments:

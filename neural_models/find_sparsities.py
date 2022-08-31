@@ -15,8 +15,6 @@ def reduce_model_firing_activity(
 ):
     new_model = expose_latent_model(model, include_layers=[layer_identifier], idx=output_index)
 
-    names = [weight.name for layer in new_model.layers for weight in layer.weights]
-    print(names)
     for layer in new_model.layers:
         for i, w in enumerate(layer.trainable_weights):
             if not trainable_param_identifier in w.name:
