@@ -1,6 +1,8 @@
 import os, json, argparse, copy
 from datetime import timedelta, datetime
 
+from tensorflow import reduce_prod
+
 from GenericTools.keras_tools.esoteric_initializers import glorotcolor, orthogonalcolor, hecolor
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
@@ -27,7 +29,7 @@ from GenericTools.stay_organized.statistics import significance_to_star
 from GenericTools.stay_organized.utils import timeStructured, str2val
 from GenericTools.stay_organized.mpl_tools import load_plot_settings
 
-from sg_design_lif.generate_data.task_redirection import Task
+from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import Task
 # from stochastic_spiking.language_main import build_model
 # from sg_design_lif.neural_models import clean_pseudo_name, pseudod_color
 from sg_design_lif.visualization_tools.plotting_tools import smart_plot, postprocess_results
@@ -64,6 +66,18 @@ GEXPERIMENTS = [
 
 _, starts_at_s = timeStructured(False, True)
 
+# reduce_prod
+def history_pick(k, v):
+    if any([n in k for n in ['loss', 'perplexity', 'entropy', 'bpc']]):
+        o = np.nanmin(v[10:])
+    elif any([n in k for n in ['acc']]):
+        o = np.nanmax(v[10:])
+    else:
+        o = f'{round(v[0], 3)}/{round(v[-1], 3)}'
+
+    return o
+
+
 if not os.path.exists(CSVPATH):
     ds = unzip_good_exps(
         GEXPERIMENTS, EXPERIMENTS,
@@ -72,30 +86,10 @@ if not os.path.exists(CSVPATH):
     )
 
     print(ds)
-    what = lambda k, v: np.nanmax(v) if 'acc' in k else np.nanmin(v)
-
-    history_keys = [
-        # 'bpc', 'val_bpc', 'val_accuracy', 'val_zeros_accuracy', 'perplexity',
-        # 'val_perplexity', 'val_sparse_mode_accuracy',
-        'v_perplexity', 'v_sparse_mode_accuracy', 'v_firing_rate', 'v_loss',
-        't_perplexity', 't_sparse_mode_accuracy', 't_firing_rate', 't_loss',
-        # 'val_bpc_2', 'val_bound_a', 'val_bound_b', 'val_bound_c', 'val_entropy_data', 'val_entropy_model',
-        # 'val_zeros_categorical_accuracy', 'val_mode_accuracy', 'val_second_half_mode_accuracy',
-        # 'val_sparse_categorical_accuracy', 'sparse_categorical_accuracy_test',
-    ]
-
-    config_keys = [
-        'comments', 'initializer', 'optimizer_name', 'seed',
-        'weight_decay', 'clipnorm', 'task_name', 'net_name',  # 'lr_schedule'  # 'continue_training',
-    ]
-    hyperparams_keys = [
-        'n_params', 'final_epochs', 'duration_experiment', 'convergence', 'lr', 'stack', 'n_neurons', 'embedding',
-        'batch_size',
-    ]
-    extras = ['d_name', 'where']  # , 'where', 'main_file','accumulated_epochs',
+    # what = lambda k, v: np.nanmax(v) if 'acc' in k else np.nanmin(v)
 
     histories = {}
-    df = pd.DataFrame(columns=history_keys + config_keys + hyperparams_keys + extras)
+    df = pd.DataFrame()
     for d in tqdm(ds):
         try:
             # d_path = os.path.join(EXPERIMENTS, d)
@@ -109,30 +103,28 @@ if not os.path.exists(CSVPATH):
 
             with open(hyperparams_path) as f:
                 hyperparams = json.load(f)
-                # print(hyperparams.keys())
+                hyperparams['final_comments'] = hyperparams['comments']
+                hyperparams.pop('comments', None)
 
             with open(history_path) as f:
                 history = json.load(f)
-                print(history.keys())
+                # print(history.keys())
 
             with open(run_path) as f:
                 run = json.load(f)
 
             results = {}
-            if 'where' in extras:
-                results.update({'where': run['host']['hostname']})
+            results.update({'where': run['host']['hostname']})
 
             if 'stop_time' in run.keys():
                 results.update({'duration_experiment':
                                     datetime.strptime(run['stop_time'].split('.')[0], FMT) - datetime.strptime(
                                         run['start_time'].split('.')[0], FMT)
                                 })
-            results.update({k: what(k, v[10:]) for k, v in history.items() if k in history_keys})
-            results.update({k: v for k, v in config.items() if k in config_keys})
-            results.update({k: postprocess_results(k, v) for k, v in hyperparams.items() if k in hyperparams_keys})
-
-            if len(extras) > 0:
-                results.update({'d_name': d})
+            results.update({k: history_pick(k, v) for k, v in history.items()})
+            results.update({k: v for k, v in config.items()})
+            results.update({k: postprocess_results(k, v) for k, v in hyperparams.items()})
+            results.update({'d_name': d})
 
             small_df = pd.DataFrame([results])
 
@@ -147,12 +139,6 @@ if not os.path.exists(CSVPATH):
             print(config['task_name'], config['comments'])
 
     # val_categorical_accuracy val_bpc
-    remove_columns = []
-    # remove_columns = ['val_accuracy', 'val_output_net_bpc', 'val_output_net_categorical_accuracy',
-    #                   'val_output_net_zeros_categorical_accuracy', 'val_output_net_mode_accuracy',
-    #                   'val_zeros_categorical_accuracy']
-    # df.drop(columns=remove_columns, inplace=True)
-    keep_columns = [k for k in history_keys + config_keys + hyperparams_keys + extras if not k in remove_columns]
 
     df.loc[df['comments'].str.contains('noalif'), 'net_name'] = 'LIF'
     df.loc[df['net_name'].str.contains('maLSNN'), 'net_name'] = 'ALIF'
@@ -176,6 +162,29 @@ else:
     with open(HSITORIESPATH) as f:
         histories = json.load(f)
 
+df = df.sort_values(by='v_sparse_mode_accuracy', ascending=False)
+
+history_keys = [
+    'v_perplexity', 'v_sparse_mode_accuracy', 'v_firing_rate', 'v_loss',
+    't_perplexity', 't_sparse_mode_accuracy', 't_firing_rate', 't_loss',
+    'v_firing_rate_ma_lsnn', 'v_firing_rate_ma_lsnn_1',
+    'firing_rate_ma_lsnn', 'firing_rate_ma_lsnn_1',
+]
+
+config_keys = [
+    'comments', 'initializer', 'optimizer_name', 'seed',
+    'weight_decay', 'clipnorm', 'task_name', 'net_name',  # 'lr_schedule'  # 'continue_training',
+]
+hyperparams_keys = [
+    'n_params', 'final_epochs', 'duration_experiment', 'convergence', 'lr', 'stack', 'n_neurons', 'embedding',
+    'batch_size',
+]
+extras = ['d_name', 'where']  # , 'where', 'main_file','accumulated_epochs',
+
+keep_columns = history_keys + config_keys + hyperparams_keys + extras
+remove_columns = [k for k in df.columns if k not in keep_columns]
+df.drop(columns=remove_columns, inplace=True)
+
 df = df.rename(
     columns={
         'val_sparse_categorical_accuracy': 'val_zacc', 'val_sparse_mode_accuracy': 'val_macc',
@@ -184,17 +193,17 @@ df = df.rename(
         't_sparse_mode_accuracy': 't_macc', 't_perplexity': 't_ppl',
         'v_sparse_mode_accuracy': 'v_macc', 'v_perplexity': 'v_ppl',
     },
-    inplace=False)
-
+    inplace=False
+)
 # df = df[df['task_name'].str.contains('PTB')]
 # df = df[df['final_epochs'] == 3]
-df = df.sort_values(by=metric_sort, ascending=False)
 
 # df['comments'] = df['comments'].str.replace('_dampf:.3', '')
 # df['comments'] = df['comments'].str.replace('_dropout:.3', '')
 # df = df[(df['comments'].str.contains('ptb2')) | (df['task_name'].str.contains('SHD')) | (
 #     df['task_name'].str.contains('sl-MNIST'))]
 df['comments'] = df['comments'].str.replace('_ptb2', '')
+df = df[df['comments'].str.contains('_v0m')]
 # df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
 
 for ps in possible_pseudod:
@@ -209,7 +218,6 @@ df = df.dropna(subset=['t_ppl'])
 early_cols = ['task_name', 'net_name', 'n_params', 'final_epochs', 'comments']
 some_cols = [n for n in list(df.columns) if not n in early_cols]
 df = df[early_cols + some_cols]
-print(df.to_string())
 
 group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
 counts = df.groupby(group_cols).size().reset_index(name='counts')
@@ -227,6 +235,7 @@ for metric in metrics_oi:
 mdf['counts'] = counts['counts']
 mdf = mdf.sort_values(by='mean_' + metric_sort, ascending=False)
 
+print(df.to_string())
 print(mdf.to_string())
 
 _, ends_at_s = timeStructured(False, True)
