@@ -1,4 +1,5 @@
-from sg_design_lif.generate_data.task_redirection import language_tasks
+
+from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import language_tasks
 
 
 def default_config(stack, batch_size, embedding, n_neurons, lr, task_name):
