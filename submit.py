@@ -22,7 +22,6 @@ if args.type == 'send':
     seeds = [seed + i for i in range(n_seeds)]
     # seeds = [seed + 3, seed + 4]
 
-
     save_model = False
     # final_experiments(seed)
     experiments = []
@@ -250,7 +249,6 @@ if args.type == 'send':
         }
         experiments.append(experiment)
 
-
     if 'adaptsg' in send_fs:
         incomplete_comments = '8_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_movedgauss_'
         # lif_comments = [incomplete_comments + t for t in ['', 'adaptsg', 'readaptsg:3', 'readaptsg:10']]
@@ -261,7 +259,6 @@ if args.type == 'send':
             'comments': lif_comments + alif_comments, 'seed': seeds
         }
         experiments.append(experiment)
-
 
     if 'extra' in send_fs:
         comments = ['6_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_tenb_' + p for p in
