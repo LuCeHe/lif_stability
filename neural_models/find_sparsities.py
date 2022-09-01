@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from GenericTools.keras_tools.esoteric_layers import AddLossLayer
 from GenericTools.keras_tools.expose_latent import expose_latent_model
-from sg_design_lif.generate_data.task_redirection import checkTaskMeanVariance
+from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import checkTaskMeanVariance
 from sg_design_lif.neural_models.full_model import build_model
 # from sg_design_lif.neural_models.sparsity_gp import sparsity_gp
 

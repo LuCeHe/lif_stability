@@ -6,11 +6,10 @@ from scipy.optimize import curve_fit
 
 import matplotlib.pyplot as plt
 from GenericTools.keras_tools.esoteric_layers.surrogated_step import ChoosePseudoHeaviside
-from sg_design_lif.generate_data.task_redirection import Task
+from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import Task
 
 from sg_design_lif.neural_models.full_model import build_model
-
-
+from sg_design_lif.visualization_tools.training_tests import get_test_model
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)

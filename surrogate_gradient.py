@@ -5,7 +5,7 @@ import pandas as pd
 
 import tensorflow as tf
 
-from alif_sg.initialization_plots import adapt_sg_shape
+from sg_design_lif.neural_models.adaptsg import adapt_sg_shape
 from sg_design_lif.neural_models.find_sparsities import reduce_model_firing_activity
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -30,7 +30,7 @@ from GenericTools.keras_tools.plot_tools import plot_history
 from GenericTools.stay_organized.VeryCustomSacred import CustomExperiment, ChooseGPU
 from GenericTools.stay_organized.utils import timeStructured, setReproducible, str2val, NumpyEncoder
 
-from sg_design_lif.generate_data.task_redirection import Task, checkTaskMeanVariance, language_tasks
+from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import Task, checkTaskMeanVariance, language_tasks
 from sg_design_lif.visualization_tools.training_tests import Tests, check_assumptions
 from sg_design_lif.neural_models.full_model import build_model
 
@@ -50,7 +50,7 @@ def config():
     # task and net
     # ptb time_ae simplest_random time_ae_merge ps_mnist heidelberg wiki103 wmt14 s_mnist xor small_s_mnist
     # wordptb sl_mnist
-    task_name = 'heidelberg'
+    task_name = 'wordptb'
 
     # test configuration
     epochs = 3
