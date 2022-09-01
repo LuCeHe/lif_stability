@@ -252,7 +252,10 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
         removable_checkpoints = sorted([d for d in os.listdir(models_dir) if 'checkpoint' in d])
         for d in removable_checkpoints: os.remove(os.path.join(models_dir, d))
 
-        results['convergence'] = convergence_estimation(history_dict['val_loss'])
+        try:
+            results['convergence'] = convergence_estimation(history_dict['val_loss'])
+        except Exception as e:
+            results['convergence'] = -1
 
     print('Fitting done!')
     # if not task_name == 'ptb':

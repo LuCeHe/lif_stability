@@ -41,8 +41,10 @@ CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 
 parser = argparse.ArgumentParser(description='main')
+
+metric_sort = 'v_ppl'
 parser.add_argument(
-    '--type', default='nothing', type=str, help='main behavior',
+    '--type', default='lr_sg', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -186,7 +188,7 @@ df = df.rename(
 
 # df = df[df['task_name'].str.contains('PTB')]
 # df = df[df['final_epochs'] == 3]
-df = df.sort_values(by='v_ppl', ascending=False)
+df = df.sort_values(by=metric_sort, ascending=False)
 
 # df['comments'] = df['comments'].str.replace('_dampf:.3', '')
 # df['comments'] = df['comments'].str.replace('_dropout:.3', '')
@@ -202,15 +204,16 @@ for ps in possible_pseudod:
 # df = df[(df['d_name'].str.contains('2022-08-27--'))]
 
 df = df.dropna(subset=['t_ppl'])
+
+
+early_cols = ['task_name', 'net_name', 'n_params', 'final_epochs', 'comments']
+some_cols = [n for n in list(df.columns) if not n in early_cols]
+df = df[early_cols + some_cols]
 print(df.to_string())
 
 group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
-
 counts = df.groupby(group_cols).size().reset_index(name='counts')
-
-# metrics_oi = ['val_ppl', 'val_macc', 'test_macc', 'test_ppl']
 metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc']
-# metrics_oi = []
 
 mdf = df.groupby(
     group_cols, as_index=False
@@ -222,6 +225,8 @@ for metric in metrics_oi:
     mdf = mdf.drop([metric], axis=1)
 
 mdf['counts'] = counts['counts']
+mdf = mdf.sort_values(by='mean_' + metric_sort, ascending=False)
+
 print(mdf.to_string())
 
 _, ends_at_s = timeStructured(False, True)
@@ -366,7 +371,7 @@ elif args.type == 'sharpness_dampening':
 elif args.type == 'lr_sg':
     metric = 'v_ppl'
     # tasks = np.unique(mdf['task_name'])
-    net_name = 'ALIF'
+    net_name = 'sLSTM'  # LIF sLSTM
     # tasks = ['sl-MNIST', 'SHD', 'PTB'] # for LIF
     tasks = ['SHD']
     print(tasks)
