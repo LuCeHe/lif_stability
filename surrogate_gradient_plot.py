@@ -66,6 +66,7 @@ GEXPERIMENTS = [
 
 _, starts_at_s = timeStructured(False, True)
 
+
 # reduce_prod
 def history_pick(k, v):
     if any([n in k for n in ['loss', 'perplexity', 'entropy', 'bpc']]):
@@ -78,6 +79,9 @@ def history_pick(k, v):
     return o
 
 
+remove_old_samples = True
+
+
 if not os.path.exists(CSVPATH):
     ds = unzip_good_exps(
         GEXPERIMENTS, EXPERIMENTS,
@@ -85,30 +89,28 @@ if not os.path.exists(CSVPATH):
         unzip_what=['run.json', ]  # 'png_content', 'train_model']
     )
 
-    print(ds)
-    # what = lambda k, v: np.nanmax(v) if 'acc' in k else np.nanmin(v)
+    # first check how many have the history file:
+    nohistoryds = [d for d in ds if not os.path.exists(os.path.join(d, 'other_outputs', 'history.json'))]
+    ds = [d for d in ds if not d in nohistoryds]
 
     histories = {}
     df = pd.DataFrame()
+    list_results = []
     for d in tqdm(ds):
-        try:
-            # d_path = os.path.join(EXPERIMENTS, d)
-            history_path = os.path.join(d, 'other_outputs', 'history.json')
-            hyperparams_path = os.path.join(d, 'other_outputs', 'results.json')
-            config_path = os.path.join(d, '1', 'config.json')
-            run_path = os.path.join(d, '1', 'run.json')
+        print(d)
+        # d_path = os.path.join(EXPERIMENTS, d)
+        history_path = os.path.join(d, 'other_outputs', 'history.json')
+        hyperparams_path = os.path.join(d, 'other_outputs', 'results.json')
+        config_path = os.path.join(d, '1', 'config.json')
+        run_path = os.path.join(d, '1', 'run.json')
+
+        with open(history_path) as f:
+            history = json.load(f)
+
+        if len(history['loss']) > 5:
 
             with open(config_path) as f:
                 config = json.load(f)
-
-            with open(hyperparams_path) as f:
-                hyperparams = json.load(f)
-                hyperparams['final_comments'] = hyperparams['comments']
-                hyperparams.pop('comments', None)
-
-            with open(history_path) as f:
-                history = json.load(f)
-                # print(history.keys())
 
             with open(run_path) as f:
                 run = json.load(f)
@@ -123,23 +125,26 @@ if not os.path.exists(CSVPATH):
                                 })
             results.update({k: history_pick(k, v) for k, v in history.items()})
             results.update({k: v for k, v in config.items()})
-            results.update({k: postprocess_results(k, v) for k, v in hyperparams.items()})
             results.update({'d_name': d})
 
-            small_df = pd.DataFrame([results])
+            if os.path.exists(hyperparams_path):
+                with open(hyperparams_path) as f:
+                    hyperparams = json.load(f)
+                    if 'comments' in hyperparams.keys():
+                        hyperparams['final_comments'] = hyperparams['comments']
+                        hyperparams.pop('comments', None)
 
-            df = df.append(small_df)
+                results.update({k: postprocess_results(k, v) for k, v in hyperparams.items()})
+
+            list_results.append(results)
+            # small_df = pd.DataFrame([results])
+
+            # df = df.append(small_df)
             history = {k.replace('val_', ''): v for k, v in history.items() if 'val' in k}
 
             histories[d] = history
-        except Exception as e:
-            print('-' * 30)
-            print(e)
-            print(d)
-            print(config['task_name'], config['comments'])
 
-    # val_categorical_accuracy val_bpc
-
+    df = pd.DataFrame.from_records(list_results)
     df.loc[df['comments'].str.contains('noalif'), 'net_name'] = 'LIF'
     df.loc[df['net_name'].str.contains('maLSNN'), 'net_name'] = 'ALIF'
     df.loc[df['net_name'].str.contains('spikingLSTM'), 'net_name'] = 'sLSTM'
@@ -161,6 +166,15 @@ else:
     df = pd.read_hdf(CSVPATH, 'df')  # load it
     with open(HSITORIESPATH) as f:
         histories = json.load(f)
+
+
+if remove_old_samples:
+    df = df.sort_values(by='d_name', ascending=True)
+
+    pass
+
+print(df.to_string())
+
 
 df = df.sort_values(by='v_sparse_mode_accuracy', ascending=False)
 
@@ -203,7 +217,7 @@ df = df.rename(
 # df = df[(df['comments'].str.contains('ptb2')) | (df['task_name'].str.contains('SHD')) | (
 #     df['task_name'].str.contains('sl-MNIST'))]
 df['comments'] = df['comments'].str.replace('_ptb2', '')
-df = df[df['comments'].str.contains('_v0m')]
+# df = df[df['comments'].str.contains('_v0m')]
 # df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
 
 for ps in possible_pseudod:
@@ -212,14 +226,21 @@ for ps in possible_pseudod:
 # df = df[(df['d_name'].str.contains('2022-08-12--'))|(df['d_name'].str.contains('2022-08-13--'))]
 # df = df[(df['d_name'].str.contains('2022-08-27--'))]
 
-df = df.dropna(subset=['t_ppl'])
+# df = df.dropna(subset=['t_ppl'])
 
 
-early_cols = ['task_name', 'net_name', 'n_params', 'final_epochs', 'comments']
+early_cols = ['task_name', 'net_name', 'n_params', 'final_epochs', 'comments', 'firing_rate_ma_lsnn',
+              'firing_rate_ma_lsnn_1']
 some_cols = [n for n in list(df.columns) if not n in early_cols]
 df = df[early_cols + some_cols]
 
+
 group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
+df = df.sort_values(by='d_name', ascending=True)
+df = df.groupby(group_cols).sample(4, replace=True)
+print(df.to_string())
+
+
 counts = df.groupby(group_cols).size().reset_index(name='counts')
 metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc']
 
@@ -235,7 +256,6 @@ for metric in metrics_oi:
 mdf['counts'] = counts['counts']
 mdf = mdf.sort_values(by='mean_' + metric_sort, ascending=False)
 
-print(df.to_string())
 print(mdf.to_string())
 
 _, ends_at_s = timeStructured(False, True)
@@ -378,19 +398,25 @@ elif args.type == 'sharpness_dampening':
 
 
 elif args.type == 'lr_sg':
-    metric = 'v_ppl'
-    # tasks = np.unique(mdf['task_name'])
-    net_name = 'sLSTM'  # LIF sLSTM
-    # tasks = ['sl-MNIST', 'SHD', 'PTB'] # for LIF
-    tasks = ['SHD']
-    print(tasks)
-    fig, axs = plt.subplots(1, len(tasks), gridspec_kw={'wspace': .5, 'hspace': 0.}, figsize=(8, 4))
 
-    if not isinstance(axs, list):
-        axs = [axs]
+    per_task_variability = {}
+    idf = df[df['comments'].str.contains('6_')]
+
+    metric = 'v_ppl'
+
+    net_name = 'LIF'  # LIF sLSTM
+    tasks = ['sl-MNIST', 'SHD', 'PTB']  # for LIF
+    nets = ['LIF', 'ALIF', 'sLSTM']
+
+    fig, axs = plt.subplots(2, len(tasks), gridspec_kw={'wspace': .5, 'hspace': 0.3}, figsize=(8, 4))
+
+    # if not isinstance(axs, list):
+    #     axs = [axs]
+
+    # mdf = mdf[mdf['comments'].str.contains('6_')]
+    mdf = mdf[mdf['comments'].str.contains('_dropout:.3')]
 
     for i, task in enumerate(tasks):
-        # idf = mdf[mdf['comments'].str.contains('6_')]
         idf = mdf
         idf = idf[idf['net_name'].eq(net_name)]
 
@@ -413,34 +439,61 @@ elif args.type == 'lr_sg':
                 stds.append(ldf['std_' + metric].values[0] / 2)
 
             stds = np.nan_to_num(stds)
-            print(accs, stds, lrs)
-            axs[i].plot(lrs, accs, color=pseudod_color(pn))
-            axs[i].fill_between(lrs, accs - stds, accs + stds, alpha=0.5, color=pseudod_color(pn))
+            # print(accs, stds, lrs)
+            axs[0, i].plot(lrs, accs, color=pseudod_color(pn))
+            axs[0, i].fill_between(lrs, accs - stds, accs + stds, alpha=0.5, color=pseudod_color(pn))
 
-        for pos in ['right', 'left', 'bottom', 'top']:
-            axs[i].spines[pos].set_visible(False)
+        axs[0, i].set_title(task)
 
-        axs[i].set_xscale('log')
-        axs[i].set_title(task)
+    task = 'SHD'
+    for i, net_name in enumerate(nets):
+        idf = mdf
+        idf = idf[idf['net_name'].eq(net_name)]
 
-    if len(tasks) > 1 and tasks[2] == 'PTB':
-        axs[2].set_ylim([80, 800])
+        idf = idf[idf['task_name'].str.contains(task)]
+        idf = idf.sort_values(by=['mean_' + metric], ascending=False)
 
-    for i in range(len(tasks)):
-        axs[i].set_xticks([1e-2, 1e-3, 1e-4, 1e-5])
-    # axs[0].set_yticks([100, 200, 800])
-    # axs[1].set_yticks([100, 200, 800])
-    # axs[2].set_yticks([100, 200, 800])
+        print(idf.to_string(index=False))
 
-    axs[-1].set_xlabel('Learning rate')
-    axs[0].set_ylabel('Perplexity')
+        comments = np.unique(mdf['comments'])
+
+        for pn in possible_pseudod:
+            iidf = idf[idf['comments'].str.contains(pn)]
+            lrs = np.unique(iidf['lr'])
+
+            accs = []
+            stds = []
+            for lr in lrs:
+                ldf = iidf[iidf['lr'] == lr]
+                accs.append(ldf['mean_' + metric].values[0])
+                stds.append(ldf['std_' + metric].values[0] / 2)
+
+            stds = np.nan_to_num(stds)
+            # print(accs, stds, lrs)
+            axs[1, i].plot(lrs, accs, color=pseudod_color(pn))
+            axs[1, i].fill_between(lrs, accs - stds, accs + stds, alpha=0.5, color=pseudod_color(pn))
+
+        axs[1, i].set_title(net_name)
+    # if len(tasks) > 1 and tasks[2] == 'PTB':
+    #     axs[2].set_ylim([80, 800])
+
+    for j in range(2):
+        for i in range(len(tasks)):
+            axs[j, i].set_xscale('log')
+            axs[j, i].set_xticks([1e-2, 1e-3, 1e-4, 1e-5])
+
+            for pos in ['right', 'left', 'bottom', 'top']:
+                axs[j, i].spines[pos].set_visible(False)
+
+    # axs[-1].set_xlabel('Learning rate')
+    # axs[0].set_ylabel('Perplexity')
 
     legend_elements = [Line2D([0], [0], color=pseudod_color(n), lw=4, label=clean_pseudname(n))
                        for n in possible_pseudod]
-    plt.legend(ncol=3, handles=legend_elements, loc='lower center', bbox_to_anchor=(-1.2, -.5))
+    plt.legend(ncol=6, handles=legend_elements, loc='lower center', bbox_to_anchor=(-1.2, -.5))
 
     plt.show()
-    plot_filename = f'experiments/lr_sg_{net_name}.pdf'
+    plot_filename = f'experiments/lr_sg.pdf'
     fig.savefig(plot_filename, bbox_inches='tight')
 
 elif args.type == 'init_sg':
