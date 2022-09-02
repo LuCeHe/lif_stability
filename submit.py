@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser(description='main')
 
 # types: spiking_transformers, send, summary, scancel:x:y
 parser.add_argument('--type', default='send', type=str, help='main behavior')
+parser.add_argument('--comments', default='', type=str, help='side behaviors')
 args = parser.parse_args()
 
 if args.type == 'send':
@@ -366,7 +367,7 @@ elif 'summary' in args.type:
     # track_params = ['net_name', 'task_name', 'n_dt_per_step', 'spike_dropout', 'stack', 'n_neurons',
     #                 'batch_size', 'comments', 'continue_training', 'initializer']
     # summarize(CDIR, track_params)
-    summarize_logs(CDIR)
+    summarize_logs(CDIR, comments=args.comments)
 
 elif 'scancel' in args.type:
 
