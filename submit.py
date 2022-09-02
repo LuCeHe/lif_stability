@@ -363,10 +363,6 @@ elif 'continue' in args.type:
     print('Number jobs: {}'.format(len(exps_to_continue)))
 
 elif 'summary' in args.type:
-    # summarize content of ungoing training sessions
-    # track_params = ['net_name', 'task_name', 'n_dt_per_step', 'spike_dropout', 'stack', 'n_neurons',
-    #                 'batch_size', 'comments', 'continue_training', 'initializer']
-    # summarize(CDIR, track_params)
     summarize_logs(CDIR, comments=args.comments)
 
 elif 'scancel' in args.type:
