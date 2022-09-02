@@ -81,7 +81,6 @@ def history_pick(k, v):
 
 remove_old_samples = True
 
-
 if not os.path.exists(CSVPATH):
     ds = unzip_good_exps(
         GEXPERIMENTS, EXPERIMENTS,
@@ -167,14 +166,12 @@ else:
     with open(HSITORIESPATH) as f:
         histories = json.load(f)
 
-
 if remove_old_samples:
     df = df.sort_values(by='d_name', ascending=True)
 
     pass
 
 print(df.to_string())
-
 
 df = df.sort_values(by='v_sparse_mode_accuracy', ascending=False)
 
@@ -234,12 +231,10 @@ early_cols = ['task_name', 'net_name', 'n_params', 'final_epochs', 'comments', '
 some_cols = [n for n in list(df.columns) if not n in early_cols]
 df = df[early_cols + some_cols]
 
-
 group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
 df = df.sort_values(by='d_name', ascending=True)
 df = df.groupby(group_cols).sample(4, replace=True)
 print(df.to_string())
-
 
 counts = df.groupby(group_cols).size().reset_index(name='counts')
 metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc']
@@ -415,11 +410,11 @@ elif args.type == 'lr_sg':
 
     # mdf = mdf[mdf['comments'].str.contains('6_')]
     mdf = mdf[mdf['comments'].str.contains('_dropout:.3')]
+    df = df[df['comments'].str.contains('_dropout:.3')]
 
     for i, task in enumerate(tasks):
         idf = mdf
         idf = idf[idf['net_name'].eq(net_name)]
-
         idf = idf[idf['task_name'].str.contains(task)]
         idf = idf.sort_values(by=['mean_' + metric], ascending=False)
 
@@ -427,6 +422,16 @@ elif args.type == 'lr_sg':
 
         comments = np.unique(mdf['comments'])
 
+        idf2 = df[df['net_name'].eq(net_name)]
+        idf2 = idf2[idf2['task_name'].str.contains(task)]
+        lrs = np.unique(idf2['lr'])
+        vars = []
+        for lr in lrs:
+            iidf2 = idf2[idf2['lr'].eq(lr)]
+            var = np.var(iidf2['mean_' + metric])
+            vars.append(var)
+
+        pn_vars = {}
         for pn in possible_pseudod:
             iidf = idf[idf['comments'].str.contains(pn)]
             lrs = np.unique(iidf['lr'])
@@ -449,6 +454,10 @@ elif args.type == 'lr_sg':
     for i, net_name in enumerate(nets):
         idf = mdf
         idf = idf[idf['net_name'].eq(net_name)]
+        if net_name == 'ALIF':
+            idf = idf[idf['comments'].str.contains('1_')]
+        else:
+            idf = idf[idf['comments'].str.contains('6_')]
 
         idf = idf[idf['task_name'].str.contains(task)]
         idf = idf.sort_values(by=['mean_' + metric], ascending=False)
