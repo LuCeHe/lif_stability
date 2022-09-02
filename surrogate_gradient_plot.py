@@ -42,9 +42,10 @@ EXPERIMENTS = os.path.join(CDIR, 'experiments')
 CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 
-parser = argparse.ArgumentParser(description='main')
-
 metric_sort = 'v_ppl'
+reduce_samples = True
+
+parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
     '--type', default='lr_sg', type=str, help='main behavior',
     choices=[
@@ -53,7 +54,6 @@ parser.add_argument(
         'conditions', 'lr_sg'
     ]
 )
-
 args = parser.parse_args()
 
 GEXPERIMENTS = [
@@ -78,8 +78,6 @@ def history_pick(k, v):
 
     return o
 
-
-remove_old_samples = True
 
 if not os.path.exists(CSVPATH):
     ds = unzip_good_exps(
@@ -166,13 +164,6 @@ else:
     with open(HSITORIESPATH) as f:
         histories = json.load(f)
 
-if remove_old_samples:
-    df = df.sort_values(by='d_name', ascending=True)
-
-    pass
-
-print(df.to_string())
-
 df = df.sort_values(by='v_sparse_mode_accuracy', ascending=False)
 
 history_keys = [
@@ -215,6 +206,7 @@ df = df.rename(
 #     df['task_name'].str.contains('sl-MNIST'))]
 df['comments'] = df['comments'].str.replace('_ptb2', '')
 # df = df[df['comments'].str.contains('_v0m')]
+df = df[df['d_name'] > r'C:\Users\PlasticDiscobolus\work\sg_design_lif\experiments\2022-08-13']
 # df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
 
 for ps in possible_pseudod:
@@ -222,6 +214,7 @@ for ps in possible_pseudod:
 
 # df = df[(df['d_name'].str.contains('2022-08-12--'))|(df['d_name'].str.contains('2022-08-13--'))]
 # df = df[(df['d_name'].str.contains('2022-08-27--'))]
+df['comments'] = df['comments'].replace({'1_embproj_nogradres': '6_embproj_nogradres'}, regex=True)
 
 # df = df.dropna(subset=['t_ppl'])
 
@@ -232,8 +225,12 @@ some_cols = [n for n in list(df.columns) if not n in early_cols]
 df = df[early_cols + some_cols]
 
 group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
-df = df.sort_values(by='d_name', ascending=True)
-df = df.groupby(group_cols).sample(4, replace=True)
+# only 4 experiments of the same type, so they have comparable statistics
+
+if reduce_samples:
+    df = df.sort_values(by='d_name', ascending=True)
+    df = df.groupby(group_cols).sample(4, replace=True)
+
 print(df.to_string())
 
 counts = df.groupby(group_cols).size().reset_index(name='counts')
@@ -395,15 +392,20 @@ elif args.type == 'sharpness_dampening':
 elif args.type == 'lr_sg':
 
     per_task_variability = {}
-    idf = df[df['comments'].str.contains('6_')]
-
     metric = 'v_ppl'
 
     net_name = 'LIF'  # LIF sLSTM
     tasks = ['sl-MNIST', 'SHD', 'PTB']  # for LIF
     nets = ['LIF', 'ALIF', 'sLSTM']
+    task_sensitivity = {}
+    net_sensitivity = {}
+    task_sensitivity_std = {}
+    net_sensitivity_std = {}
 
-    fig, axs = plt.subplots(2, len(tasks), gridspec_kw={'wspace': .5, 'hspace': 0.3}, figsize=(8, 4))
+    fig, axs = plt.subplots(
+        2, len(tasks) + 1, figsize=(12, 7),
+        gridspec_kw={'wspace': .5, 'hspace': .5, 'width_ratios': [1, 1, 1, 2]}
+    )
 
     # if not isinstance(axs, list):
     #     axs = [axs]
@@ -412,26 +414,16 @@ elif args.type == 'lr_sg':
     mdf = mdf[mdf['comments'].str.contains('_dropout:.3')]
     df = df[df['comments'].str.contains('_dropout:.3')]
 
+    # plot lr vs metric
     for i, task in enumerate(tasks):
         idf = mdf
         idf = idf[idf['net_name'].eq(net_name)]
         idf = idf[idf['task_name'].str.contains(task)]
         idf = idf.sort_values(by=['mean_' + metric], ascending=False)
 
-        print(idf.to_string(index=False))
+        # print(idf.to_string(index=False))
 
         comments = np.unique(mdf['comments'])
-
-        idf2 = df[df['net_name'].eq(net_name)]
-        idf2 = idf2[idf2['task_name'].str.contains(task)]
-        lrs = np.unique(idf2['lr'])
-        vars = []
-        for lr in lrs:
-            iidf2 = idf2[idf2['lr'].eq(lr)]
-            var = np.var(iidf2['mean_' + metric])
-            vars.append(var)
-
-        pn_vars = {}
         for pn in possible_pseudod:
             iidf = idf[idf['comments'].str.contains(pn)]
             lrs = np.unique(iidf['lr'])
@@ -444,25 +436,63 @@ elif args.type == 'lr_sg':
                 stds.append(ldf['std_' + metric].values[0] / 2)
 
             stds = np.nan_to_num(stds)
-            # print(accs, stds, lrs)
+
             axs[0, i].plot(lrs, accs, color=pseudod_color(pn))
             axs[0, i].fill_between(lrs, accs - stds, accs + stds, alpha=0.5, color=pseudod_color(pn))
 
         axs[0, i].set_title(task)
 
+    # compute task sensitivities
+    for task in tasks:
+        print('-' * 30)
+        print(task)
+        idf2 = df[df['net_name'].eq(net_name)]
+        idf2 = idf2[idf2['comments'].str.contains('6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_')]
+        idf2 = idf2[idf2['task_name'].str.contains(task)]
+        lrs = np.unique(idf2['lr'])
+        out_vars = {}
+        for lr in lrs:
+            iidf2 = idf2[idf2['lr'].eq(lr)]
+            # print(iidf2.to_string())
+            # print(iidf2[metric].values)
+            var = np.var(iidf2[metric])
+            # print(var)
+            out_vars[lr] = var
+
+        pn_vars = {}
+        for pn in possible_pseudod:
+            iidf = idf[idf['comments'].str.contains(pn)]
+            lrs = np.unique(iidf['lr'])
+            pn_vars[pn] = {}
+
+            for lr in lrs:
+                iidf2 = iidf[iidf['lr'].eq(lr)]
+                pn_vars[pn][lr] = iidf2['std_' + metric] ** 2
+
+        in_vars = {lr: np.mean([pn_vars[pn][lr] for pn in possible_pseudod]) for lr in lrs}
+        ratio = np.mean([out_vars[lr] / in_vars[lr] for lr in lrs])
+        items = -1
+        if task == 'sl-MNIST':
+            items = 10
+        elif task == 'SHD':
+            items = 20
+        elif task == 'PTB':
+            items = 10000
+
+        metric_2 = np.mean([out_vars[lr] / items for lr in lrs])
+        print(task, ratio, metric_2)
+        task_sensitivity[task] = metric_2
+        task_sensitivity_std[task] = np.std([out_vars[lr] / items for lr in lrs])
+
     task = 'SHD'
     for i, net_name in enumerate(nets):
         idf = mdf
         idf = idf[idf['net_name'].eq(net_name)]
-        if net_name == 'ALIF':
-            idf = idf[idf['comments'].str.contains('1_')]
-        else:
-            idf = idf[idf['comments'].str.contains('6_')]
-
+        idf = idf[idf['comments'].str.contains('6_')]
         idf = idf[idf['task_name'].str.contains(task)]
         idf = idf.sort_values(by=['mean_' + metric], ascending=False)
 
-        print(idf.to_string(index=False))
+        # print(idf.to_string(index=False))
 
         comments = np.unique(mdf['comments'])
 
@@ -486,20 +516,98 @@ elif args.type == 'lr_sg':
     # if len(tasks) > 1 and tasks[2] == 'PTB':
     #     axs[2].set_ylim([80, 800])
 
+    # compute sensitivities to net
+    task = 'SHD'
+    for net_name in nets:
+        print('-' * 30)
+        print(net_name)
+
+        idf = mdf
+        idf = idf[idf['net_name'].eq(net_name)]
+        idf = idf[idf['comments'].str.contains('6_')]
+        idf = idf[idf['task_name'].str.contains(task)]
+        idf = idf.sort_values(by=['mean_' + metric], ascending=False)
+
+        idf2 = df[df['net_name'].eq(net_name)]
+        idf2 = idf2[idf2['comments'].str.contains('6_embproj_')]
+        idf2 = idf2[idf2['task_name'].str.contains(task)]
+        lrs = np.unique(idf2['lr'])
+        out_vars = {}
+        for lr in lrs:
+            iidf2 = idf2[idf2['lr'].eq(lr)]
+            # print(iidf2.to_string())
+            # print(iidf2[metric].values)
+            var = np.var(iidf2[metric])
+            # print(var)
+            out_vars[lr] = var
+
+        pn_vars = {}
+        for pn in possible_pseudod:
+            iidf = idf[idf['comments'].str.contains(pn)]
+            lrs = np.unique(iidf['lr'])
+            pn_vars[pn] = {}
+
+            for lr in lrs:
+                iidf2 = iidf[iidf['lr'].eq(lr)]
+                pn_vars[pn][lr] = iidf2['std_' + metric] ** 2
+
+        in_vars = {lr: np.mean([pn_vars[pn][lr] for pn in possible_pseudod]) for lr in lrs}
+        ratio = np.mean([out_vars[lr] / in_vars[lr] for lr in lrs])
+        metric_2 = np.mean([out_vars[lr] / 20 for lr in lrs])
+        print('out_vars: ', out_vars)
+        print('in_vars:  ', in_vars)
+        print(net_name, ratio, metric_2)
+        net_sensitivity[net_name] = metric_2
+        net_sensitivity_std[net_name] = np.std([out_vars[lr] / 20 for lr in lrs])
+
     for j in range(2):
         for i in range(len(tasks)):
             axs[j, i].set_xscale('log')
             axs[j, i].set_xticks([1e-2, 1e-3, 1e-4, 1e-5])
 
+        for i in range(len(tasks) + 1):
             for pos in ['right', 'left', 'bottom', 'top']:
                 axs[j, i].spines[pos].set_visible(False)
 
-    # axs[-1].set_xlabel('Learning rate')
-    # axs[0].set_ylabel('Perplexity')
+    axs[1, 2].set_xlabel('Learning rate')
+    axs[0, 0].set_ylabel('Perplexity')
+
+    axs[0, -1].bar(tasks, task_sensitivity.values(),
+                   yerr=np.array(list(task_sensitivity_std.values()))/2, color='maroon', width=0.4)
+    axs[0, -1].set_ylabel('Sensitivity')
+    axs[0, -1].set_xlabel('Task')
+
+    axs[1, -1].bar(nets, net_sensitivity.values(),
+                   yerr=np.array(list(net_sensitivity_std.values()))/2, color='maroon', width=0.4)
+    axs[1, -1].set_ylabel('Sensitivity')
+    axs[1, -1].set_xlabel('Neural Model')
+
+    axs[0, 0].text(-.7, .5, 'LIF network', fontsize=18,
+                   horizontalalignment='center', verticalalignment='center', rotation='vertical',
+                   transform=axs[0, 0].transAxes)
+    axs[1, 0].text(-.7, .5, 'SHD task', fontsize=18,
+                   horizontalalignment='center', verticalalignment='center', rotation='vertical',
+                   transform=axs[1, 0].transAxes)
+
+    for i in [0, 1]:
+        box = axs[i, -1].get_position()
+        box.x0 = box.x0 + 0.05
+        box.x1 = box.x1 + 0.05
+        axs[i, -1].set_position(box)
+
+    for i, label in enumerate('abcg'):
+        axs[0, i].text(-.3, 1.2, f'{label})', fontsize=14, color='#535353',
+                       horizontalalignment='center', verticalalignment='center',
+                       transform=axs[0, i].transAxes)
+
+    for i, label in enumerate('defh'):
+        axs[1, i].text(-0.3, 1.2, f'{label})', fontsize=14, color='#535353',
+                       horizontalalignment='center', verticalalignment='center',
+                       transform=axs[1, i].transAxes)
 
     legend_elements = [Line2D([0], [0], color=pseudod_color(n), lw=4, label=clean_pseudname(n))
                        for n in possible_pseudod]
-    plt.legend(ncol=6, handles=legend_elements, loc='lower center', bbox_to_anchor=(-1.2, -.5))
+    plt.legend(ncol=3, handles=legend_elements, loc='lower center', bbox_to_anchor=(-1.4, -.85))
 
     plt.show()
     plot_filename = f'experiments/lr_sg.pdf'
