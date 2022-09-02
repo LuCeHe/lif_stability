@@ -390,6 +390,20 @@ elif args.type == 'sharpness_dampening':
 
 
 elif args.type == 'lr_sg':
+    def sensitivity_metric(out_vars, in_vars, name='diff'):
+        assert out_vars.keys() == in_vars.keys()
+        lrs = out_vars.keys()
+        if name == 'ratio':
+            metric = np.mean([out_vars[lr] / in_vars[lr] for lr in lrs])
+        elif name == 'mean':
+            metric = np.mean([out_vars[lr] for lr in lrs])
+        elif name == 'diff':
+            metric = np.mean([abs(out_vars[lr] - in_vars[lr]) for lr in lrs])
+        else:
+            raise NotImplementedError
+
+        return metric
+
 
     per_task_variability = {}
     metric = 'v_ppl'
@@ -449,15 +463,21 @@ elif args.type == 'lr_sg':
         idf2 = df[df['net_name'].eq(net_name)]
         idf2 = idf2[idf2['comments'].str.contains('6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_')]
         idf2 = idf2[idf2['task_name'].str.contains(task)]
+
+        # print(idf2.to_string())
+        items = -1
+        if task == 'sl-MNIST':
+            items = 10
+        elif task == 'SHD':
+            items = 20
+        elif task == 'PTB':
+            items = 10000
+
         lrs = np.unique(idf2['lr'])
         out_vars = {}
         for lr in lrs:
             iidf2 = idf2[idf2['lr'].eq(lr)]
-            # print(iidf2.to_string())
-            # print(iidf2[metric].values)
-            var = np.var(iidf2[metric])
-            # print(var)
-            out_vars[lr] = var
+            out_vars[lr] = np.std(iidf2[metric]) / items
 
         pn_vars = {}
         for pn in possible_pseudod:
@@ -467,22 +487,14 @@ elif args.type == 'lr_sg':
 
             for lr in lrs:
                 iidf2 = iidf[iidf['lr'].eq(lr)]
-                pn_vars[pn][lr] = iidf2['std_' + metric] ** 2
+                pn_vars[pn][lr] = iidf2['std_' + metric]
 
         in_vars = {lr: np.mean([pn_vars[pn][lr] for pn in possible_pseudod]) for lr in lrs}
-        ratio = np.mean([out_vars[lr] / in_vars[lr] for lr in lrs])
-        items = -1
-        if task == 'sl-MNIST':
-            items = 10
-        elif task == 'SHD':
-            items = 20
-        elif task == 'PTB':
-            items = 10000
 
-        metric_2 = np.mean([out_vars[lr] / items for lr in lrs])
-        print(task, ratio, metric_2)
-        task_sensitivity[task] = metric_2
-        task_sensitivity_std[task] = np.std([out_vars[lr] / items for lr in lrs])
+        # print(out_vars)
+        task_sensitivity[task] = sensitivity_metric(out_vars, in_vars)
+        print(task, task_sensitivity[task])
+        task_sensitivity_std[task] = np.std([out_vars[lr] for lr in lrs])
 
     task = 'SHD'
     for i, net_name in enumerate(nets):
@@ -518,6 +530,7 @@ elif args.type == 'lr_sg':
 
     # compute sensitivities to net
     task = 'SHD'
+    items = 20
     for net_name in nets:
         print('-' * 30)
         print(net_name)
@@ -535,11 +548,7 @@ elif args.type == 'lr_sg':
         out_vars = {}
         for lr in lrs:
             iidf2 = idf2[idf2['lr'].eq(lr)]
-            # print(iidf2.to_string())
-            # print(iidf2[metric].values)
-            var = np.var(iidf2[metric])
-            # print(var)
-            out_vars[lr] = var
+            out_vars[lr] = np.std(iidf2[metric]) / items
 
         pn_vars = {}
         for pn in possible_pseudod:
@@ -549,16 +558,16 @@ elif args.type == 'lr_sg':
 
             for lr in lrs:
                 iidf2 = iidf[iidf['lr'].eq(lr)]
-                pn_vars[pn][lr] = iidf2['std_' + metric] ** 2
+                pn_vars[pn][lr] = iidf2['std_' + metric]
 
         in_vars = {lr: np.mean([pn_vars[pn][lr] for pn in possible_pseudod]) for lr in lrs}
         ratio = np.mean([out_vars[lr] / in_vars[lr] for lr in lrs])
-        metric_2 = np.mean([out_vars[lr] / 20 for lr in lrs])
+        metric_2 = np.mean([out_vars[lr] for lr in lrs])
         print('out_vars: ', out_vars)
         print('in_vars:  ', in_vars)
         print(net_name, ratio, metric_2)
-        net_sensitivity[net_name] = metric_2
-        net_sensitivity_std[net_name] = np.std([out_vars[lr] / 20 for lr in lrs])
+        net_sensitivity[net_name] = sensitivity_metric(out_vars, in_vars)
+        net_sensitivity_std[net_name] = np.std([out_vars[lr] for lr in lrs])
 
     for j in range(2):
         for i in range(len(tasks)):
@@ -573,12 +582,12 @@ elif args.type == 'lr_sg':
     axs[0, 0].set_ylabel('Perplexity')
 
     axs[0, -1].bar(tasks, task_sensitivity.values(),
-                   yerr=np.array(list(task_sensitivity_std.values()))/2, color='maroon', width=0.4)
+                   yerr=np.array(list(task_sensitivity_std.values())) / 2, color='maroon', width=0.4)
     axs[0, -1].set_ylabel('Sensitivity')
     axs[0, -1].set_xlabel('Task')
 
     axs[1, -1].bar(nets, net_sensitivity.values(),
-                   yerr=np.array(list(net_sensitivity_std.values()))/2, color='maroon', width=0.4)
+                   yerr=np.array(list(net_sensitivity_std.values())) / 2, color='maroon', width=0.4)
     axs[1, -1].set_ylabel('Sensitivity')
     axs[1, -1].set_xlabel('Neural Model')
 
