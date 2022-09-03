@@ -47,7 +47,7 @@ reduce_samples = True
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='lr_sg', type=str, help='main behavior',
+    '--type', default='nothing', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
