@@ -241,7 +241,7 @@ if args.type == 'send':
         incomplete_comments = [incomplete_comment + f'adjfi:{i}_' for i in [.01, .1, .3, .5, .7]]
 
         comments = []
-        for ff in  ['', 'adjff:.1', 'adjff:.01']: # ['', ]
+        for ff in ['', 'adjff:.1', 'adjff:.01']:  # ['', ]
             comments.extend([c + ff for c in incomplete_comments])
 
         experiment = {
@@ -251,13 +251,18 @@ if args.type == 'send':
         experiments.append(experiment)
 
     if 'adaptsg' in send_fs:
-        incomplete_comments = '8_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_movedgauss_'
+        incomplete_comments = '8_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
         # lif_comments = [incomplete_comments + t for t in ['', 'adaptsg', 'readaptsg:3', 'readaptsg:10']]
         lif_comments = [incomplete_comments + t for t in ['adaptsg', 'readaptsg:3']]
         alif_comments = [c.replace('noalif_', '') for c in lif_comments]
+        incomplete_comments = lif_comments + alif_comments
+        comments = []
+        for name in ['_asgname:movedgauss', '_asgname:movedsigmoid', '_asgname:movedfastsigmoid']:
+            comments += [c + name for c in incomplete_comments]
+
         experiment = {
             'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
-            'comments': lif_comments + alif_comments, 'seed': seeds
+            'comments': comments, 'seed': seeds
         }
         experiments.append(experiment)
 
