@@ -50,18 +50,18 @@ def config():
     # task and net
     # ptb time_ae simplest_random time_ae_merge ps_mnist heidelberg wiki103 wmt14 s_mnist xor small_s_mnist
     # wordptb sl_mnist
-    task_name = 'wordptb'
+    task_name = 'heidelberg'
 
     # test configuration
     epochs = 3
     steps_per_epoch = 1
     batch_size = 2
     stack = None
-    n_neurons = 10
+    n_neurons = None
 
     # net
-    # mn_aLSNN_2 mn_aLSNN_2_sig LSNN maLSNN spikingPerformer smallGPT2 aLSNN_noIC spikingLSTM
-    net_name = 'maLSNN'
+    # LSNN maLSNN spikingLSTM
+    net_name = 'spikingLSTM'
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
