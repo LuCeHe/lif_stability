@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 if args.type == 'send':
     # send experiments on Compute Canada for surrogate gradients paper
-    n_seeds = 4
+    n_seeds = 2
     seed = 104
     seeds = [seed + i for i in range(n_seeds)]
     # seeds = [seed + 3, seed + 4]

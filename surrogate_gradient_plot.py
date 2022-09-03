@@ -39,6 +39,16 @@ mpl, pd = load_plot_settings(mpl=mpl, pd=pd)
 CDIR = os.path.dirname(os.path.realpath(__file__))
 EXPERIMENTS = os.path.join(CDIR, 'experiments')
 
+GEXPERIMENTS = [
+    # r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
+    r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
+    # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
+    # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
+    # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
+    # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
+]
+EXPERIMENTS = GEXPERIMENTS[0]
+
 CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 
@@ -47,7 +57,7 @@ reduce_samples = True
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='nothing', type=str, help='main behavior',
+    '--type', default='lr_sg', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -55,14 +65,6 @@ parser.add_argument(
     ]
 )
 args = parser.parse_args()
-
-GEXPERIMENTS = [
-    r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
-    # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
-    # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
-    # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
-    # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
-]
 
 _, starts_at_s = timeStructured(False, True)
 
@@ -75,7 +77,6 @@ def history_pick(k, v):
         o = np.nanmax(v[10:])
     else:
         o = f'{round(v[0], 3)}/{round(v[-1], 3)}'
-
     return o
 
 
@@ -390,7 +391,10 @@ elif args.type == 'sharpness_dampening':
 
 
 elif args.type == 'lr_sg':
-    def sensitivity_metric(out_vars, in_vars, name='diff'):
+    normalize_ppls = True
+
+
+    def sensitivity_metric(out_vars, in_vars, name='mean'):
         assert out_vars.keys() == in_vars.keys()
         lrs = out_vars.keys()
         if name == 'ratio':
@@ -409,184 +413,132 @@ elif args.type == 'lr_sg':
     metric = 'v_ppl'
 
     net_name = 'LIF'  # LIF sLSTM
-    tasks = ['sl-MNIST', 'SHD', 'PTB']  # for LIF
-    nets = ['LIF', 'ALIF', 'sLSTM']
+    all_tasks = ['sl-MNIST', 'SHD', 'PTB']  # for LIF
+    all_nets = ['LIF', 'ALIF', 'sLSTM']
     task_sensitivity = {}
     net_sensitivity = {}
     task_sensitivity_std = {}
     net_sensitivity_std = {}
 
     fig, axs = plt.subplots(
-        2, len(tasks) + 1, figsize=(12, 7),
+        2, 3 + 1, figsize=(12, 7),
         gridspec_kw={'wspace': .5, 'hspace': .5, 'width_ratios': [1, 1, 1, 2]}
     )
 
     # if not isinstance(axs, list):
     #     axs = [axs]
 
-    # mdf = mdf[mdf['comments'].str.contains('6_')]
+    mdf = mdf[mdf['comments'].str.contains('6_')]
     mdf = mdf[mdf['comments'].str.contains('_dropout:.3')]
+    df = df[df['comments'].str.contains('6_')]
     df = df[df['comments'].str.contains('_dropout:.3')]
+    maxs = {}
+    mins = {}
+    for t in all_tasks:
+        maxs[t] = {}
+        mins[t] = {}
+        for n in all_nets:
+            idf = df[(df['task_name'].eq(t)) & (df['net_name'].eq(n))]
+            maxs[t][n] = idf[metric].max()
+            mins[t][n] = idf[metric].min()
 
+    print(maxs)
+    print(mins)
     # plot lr vs metric
-    for i, task in enumerate(tasks):
-        idf = mdf
-        idf = idf[idf['net_name'].eq(net_name)]
-        idf = idf[idf['task_name'].str.contains(task)]
-        idf = idf.sort_values(by=['mean_' + metric], ascending=False)
+    for i, (tasks, nets) in enumerate([[all_tasks, ['LIF']], [['SHD'], all_nets]]):
+        for j, net_name in enumerate(nets):
+            for k, task in enumerate(tasks):
+                idf = mdf
+                idf = idf[idf['net_name'].eq(net_name)]
+                idf = idf[idf['task_name'].str.contains(task)]
+                idf = idf.sort_values(by=['mean_' + metric], ascending=False)
 
-        # print(idf.to_string(index=False))
+                # print(idf.to_string(index=False))
 
-        comments = np.unique(mdf['comments'])
-        for pn in possible_pseudod:
-            iidf = idf[idf['comments'].str.contains(pn)]
-            lrs = np.unique(iidf['lr'])
+                comments = np.unique(mdf['comments'])
+                for pn in possible_pseudod:
+                    iidf = idf[idf['comments'].str.contains(pn)]
+                    lrs = np.unique(iidf['lr'])
 
-            accs = []
-            stds = []
-            for lr in lrs:
-                ldf = iidf[iidf['lr'] == lr]
-                accs.append(ldf['mean_' + metric].values[0])
-                stds.append(ldf['std_' + metric].values[0] / 2)
+                    accs = []
+                    stds = []
+                    for lr in lrs:
+                        ldf = iidf[iidf['lr'] == lr]
+                        accs.append(ldf['mean_' + metric].values[0])
+                        stds.append(ldf['std_' + metric].values[0] / 2)
 
-            stds = np.nan_to_num(stds)
+                    stds = np.nan_to_num(stds)
 
-            axs[0, i].plot(lrs, accs, color=pseudod_color(pn))
-            axs[0, i].fill_between(lrs, accs - stds, accs + stds, alpha=0.5, color=pseudod_color(pn))
+                    axs[i, j + k].plot(lrs, accs, color=pseudod_color(pn))
+                    axs[i, j + k].fill_between(lrs, accs - stds, accs + stds, alpha=0.5, color=pseudod_color(pn))
 
-        axs[0, i].set_title(task)
+                axs[i, j + k].set_title(task if i == 0 else net_name)
 
-    # compute task sensitivities
-    for task in tasks:
-        print('-' * 30)
-        print(task)
-        idf2 = df[df['net_name'].eq(net_name)]
-        idf2 = idf2[idf2['comments'].str.contains('6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_')]
-        idf2 = idf2[idf2['task_name'].str.contains(task)]
+    # compute sensitivities
+    for i, (tasks, nets) in enumerate([[all_tasks, ['LIF']], [['SHD'], all_nets]]):
+        for j, net_name in enumerate(nets):
+            for k, task in enumerate(tasks):
+                print('-' * 30)
+                print(task)
+                sdf = df[df['net_name'].eq(net_name)]
+                sdf = sdf[sdf['comments'].str.contains('6_embproj_')]
+                sdf = sdf[sdf['task_name'].str.contains(task)]
 
-        # print(idf2.to_string())
-        items = -1
-        if task == 'sl-MNIST':
-            items = 10
-        elif task == 'SHD':
-            items = 20
-        elif task == 'PTB':
-            items = 10000
+                # print(idf2.to_string())
+                items = -1
+                if task == 'sl-MNIST':
+                    items = 10
+                elif task == 'SHD':
+                    items = 20
+                elif task == 'PTB':
+                    items = 10000
 
-        lrs = np.unique(idf2['lr'])
-        out_vars = {}
-        for lr in lrs:
-            iidf2 = idf2[idf2['lr'].eq(lr)]
-            out_vars[lr] = np.std(iidf2[metric]) / items
+                lrs = np.unique(sdf['lr'])
+                out_vars = {}
+                pn_vars = {pn: {} for pn in possible_pseudod}
+                for lr in lrs:
+                    sdf_lr = sdf[sdf['lr'].eq(lr)]
 
-        pn_vars = {}
-        for pn in possible_pseudod:
-            iidf = idf[idf['comments'].str.contains(pn)]
-            lrs = np.unique(iidf['lr'])
-            pn_vars[pn] = {}
+                    if normalize_ppls:
+                        sdf_lr[metric] = (sdf_lr[metric] - mins[task][net_name]) / (
+                                    maxs[task][net_name] - mins[task][net_name])
+                    out_vars[lr] = sdf_lr[metric].std()
 
-            for lr in lrs:
-                iidf2 = iidf[iidf['lr'].eq(lr)]
-                pn_vars[pn][lr] = iidf2['std_' + metric]
+                    for pn in possible_pseudod:
+                        sdf_lr_pn = sdf_lr[sdf_lr['comments'].str.contains(pn)]
+                        pn_vars[pn][lr] = sdf_lr_pn[metric].std()
 
-        in_vars = {lr: np.mean([pn_vars[pn][lr] for pn in possible_pseudod]) for lr in lrs}
+                in_vars = {lr: np.mean([pn_vars[pn][lr] for pn in possible_pseudod]) for lr in lrs}
 
-        # print(out_vars)
-        task_sensitivity[task] = sensitivity_metric(out_vars, in_vars)
-        print(task, task_sensitivity[task])
-        task_sensitivity_std[task] = np.std([out_vars[lr] for lr in lrs])
+                # print(out_vars)
+                if i == 0:
+                    task_sensitivity[task] = sensitivity_metric(out_vars, in_vars)
+                    task_sensitivity_std[task] = np.std([out_vars[lr] for lr in lrs])
+                    print(task, task_sensitivity[task], task_sensitivity_std[task])
+                else:
+                    net_sensitivity[net_name] = sensitivity_metric(out_vars, in_vars)
+                    net_sensitivity_std[net_name] = np.std([out_vars[lr] for lr in lrs])
+                    print(net_name, net_sensitivity[net_name], net_sensitivity_std[net_name])
 
-    task = 'SHD'
-    for i, net_name in enumerate(nets):
-        idf = mdf
-        idf = idf[idf['net_name'].eq(net_name)]
-        idf = idf[idf['comments'].str.contains('6_')]
-        idf = idf[idf['task_name'].str.contains(task)]
-        idf = idf.sort_values(by=['mean_' + metric], ascending=False)
-
-        # print(idf.to_string(index=False))
-
-        comments = np.unique(mdf['comments'])
-
-        for pn in possible_pseudod:
-            iidf = idf[idf['comments'].str.contains(pn)]
-            lrs = np.unique(iidf['lr'])
-
-            accs = []
-            stds = []
-            for lr in lrs:
-                ldf = iidf[iidf['lr'] == lr]
-                accs.append(ldf['mean_' + metric].values[0])
-                stds.append(ldf['std_' + metric].values[0] / 2)
-
-            stds = np.nan_to_num(stds)
-            # print(accs, stds, lrs)
-            axs[1, i].plot(lrs, accs, color=pseudod_color(pn))
-            axs[1, i].fill_between(lrs, accs - stds, accs + stds, alpha=0.5, color=pseudod_color(pn))
-
-        axs[1, i].set_title(net_name)
-    # if len(tasks) > 1 and tasks[2] == 'PTB':
-    #     axs[2].set_ylim([80, 800])
-
-    # compute sensitivities to net
-    task = 'SHD'
-    items = 20
-    for net_name in nets:
-        print('-' * 30)
-        print(net_name)
-
-        idf = mdf
-        idf = idf[idf['net_name'].eq(net_name)]
-        idf = idf[idf['comments'].str.contains('6_')]
-        idf = idf[idf['task_name'].str.contains(task)]
-        idf = idf.sort_values(by=['mean_' + metric], ascending=False)
-
-        idf2 = df[df['net_name'].eq(net_name)]
-        idf2 = idf2[idf2['comments'].str.contains('6_embproj_')]
-        idf2 = idf2[idf2['task_name'].str.contains(task)]
-        lrs = np.unique(idf2['lr'])
-        out_vars = {}
-        for lr in lrs:
-            iidf2 = idf2[idf2['lr'].eq(lr)]
-            out_vars[lr] = np.std(iidf2[metric]) / items
-
-        pn_vars = {}
-        for pn in possible_pseudod:
-            iidf = idf[idf['comments'].str.contains(pn)]
-            lrs = np.unique(iidf['lr'])
-            pn_vars[pn] = {}
-
-            for lr in lrs:
-                iidf2 = iidf[iidf['lr'].eq(lr)]
-                pn_vars[pn][lr] = iidf2['std_' + metric]
-
-        in_vars = {lr: np.mean([pn_vars[pn][lr] for pn in possible_pseudod]) for lr in lrs}
-        ratio = np.mean([out_vars[lr] / in_vars[lr] for lr in lrs])
-        metric_2 = np.mean([out_vars[lr] for lr in lrs])
-        print('out_vars: ', out_vars)
-        print('in_vars:  ', in_vars)
-        print(net_name, ratio, metric_2)
-        net_sensitivity[net_name] = sensitivity_metric(out_vars, in_vars)
-        net_sensitivity_std[net_name] = np.std([out_vars[lr] for lr in lrs])
 
     for j in range(2):
-        for i in range(len(tasks)):
+        for i in range(3):
             axs[j, i].set_xscale('log')
             axs[j, i].set_xticks([1e-2, 1e-3, 1e-4, 1e-5])
 
-        for i in range(len(tasks) + 1):
+        for i in range(3 + 1):
             for pos in ['right', 'left', 'bottom', 'top']:
                 axs[j, i].spines[pos].set_visible(False)
 
     axs[1, 2].set_xlabel('Learning rate')
-    axs[0, 0].set_ylabel('Perplexity')
+    axs[0, 0].set_ylabel('Validation Perplexity')
 
-    axs[0, -1].bar(tasks, task_sensitivity.values(),
+    axs[0, -1].bar(all_tasks, task_sensitivity.values(),
                    yerr=np.array(list(task_sensitivity_std.values())) / 2, color='maroon', width=0.4)
     axs[0, -1].set_ylabel('Sensitivity')
     axs[0, -1].set_xlabel('Task')
 
-    axs[1, -1].bar(nets, net_sensitivity.values(),
+    axs[1, -1].bar(all_nets, net_sensitivity.values(),
                    yerr=np.array(list(net_sensitivity_std.values())) / 2, color='maroon', width=0.4)
     axs[1, -1].set_ylabel('Sensitivity')
     axs[1, -1].set_xlabel('Neural Model')
