@@ -252,12 +252,13 @@ if args.type == 'send':
 
     if 'adaptsg' in send_fs:
         incomplete_comments = '8_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
-        # lif_comments = [incomplete_comments + t for t in ['', 'adaptsg', 'readaptsg:3', 'readaptsg:10']]
         lif_comments = [incomplete_comments + t for t in ['adaptsg', 'readaptsg:3']]
         alif_comments = [c.replace('noalif_', '') for c in lif_comments]
         incomplete_comments = lif_comments + alif_comments
         comments = []
-        for name in ['_asgname:movedgauss', '_asgname:movedsigmoid', '_asgname:movedfastsigmoid']:
+        for name in [
+            '_asgname:movedgauss', '_asgname:movedsigmoid', '_asgname:movedfastsigmoid', '_asgname:movedfasttail'
+        ]:
             comments += [c + name for c in incomplete_comments]
 
         experiment = {

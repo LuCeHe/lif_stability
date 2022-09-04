@@ -40,14 +40,14 @@ CDIR = os.path.dirname(os.path.realpath(__file__))
 EXPERIMENTS = os.path.join(CDIR, 'experiments')
 
 GEXPERIMENTS = [
-    # r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
-    r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
+    r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
+    # r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
 ]
-EXPERIMENTS = GEXPERIMENTS[0]
+# EXPERIMENTS = GEXPERIMENTS[0]
 
 CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
