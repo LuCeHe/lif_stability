@@ -289,7 +289,7 @@ def build_model(task_name, net_name, n_neurons, lr, stack,
             else:
                 expanded_input = in_expert
 
-            expanded_input = Dropout(drate)(expanded_input)
+            expanded_input = Dropout(drate, name=f'dropout_{i}')(expanded_input)
 
             if i == 0:
                 if not embedding is False:
@@ -414,6 +414,6 @@ def build_model(task_name, net_name, n_neurons, lr, stack,
     optimizer = get_optimizer(optimizer_name=optimizer_name, lr_schedule=lr_schedule,
                               total_steps=final_epochs, lr=lr, weight_decay=weight_decay,
                               clipnorm=clipnorm, exclude_from_weight_decay=exclude_from_weight_decay)
-    train_model.compile(optimizer=optimizer, loss=lambda x, y: 0)
+    train_model.compile(optimizer=optimizer, loss=lambda x, y: 0.)
 
     return train_model
