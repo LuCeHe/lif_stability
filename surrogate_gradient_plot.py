@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from GenericTools.keras_tools.convergence_metric import convergence_estimation
 from GenericTools.keras_tools.esoteric_layers.surrogated_step import possible_pseudod, clean_pseudname, \
     clean_pseudo_name, pseudod_color
-from GenericTools.keras_tools.plot_tools import plot_history, TensorboardToNumpy
+from GenericTools.keras_tools.plot_tools import plot_history, TensorboardToNumpy, history_pick
 # from GenericTools.PlotTools.mpl_tools import load_plot_settings
 from GenericTools.stay_organized.unzip import unzip_good_exps
 from GenericTools.stay_organized.plot_tricks import large_num_to_reasonable_string
@@ -69,16 +69,6 @@ args = parser.parse_args()
 _, starts_at_s = timeStructured(False, True)
 
 
-# reduce_prod
-def history_pick(k, v):
-    if any([n in k for n in ['loss', 'perplexity', 'entropy', 'bpc']]):
-        o = np.nanmin(v[10:])
-    elif any([n in k for n in ['acc']]):
-        o = np.nanmax(v[10:])
-    else:
-        o = f'{round(v[0], 3)}/{round(v[-1], 3)}'
-    return o
-
 
 if not os.path.exists(CSVPATH):
     ds = unzip_good_exps(
@@ -88,8 +78,8 @@ if not os.path.exists(CSVPATH):
     )
 
     # first check how many have the history file:
-    nohistoryds = [d for d in ds if not os.path.exists(os.path.join(d, 'other_outputs', 'history.json'))]
-    ds = [d for d in ds if not d in nohistoryds]
+    ds = [d for d in ds if os.path.exists(os.path.join(d, 'other_outputs', 'history.json'))]
+    # ds = [d for d in ds if not d in nohistoryds]
 
     histories = {}
     df = pd.DataFrame()
