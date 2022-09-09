@@ -53,11 +53,12 @@ CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 
 metric_sort = 'v_ppl'
-reduce_samples = True
+metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc']
+reduce_samples = False
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='lr_sg', type=str, help='main behavior',
+    '--type', default='nothing', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -68,25 +69,15 @@ args = parser.parse_args()
 
 _, starts_at_s = timeStructured(False, True)
 
-
-
 if not os.path.exists(CSVPATH):
-    ds = unzip_good_exps(
-        GEXPERIMENTS, EXPERIMENTS,
-        exp_identifiers=['mnl'], except_folders=[],
-        unzip_what=['run.json', ]  # 'png_content', 'train_model']
-    )
-
-    # first check how many have the history file:
+    ds = unzip_good_exps(GEXPERIMENTS, EXPERIMENTS, exp_identifiers=['mnl'], unzip_what=['run.json'])
     ds = [d for d in ds if os.path.exists(os.path.join(d, 'other_outputs', 'history.json'))]
-    # ds = [d for d in ds if not d in nohistoryds]
 
     histories = {}
     df = pd.DataFrame()
     list_results = []
     for d in tqdm(ds):
-        print(d)
-        # d_path = os.path.join(EXPERIMENTS, d)
+
         history_path = os.path.join(d, 'other_outputs', 'history.json')
         hyperparams_path = os.path.join(d, 'other_outputs', 'results.json')
         config_path = os.path.join(d, '1', 'config.json')
@@ -111,7 +102,9 @@ if not os.path.exists(CSVPATH):
                                     datetime.strptime(run['stop_time'].split('.')[0], FMT) - datetime.strptime(
                                         run['start_time'].split('.')[0], FMT)
                                 })
-            results.update({k: history_pick(k, v) for k, v in history.items()})
+            # results.update({k: history_pick(k, v) for k, v in history.items()})
+            results.update(h for k, v in history.items() for h in history_pick(k, v))
+
             results.update({k: v for k, v in config.items()})
             results.update({'d_name': d})
 
@@ -125,7 +118,6 @@ if not os.path.exists(CSVPATH):
                 results.update({k: postprocess_results(k, v) for k, v in hyperparams.items()})
 
             list_results.append(results)
-            # small_df = pd.DataFrame([results])
 
             # df = df.append(small_df)
             history = {k.replace('val_', ''): v for k, v in history.items() if 'val' in k}
@@ -154,8 +146,6 @@ else:
     df = pd.read_hdf(CSVPATH, 'df')  # load it
     with open(HSITORIESPATH) as f:
         histories = json.load(f)
-
-df = df.sort_values(by='v_sparse_mode_accuracy', ascending=False)
 
 history_keys = [
     'v_perplexity', 'v_sparse_mode_accuracy', 'v_firing_rate', 'v_loss',
@@ -188,48 +178,43 @@ df = df.rename(
     },
     inplace=False
 )
-# df = df[df['task_name'].str.contains('PTB')]
-# df = df[df['final_epochs'] == 3]
-
-# df['comments'] = df['comments'].str.replace('_dampf:.3', '')
-# df['comments'] = df['comments'].str.replace('_dropout:.3', '')
-# df = df[(df['comments'].str.contains('ptb2')) | (df['task_name'].str.contains('SHD')) | (
-#     df['task_name'].str.contains('sl-MNIST'))]
-df['comments'] = df['comments'].str.replace('_ptb2', '')
-# df = df[df['comments'].str.contains('_v0m')]
-df = df[df['d_name'] > r'C:\Users\PlasticDiscobolus\work\sg_design_lif\experiments\2022-08-13']
-# df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
-
-for ps in possible_pseudod:
-    df['comments'] = df['comments'].str.replace('timerepeat:2' + ps, 'timerepeat:2_' + ps)
-
-# df = df[(df['d_name'].str.contains('2022-08-12--'))|(df['d_name'].str.contains('2022-08-13--'))]
-# df = df[(df['d_name'].str.contains('2022-08-27--'))]
-df['comments'] = df['comments'].replace({'1_embproj_nogradres': '6_embproj_nogradres'}, regex=True)
-
-# df = df.dropna(subset=['t_ppl'])
 
 
-early_cols = ['task_name', 'net_name', 'n_params', 'final_epochs', 'comments', 'firing_rate_ma_lsnn',
+def fix_df_comments(df):
+    for ps in possible_pseudod:
+        df['comments'] = df['comments'].str.replace('timerepeat:2' + ps, 'timerepeat:2_' + ps)
+
+    df = df[df['comments'].str.contains('_v0m')]
+    # df = df[df['d_name'] > r'C:\Users\PlasticDiscobolus\work\sg_design_lif\experiments\2022-08-13']
+    # df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
+
+    # df = df[(df['d_name'].str.contains('2022-08-12--'))|(df['d_name'].str.contains('2022-08-13--'))]
+    # df = df[(df['d_name'].str.contains('2022-08-27--'))]
+    # df['comments'] = df['comments'].replace({'1_embproj_nogradres': '6_embproj_nogradres'}, regex=True)
+    return df
+
+
+df = fix_df_comments(df)
+
+early_cols = ['task_name', 'net_name', *metrics_oi, 'n_params', 'final_epochs', 'comments', 'firing_rate_ma_lsnn',
               'firing_rate_ma_lsnn_1']
 some_cols = [n for n in list(df.columns) if not n in early_cols]
 df = df[early_cols + some_cols]
 
-group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
+# group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
+group_cols = ['net_name', 'task_name', 'initializer', 'comments']
 # only 4 experiments of the same type, so they have comparable statistics
 
 if reduce_samples:
     df = df.sort_values(by='d_name', ascending=True)
     df = df.groupby(group_cols).sample(4, replace=True)
 
+df = df.sort_values(by=metric_sort, ascending=False)
 print(df.to_string())
 
 counts = df.groupby(group_cols).size().reset_index(name='counts')
-metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc']
 
-mdf = df.groupby(
-    group_cols, as_index=False
-).agg({m: ['mean', 'std'] for m in metrics_oi})
+mdf = df.groupby(group_cols, as_index=False).agg({m: ['mean', 'std'] for m in metrics_oi})
 
 for metric in metrics_oi:
     mdf['mean_{}'.format(metric)] = mdf[metric]['mean']
@@ -491,7 +476,7 @@ elif args.type == 'lr_sg':
 
                     if normalize_ppls:
                         sdf_lr[metric] = (sdf_lr[metric] - mins[task][net_name]) / (
-                                    maxs[task][net_name] - mins[task][net_name])
+                                maxs[task][net_name] - mins[task][net_name])
                     out_vars[lr] = sdf_lr[metric].std()
 
                     for pn in possible_pseudod:
@@ -509,7 +494,6 @@ elif args.type == 'lr_sg':
                     net_sensitivity[net_name] = sensitivity_metric(out_vars, in_vars)
                     net_sensitivity_std[net_name] = np.std([out_vars[lr] for lr in lrs])
                     print(net_name, net_sensitivity[net_name], net_sensitivity_std[net_name])
-
 
     for j in range(2):
         for i in range(3):
