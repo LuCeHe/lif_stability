@@ -551,10 +551,17 @@ elif args.type == 'sparsity':
     n_cols = 4
     n_rows = 1
     alpha = .7
-    data_split = 'v_' # v_ t_ ''
+    data_split = 't_'  # v_ t_ ''
     metric = data_split + 'macc'  # t_macc v_macc
 
     net_name = 'LIF'  # LIF sLSTM
+
+    legend_elements = [
+        Line2D([], [], color='darksalmon', marker='o', linestyle='None', alpha=alpha,
+               markersize=10, label='layer 1'),
+        Line2D([], [], color='sienna', marker='o', linestyle='None', alpha=alpha,
+               markersize=10, label='layer 2'),
+    ]
 
     fig, axs = plt.subplots(
         n_rows, n_cols, figsize=(12, 7),
@@ -562,8 +569,7 @@ elif args.type == 'sparsity':
         sharey=True
     )
 
-    # if not isinstance(axs, list):
-    #     axs = [axs]
+    suplegend = fig.legend(ncol=2, handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -.1))
 
     mdf = mdf[mdf['comments'].str.contains('7_')]
     df = df[df['comments'].str.contains('7_')]
@@ -572,19 +578,27 @@ elif args.type == 'sparsity':
     # plot lr vs metric
     idf = df
     idf = idf[~df['comments'].str.contains('adjff')]
-    # idf = idf.sort_values(by=['mean_' + metric], ascending=False)
 
-    frs0 = idf[data_split + 'fr_initial'].values
-    frs1 = idf[data_split + 'fr_1_initial'].values
-    accs = idf[metric].values
-    axs[0].scatter(frs0, accs, alpha=alpha, color='darksalmon')
-    axs[0].scatter(frs1, accs, alpha=alpha, color='sienna')
+    frs0i = idf[data_split + 'fr_initial'].values
+    frs1i = idf[data_split + 'fr_1_initial'].values
+    frs0f = idf[data_split + 'fr_final'].values
+    frs1f = idf[data_split + 'fr_1_final'].values
 
-    frs0 = idf[data_split + 'fr_final'].values
-    frs1 = idf[data_split + 'fr_1_final'].values
     accs = idf[metric].values
-    axs[1].scatter(frs0, accs, alpha=alpha, color='darksalmon')
-    axs[1].scatter(frs1, accs, alpha=alpha, color='sienna')
+
+    r0 = np.corrcoef(accs, frs0i).round(2)[0, 1]
+    r1 = np.corrcoef(accs, frs1i).round(2)[0, 1]
+
+    axs[0].scatter(frs0i, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
+    axs[0].scatter(frs1i, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
+    axs[0].set_xlabel('Initial firing rate')
+
+    r0 = np.corrcoef(accs, frs0f).round(2)[0, 1]
+    r1 = np.corrcoef(accs, frs1f).round(2)[0, 1]
+
+    axs[1].scatter(frs0f, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
+    axs[1].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
+    axs[1].set_xlabel('Final firing rate')
 
     idf = df
     idf = idf[df['comments'].str.contains('adjff:.01')]
@@ -594,18 +608,39 @@ elif args.type == 'sparsity':
     frs0f = idf[data_split + 'fr_final'].values
     frs1f = idf[data_split + 'fr_1_final'].values
     accs = idf[metric].values
-    axs[2].scatter(frs0i, accs, alpha=alpha, color='darksalmon')
-    axs[2].scatter(frs1i, accs, alpha=alpha, color='sienna')
-    axs[3].scatter(frs0f, accs, alpha=alpha, color='darksalmon')
-    axs[3].scatter(frs1f, accs, alpha=alpha, color='sienna')
+
+    r0 = np.corrcoef(accs, frs0i).round(2)[0, 1]
+    r1 = np.corrcoef(accs, frs1i).round(2)[0, 1]
+    axs[2].scatter(frs0i, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
+    axs[2].scatter(frs1i, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
+    axs[2].set_xlabel('Initial firing rate')
+
+    r0 = np.corrcoef(accs, frs0f).round(2)[0, 1]
+    r1 = np.corrcoef(accs, frs1f).round(2)[0, 1]
+    axs[3].scatter(frs0f, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
+    axs[3].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
+    axs[3].set_xlabel('Final firing rate')
+
+
+    if 'v_' in data_split:
+        ylabel = 'Validation accuracy'
+    elif 't_' in data_split:
+        ylabel = 'Test accuracy'
+    else:
+        ylabel = 'Train accuracy'
+    axs[0].set_ylabel(ylabel)
 
     for ax in axs.reshape(-1):
+        ax.legend(loc='lower center', bbox_to_anchor=(0.5, .13))
         for pos in ['right', 'left', 'bottom', 'top']:
             ax.spines[pos].set_visible(False)
 
+    fig.text(0.73, .93, 'Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center', fontsize=14)
+    fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center', fontsize=14)
+
     plt.show()
-    # plot_filename = f'experiments/sparsity.pdf'
-    # fig.savefig(plot_filename, bbox_inches='tight')
+    plot_filename = f'experiments/{data_split}_sparsity.pdf'
+    fig.savefig(plot_filename, bbox_inches='tight')
 
 elif args.type == 'init_sg':
 
