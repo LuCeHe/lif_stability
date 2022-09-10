@@ -6,6 +6,8 @@ from GenericTools.keras_tools.esoteric_layers import AddLossLayer
 from GenericTools.keras_tools.expose_latent import expose_latent_model
 from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import checkTaskMeanVariance
 from sg_design_lif.neural_models.full_model import build_model
+
+
 # from sg_design_lif.neural_models.sparsity_gp import sparsity_gp
 
 
@@ -35,9 +37,9 @@ def reduce_model_firing_activity(
     train_model = tf.keras.models.Model(new_model.inputs, outs, name='sparsifier')
     train_model.compile(optimizer='AdaM', loss=lambda x, y: 0)
 
-    train_model.summary()
+    # train_model.summary()
 
-    train_model.fit(generator, epochs=epochs)
+    history = train_model.fit(generator, epochs=epochs)
 
     for layer in model.layers:
         for i, w in enumerate(layer.non_trainable_weights):
@@ -47,6 +49,10 @@ def reduce_model_firing_activity(
     for layer in model.layers:
         for i, w in enumerate(layer.trainable_weights):
             w._trainable = True
+
+    results = {k + '_sparsification': v for k, v in history.history.items()}
+    return results
+
 
 if __name__ == '__main__':
 
@@ -125,12 +131,10 @@ if __name__ == '__main__':
         # print(len(prediction))
         # print(prediction)
         names = [weight.name for layer in new_model.layers for weight in layer.weights]
-        print(names)
 
         initial_trainable = None
         initial_non_trainable = None
         for layer in new_model.layers:
-            print(layer.name, len(layer.non_trainable_weights), len(layer.trainable_weights))
             for i, w in enumerate(layer.trainable_weights):
                 # print(w.name)
                 if not 'internal_current' in w.name:

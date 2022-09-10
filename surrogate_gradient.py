@@ -61,12 +61,12 @@ def config():
 
     # net
     # LSNN maLSNN spikingLSTM
-    net_name = 'spikingLSTM'
+    net_name = 'maLSNN'
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
-    # comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m'
-    comments = '8_embproj_nogradreset_dropout:.3_timerepeat:2_readaptsg:3_asgname:movedfastsigmoid'
+    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m'
+    # comments = '8_embproj_nogradreset_dropout:.3_timerepeat:2_readaptsg:3_asgname:movedfastsigmoid'
 
     # optimizer properties
     lr = None  # 7e-4
@@ -201,9 +201,10 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
 
     if 'adjfi' in comments:
         target_firing_rate = str2val(comments, 'adjfi', float, default=.1)
-        reduce_model_firing_activity(
-            train_model, target_firing_rate, gen_train, epochs=5
+        sparsification_results = reduce_model_firing_activity(
+            train_model, target_firing_rate, gen_train, epochs=15
         )
+        results.update(sparsification_results)
 
     if 'readaptsg' in comments:
         readapt = str2val(comments, 'readaptsg', int, default=3)
@@ -271,7 +272,7 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
 
     evaluation = train_model.evaluate(gen_test, return_dict=True, verbose=True)
     for k in evaluation.keys():
-        results[k + '_test_{}'.format(timerepeat)] = evaluation[k]
+        results['test_'+ k] = evaluation[k]
 
     results['n_params'] = train_model.count_params()
     results['final_epochs'] = str(actual_epochs)

@@ -4,6 +4,7 @@ from datetime import timedelta, datetime
 from tensorflow import reduce_prod
 
 from GenericTools.keras_tools.esoteric_initializers import glorotcolor, orthogonalcolor, hecolor
+from GenericTools.stay_organized.pandardize import simplify_col_names
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 FMT = '%Y-%m-%dT%H:%M:%S'
@@ -40,8 +41,9 @@ CDIR = os.path.dirname(os.path.realpath(__file__))
 EXPERIMENTS = os.path.join(CDIR, 'experiments')
 
 GEXPERIMENTS = [
-    r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
-    # r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
+    # r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
+    # r'D:\work\stochastic_spiking\good_experiments\2022-08-21--adaptsg',
+    r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
@@ -53,16 +55,17 @@ CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 
 metric_sort = 'v_ppl'
-metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc']
+metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc', 'fr_initial', 'fr_final', 'fr_1_initial', 'fr_1_final']
 reduce_samples = False
+group_cols = ['net_name', 'task_name', 'initializer', 'comments']
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='nothing', type=str, help='main behavior',
+    '--type', default='sparsity', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
-        'conditions', 'lr_sg'
+        'conditions', 'lr_sg', 'sparsity'
     ]
 )
 args = parser.parse_args()
@@ -148,16 +151,18 @@ else:
         histories = json.load(f)
 
 history_keys = [
-    'v_perplexity', 'v_sparse_mode_accuracy', 'v_firing_rate', 'v_loss',
-    't_perplexity', 't_sparse_mode_accuracy', 't_firing_rate', 't_loss',
-    'v_firing_rate_ma_lsnn', 'v_firing_rate_ma_lsnn_1',
-    'firing_rate_ma_lsnn', 'firing_rate_ma_lsnn_1',
+    'perplexity', 'sparse_mode_accuracy', 'loss',
+    'v_perplexity', 'v_sparse_mode_accuracy', 'v_loss',
+    't_perplexity', 't_sparse_mode_accuracy', 't_loss',
+    'firing_rate_ma_lsnn_initial', 'firing_rate_ma_lsnn_final',
+    'firing_rate_ma_lsnn_1_initial', 'firing_rate_ma_lsnn_1_final',
+    'v_firing_rate_ma_lsnn_initial', 'v_firing_rate_ma_lsnn_final',
+    'v_firing_rate_ma_lsnn_1_initial', 'v_firing_rate_ma_lsnn_1_final',
+    't_firing_rate_ma_lsnn_initial', 't_firing_rate_ma_lsnn_final',
+    't_firing_rate_ma_lsnn_1_initial', 't_firing_rate_ma_lsnn_1_final',
 ]
 
-config_keys = [
-    'comments', 'initializer', 'optimizer_name', 'seed',
-    'weight_decay', 'clipnorm', 'task_name', 'net_name',  # 'lr_schedule'  # 'continue_training',
-]
+config_keys = ['comments', 'initializer', 'optimizer_name', 'seed', 'weight_decay', 'clipnorm', 'task_name', 'net_name']
 hyperparams_keys = [
     'n_params', 'final_epochs', 'duration_experiment', 'convergence', 'lr', 'stack', 'n_neurons', 'embedding',
     'batch_size',
@@ -168,16 +173,7 @@ keep_columns = history_keys + config_keys + hyperparams_keys + extras
 remove_columns = [k for k in df.columns if k not in keep_columns]
 df.drop(columns=remove_columns, inplace=True)
 
-df = df.rename(
-    columns={
-        'val_sparse_categorical_accuracy': 'val_zacc', 'val_sparse_mode_accuracy': 'val_macc',
-        'sparse_categorical_accuracy_test': 'test_macc', 'val_perplexity': 'val_ppl',
-        'perplexity_test': 'test_ppl',
-        't_sparse_mode_accuracy': 't_macc', 't_perplexity': 't_ppl',
-        'v_sparse_mode_accuracy': 'v_macc', 'v_perplexity': 'v_ppl',
-    },
-    inplace=False
-)
+df = simplify_col_names(df)
 
 
 def fix_df_comments(df):
@@ -196,13 +192,14 @@ def fix_df_comments(df):
 
 df = fix_df_comments(df)
 
-early_cols = ['task_name', 'net_name', *metrics_oi, 'n_params', 'final_epochs', 'comments', 'firing_rate_ma_lsnn',
-              'firing_rate_ma_lsnn_1']
+print(df.columns)
+early_cols = ['task_name', 'net_name', *metrics_oi, 'n_params', 'final_epochs', 'comments']
 some_cols = [n for n in list(df.columns) if not n in early_cols]
 df = df[early_cols + some_cols]
 
+# print(df['duration_experiment'])
+
 # group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
-group_cols = ['net_name', 'task_name', 'initializer', 'comments']
 # only 4 experiments of the same type, so they have comparable statistics
 
 if reduce_samples:
@@ -547,6 +544,68 @@ elif args.type == 'lr_sg':
     plt.show()
     plot_filename = f'experiments/lr_sg.pdf'
     fig.savefig(plot_filename, bbox_inches='tight')
+
+
+
+elif args.type == 'sparsity':
+    n_cols = 4
+    n_rows = 1
+    alpha = .7
+    data_split = 'v_' # v_ t_ ''
+    metric = data_split + 'macc'  # t_macc v_macc
+
+    net_name = 'LIF'  # LIF sLSTM
+
+    fig, axs = plt.subplots(
+        n_rows, n_cols, figsize=(12, 7),
+        gridspec_kw={'wspace': .5, 'hspace': .5},
+        sharey=True
+    )
+
+    # if not isinstance(axs, list):
+    #     axs = [axs]
+
+    mdf = mdf[mdf['comments'].str.contains('7_')]
+    df = df[df['comments'].str.contains('7_')]
+    df = df[df['comments'].str.contains('_v0m')]
+
+    # plot lr vs metric
+    idf = df
+    idf = idf[~df['comments'].str.contains('adjff')]
+    # idf = idf.sort_values(by=['mean_' + metric], ascending=False)
+
+    frs0 = idf[data_split + 'fr_initial'].values
+    frs1 = idf[data_split + 'fr_1_initial'].values
+    accs = idf[metric].values
+    axs[0].scatter(frs0, accs, alpha=alpha, color='darksalmon')
+    axs[0].scatter(frs1, accs, alpha=alpha, color='sienna')
+
+    frs0 = idf[data_split + 'fr_final'].values
+    frs1 = idf[data_split + 'fr_1_final'].values
+    accs = idf[metric].values
+    axs[1].scatter(frs0, accs, alpha=alpha, color='darksalmon')
+    axs[1].scatter(frs1, accs, alpha=alpha, color='sienna')
+
+    idf = df
+    idf = idf[df['comments'].str.contains('adjff:.01')]
+
+    frs0i = idf[data_split + 'fr_initial'].values
+    frs1i = idf[data_split + 'fr_1_initial'].values
+    frs0f = idf[data_split + 'fr_final'].values
+    frs1f = idf[data_split + 'fr_1_final'].values
+    accs = idf[metric].values
+    axs[2].scatter(frs0i, accs, alpha=alpha, color='darksalmon')
+    axs[2].scatter(frs1i, accs, alpha=alpha, color='sienna')
+    axs[3].scatter(frs0f, accs, alpha=alpha, color='darksalmon')
+    axs[3].scatter(frs1f, accs, alpha=alpha, color='sienna')
+
+    for ax in axs.reshape(-1):
+        for pos in ['right', 'left', 'bottom', 'top']:
+            ax.spines[pos].set_visible(False)
+
+    plt.show()
+    # plot_filename = f'experiments/sparsity.pdf'
+    # fig.savefig(plot_filename, bbox_inches='tight')
 
 elif args.type == 'init_sg':
 

@@ -354,7 +354,7 @@ class aLSNN(baseLSNN):
             self.internal_current = self.add_weight(shape=(self.num_neurons,), initializer=initializer,
                                                     name='internal_current', trainable=True)
 
-            print(stacki, v0m, np.mean(self.internal_current))
+            # print(stacki, v0m, np.mean(self.internal_current))
 
         if 'bistabilizer' in self.config:
             initializer = tf.keras.initializers.RandomNormal(stddev=1. / tf.sqrt(tf.cast(n_input, tf.float32)))
