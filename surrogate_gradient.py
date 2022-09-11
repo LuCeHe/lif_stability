@@ -61,7 +61,7 @@ def config():
 
     # net
     # LSNN maLSNN spikingLSTM
-    net_name = 'maLSNN'
+    net_name = 'spikingLSTM'
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
