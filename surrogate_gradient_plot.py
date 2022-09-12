@@ -57,11 +57,11 @@ HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 metric_sort = 'v_ppl'
 metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc', 'fr_initial', 'fr_final', 'fr_1_initial', 'fr_1_final']
 reduce_samples = False
-group_cols = ['net_name', 'task_name', 'initializer', 'comments']
+group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='sparsity', type=str, help='main behavior',
+    '--type', default='nothing', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -177,10 +177,14 @@ df = simplify_col_names(df)
 
 
 def fix_df_comments(df):
+
+    df['comments'] = df['comments'].str.replace('_ptb2', '')
     for ps in possible_pseudod:
+        print('timerepeat:2' + ps, '->', 'timerepeat:2_' + ps)
         df['comments'] = df['comments'].str.replace('timerepeat:2' + ps, 'timerepeat:2_' + ps)
 
-    df = df[df['comments'].str.contains('_v0m')]
+    df = df[df['task_name'].str.contains('PTB')]
+    # df = df[df['comments'].str.contains('_v0m')]
     # df = df[df['d_name'] > r'C:\Users\PlasticDiscobolus\work\sg_design_lif\experiments\2022-08-13']
     # df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
 
