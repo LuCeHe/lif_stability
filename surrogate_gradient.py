@@ -1,4 +1,4 @@
-import os, shutil, logging, json, sys
+import os, shutil, logging, json, sys, copy
 
 import numpy as np
 import pandas as pd
@@ -61,11 +61,11 @@ def config():
 
     # net
     # LSNN maLSNN spikingLSTM
-    net_name = 'spikingLSTM'
+    net_name = 'maLSNN'
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
-    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m'
+    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m_test'
     # comments = '8_embproj_nogradreset_dropout:.3_timerepeat:2_readaptsg:3_asgname:movedfastsigmoid'
 
     # optimizer properties
@@ -200,11 +200,29 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
     # evaluation = train_model.evaluate(gen_val, return_dict=True, verbose=True)
 
     if 'adjfi' in comments:
+
+        new_model_args = copy.deepcopy(model_args)
+        new_model_args['comments'] = new_model_args['comments'].replace('adjff:','')
+
+
+        tf.keras.backend.clear_session()
+        del train_model
+
+        train_model = build_model(**new_model_args)
+
+
         target_firing_rate = str2val(comments, 'adjfi', float, default=.1)
+        adjfi_epochs = 2 if 'test' in comments else 15
         sparsification_results = reduce_model_firing_activity(
-            train_model, target_firing_rate, gen_train, epochs=15
+            train_model, target_firing_rate, gen_train, epochs=adjfi_epochs
         )
         results.update(sparsification_results)
+        weights = train_model.get_weights()
+        tf.keras.backend.clear_session()
+        del train_model
+
+        train_model = build_model(**model_args)
+        train_model.set_weights(weights)
 
     if 'readaptsg' in comments:
         readapt = str2val(comments, 'readaptsg', int, default=3)

@@ -41,9 +41,9 @@ CDIR = os.path.dirname(os.path.realpath(__file__))
 EXPERIMENTS = os.path.join(CDIR, 'experiments')
 
 GEXPERIMENTS = [
-    # r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
+    r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-21--adaptsg',
-    r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
+    # r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
@@ -61,7 +61,7 @@ group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='nothing', type=str, help='main behavior',
+    '--type', default='sparsity', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -177,13 +177,12 @@ df = simplify_col_names(df)
 
 
 def fix_df_comments(df):
-
     df['comments'] = df['comments'].str.replace('_ptb2', '')
     for ps in possible_pseudod:
         print('timerepeat:2' + ps, '->', 'timerepeat:2_' + ps)
         df['comments'] = df['comments'].str.replace('timerepeat:2' + ps, 'timerepeat:2_' + ps)
 
-    df = df[df['task_name'].str.contains('PTB')]
+    # df = df[df['task_name'].str.contains('PTB')]
     # df = df[df['comments'].str.contains('_v0m')]
     # df = df[df['d_name'] > r'C:\Users\PlasticDiscobolus\work\sg_design_lif\experiments\2022-08-13']
     # df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
@@ -555,8 +554,10 @@ elif args.type == 'sparsity':
     n_cols = 4
     n_rows = 1
     alpha = .7
-    data_split = 't_'  # v_ t_ ''
-    metric = data_split + 'macc'  # t_macc v_macc
+    data_split = 'v_'  # v_ t_ ''
+    metric = 'ppl'  # macc ppl
+    metric = data_split + metric
+    task_name = 'SHD'  # sl-MNIST SHD PTB
 
     net_name = 'LIF'  # LIF sLSTM
 
@@ -576,8 +577,10 @@ elif args.type == 'sparsity':
     suplegend = fig.legend(ncol=2, handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -.1))
 
     mdf = mdf[mdf['comments'].str.contains('7_')]
+    mdf = mdf[mdf['task_name'].str.contains(task_name)]
     df = df[df['comments'].str.contains('7_')]
     df = df[df['comments'].str.contains('_v0m')]
+    df = df[df['task_name'].str.contains(task_name)]
 
     # plot lr vs metric
     idf = df
@@ -605,7 +608,8 @@ elif args.type == 'sparsity':
     axs[1].set_xlabel('Final firing rate')
 
     idf = df
-    idf = idf[df['comments'].str.contains('adjff:.01')]
+    # idf = idf[df['comments'].str.contains('adjff:.01')]
+    idf = idf[df['comments'].str.contains('adjff')]
 
     frs0i = idf[data_split + 'fr_initial'].values
     frs1i = idf[data_split + 'fr_1_initial'].values
@@ -625,7 +629,6 @@ elif args.type == 'sparsity':
     axs[3].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
     axs[3].set_xlabel('Final firing rate')
 
-
     if 'v_' in data_split:
         ylabel = 'Validation accuracy'
     elif 't_' in data_split:
@@ -639,8 +642,10 @@ elif args.type == 'sparsity':
         for pos in ['right', 'left', 'bottom', 'top']:
             ax.spines[pos].set_visible(False)
 
-    fig.text(0.73, .93, 'Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center', fontsize=14)
-    fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center', fontsize=14)
+    fig.text(0.73, .93, 'Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center',
+             fontsize=14)
+    fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center',
+             fontsize=14)
 
     plt.show()
     plot_filename = f'experiments/{data_split}_sparsity.pdf'
