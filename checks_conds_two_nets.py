@@ -43,9 +43,9 @@ print(all_conditions)
 parser = argparse.ArgumentParser()
 
 # Required parameters
-parser.add_argument("--condition", default='_conditionI_', type=str,
+parser.add_argument("--condition", default='_conditionII_', type=str,
                     help="Condition to test: " + ", ".join(all_conditions))
-parser.add_argument("--task_name", default='heidelberg', type=str, help="Task to test")
+parser.add_argument("--task_name", default='sl_mnist', type=str, help="Task to test")
 parser.add_argument("--steps_per_epoch", default=2, type=int, help="Steps per Epoch")
 parser.add_argument("--seed", default=2, type=int, help="Random seed")
 parser.add_argument("--tests", default=0, type=int, help="Test on smaller architectures for speed")
@@ -104,6 +104,20 @@ for comment in tqdm([comment, comment.replace('condition', '')]):
                'encoder' in name and name.endswith('_0')}
         evaluation = {k.replace('encoder', 'fr'): np.mean(v).round(3) for k, v in trt.items()}
 
+    elif args.condition == '_conditionII_':
+        grad_tests = True if 'III' in c or 'IV' in c or c == '' else False
+        test_results = Tests(args.task_name, gen, model, EXPERIMENT, save_pickle=False,
+                             subdir_name='init', save_plots=False, model_args=model_args,
+                             grad_tests=grad_tests, seed=s)
+        evaluation = model.evaluate(gen, return_dict=True, verbose=False)
+        print(evaluation.keys())
+        evaluation = {k: v for k, v in evaluation.items() if 'curr_dis_ma_lsnn' in k}
+        # evaluation = {
+        #     k: 2 * evaluation['curr_dis_ma_lsnn' + k] / (
+        #                 evaluation['var_in_ma_lsnn' + k] + evaluation['var_rec_ma_lsnn' + k])
+        #     for k in ['', '_1']
+        # }
+
     else:
 
         grad_tests = True if 'III' in c or 'IV' in c or c == '' else False
@@ -116,16 +130,11 @@ for comment in tqdm([comment, comment.replace('condition', '')]):
     del model
 
     evaluations.append(evaluation)
+    print(evaluation.keys())
 
-if args.condition == '_conditionI_':
-    firings = [{k: v for k, v in e.items()} for e in evaluations]
+x = PrettyTable()
+x.field_names = ["metric", args.condition, "unconditioned"]
+for k in evaluations[0].keys():
+    x.add_row([k, evaluations[0][k], evaluations[1][k]])
 
-    x = PrettyTable()
-    x.field_names = ["metric", args.condition, "unconditioned"]
-    for k in firings[0].keys():
-        x.add_row([k, firings[0][k], firings[1][k]])
-
-    print(x)
-
-elif args.condition == '_conditionII_':
-    pass
+print(x)
