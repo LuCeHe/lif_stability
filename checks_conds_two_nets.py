@@ -45,14 +45,9 @@ parser = argparse.ArgumentParser()
 # Required parameters
 parser.add_argument("--condition", default='_conditionI_', type=str,
                     help="Condition to test: " + ", ".join(all_conditions))
-parser.add_argument("--task_name", default='sl_mnist', type=str, help="Task to test")
+parser.add_argument("--task_name", default='heidelberg', type=str, help="Task to test")
 parser.add_argument("--steps_per_epoch", default=2, type=int, help="Steps per Epoch")
 parser.add_argument("--seed", default=2, type=int, help="Random seed")
-parser.add_argument("--plot", default=1, type=int, help="Plot")
-parser.add_argument("--same_length_data", default=0, type=int, help="Plot the same amount of seeds for every condition")
-parser.add_argument("--plot_existing", default=1, type=int, help="Plot existing seeds, or create new seeds")
-parser.add_argument("--histogram", default=1, type=int, help="Plot histogram or scatter")
-parser.add_argument("--redoseeds", default=0, type=int, help="Redo seeds that were already computed before")
 parser.add_argument("--tests", default=0, type=int, help="Test on smaller architectures for speed")
 args = parser.parse_args()
 
@@ -85,7 +80,6 @@ evaluations = []
 print('\nLoading Models...\n')
 
 for comment in tqdm([comment, comment.replace('condition', '')]):
-
     gen = Task(timerepeat=timerepeat, batch_size=batch_size, steps_per_epoch=steps_per_epoch,
                name=args.task_name, train_val_test='val', maxlen=maxlen, comments=base_comments)
 
@@ -93,7 +87,7 @@ for comment in tqdm([comment, comment.replace('condition', '')]):
         task_name=args.task_name, net_name='maLSNN', n_neurons=n_neurons, lr=0., stack=stack,
         loss_name='sparse_categorical_crossentropy', embedding=embedding, optimizer_name='SWAAdaBelief',
         lr_schedule='', weight_decay=.01 if not 'mnist' in args.task_name else 0., clipnorm=1.,
-        initializer='glorot_uniform', comments=comment,
+        initializer='he_uniform', comments=comment,
         in_len=gen.in_len, n_in=gen.in_dim, out_len=gen.out_len, n_out=gen.out_dim, final_epochs=gen.epochs,
     )
     model = build_model(**model_args)
@@ -104,11 +98,12 @@ for comment in tqdm([comment, comment.replace('condition', '')]):
     batch = gen.__getitem__()
     task = {'input_spikes': batch[0][0], 'target_output': batch[0][1]}
     trt = test_model.predict(batch, batch_size=gen.batch_size)
-    trt = {name: pred for name, pred in zip(test_model.output_names, trt) if 'encoder' in name and name.endswith('_0')}
+    trt = {name: pred[:, 50:] for name, pred in zip(test_model.output_names, trt) if
+           'encoder' in name and name.endswith('_0')}
     print(trt.keys())
-    for batch_sample in tqdm(range(min(gen.batch_size, 3)), disable=False):
-        pathplot = os.path.join(EXPERIMENT, 'plot_s{}_{}.png'.format(batch_sample, png_suffix))
-        smart_plot(trt, pathplot, batch_sample, show=True)
+    # for batch_sample in tqdm(range(min(gen.batch_size, 3)), disable=False):
+    #     pathplot = os.path.join(EXPERIMENT, 'plot_s{}_{}.png'.format(batch_sample, png_suffix))
+    #     smart_plot(trt, pathplot, batch_sample, show=True)
 
     results = {}
 
@@ -121,11 +116,18 @@ for comment in tqdm([comment, comment.replace('condition', '')]):
     tf.keras.backend.clear_session()
     del model
     print(evaluation.keys())
+
+    evaluation = {k.replace('encoder', 'fr'): np.mean(v).round(3) for k, v in trt.items()}
+    # print([v.shape for k, v in tmp_evaluation.items()])
+    # print(tmp_evaluation.keys())
     evaluations.append(evaluation)
 
-firings = [{k.replace('firing_rate_ma_lsnn', 'fr'): round(v, 3)
-            for k, v in e.items() if 'firing_rate_ma_lsnn' in k}
-           for e in evaluations]
+# firings = [{k.replace('firing_rate_ma_lsnn', 'fr'): round(v, 3)
+#             for k, v in e.items() if 'firing_rate_ma_lsnn' in k}
+#            for e in evaluations]
+
+# firings = [{k: round(v, 3) for k, v in e.items()} for e in evaluations]
+firings = [{k: v for k, v in e.items()} for e in evaluations]
 
 x = PrettyTable()
 x.field_names = ["metric", args.condition, "unconditioned"]
