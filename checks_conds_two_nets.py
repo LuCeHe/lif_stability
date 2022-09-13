@@ -92,46 +92,40 @@ for comment in tqdm([comment, comment.replace('condition', '')]):
     )
     model = build_model(**model_args)
 
-    test_model = get_test_model(model)
-    png_suffix = 'c' if 'condition' in comment else 'u'
-
-    batch = gen.__getitem__()
-    task = {'input_spikes': batch[0][0], 'target_output': batch[0][1]}
-    trt = test_model.predict(batch, batch_size=gen.batch_size)
-    trt = {name: pred[:, 50:] for name, pred in zip(test_model.output_names, trt) if
-           'encoder' in name and name.endswith('_0')}
-    print(trt.keys())
-    # for batch_sample in tqdm(range(min(gen.batch_size, 3)), disable=False):
-    #     pathplot = os.path.join(EXPERIMENT, 'plot_s{}_{}.png'.format(batch_sample, png_suffix))
-    #     smart_plot(trt, pathplot, batch_sample, show=True)
-
     results = {}
+    if args.condition == '_conditionI_':
+        test_model = get_test_model(model)
+        png_suffix = 'c' if 'condition' in comment else 'u'
 
-    grad_tests = True if 'III' in c or 'IV' in c or c == '' else False
-    test_results = Tests(args.task_name, gen, model, EXPERIMENT, save_pickle=False,
-                         subdir_name='init', save_plots=False, model_args=model_args,
-                         grad_tests=grad_tests, seed=s)
-    evaluation = model.evaluate(gen, return_dict=True, verbose=False)
+        batch = gen.__getitem__()
+        task = {'input_spikes': batch[0][0], 'target_output': batch[0][1]}
+        trt = test_model.predict(batch, batch_size=gen.batch_size)
+        trt = {name: pred[:, 50:] for name, pred in zip(test_model.output_names, trt) if
+               'encoder' in name and name.endswith('_0')}
+        evaluation = {k.replace('encoder', 'fr'): np.mean(v).round(3) for k, v in trt.items()}
+
+    else:
+
+        grad_tests = True if 'III' in c or 'IV' in c or c == '' else False
+        test_results = Tests(args.task_name, gen, model, EXPERIMENT, save_pickle=False,
+                             subdir_name='init', save_plots=False, model_args=model_args,
+                             grad_tests=grad_tests, seed=s)
+        evaluation = model.evaluate(gen, return_dict=True, verbose=False)
 
     tf.keras.backend.clear_session()
     del model
-    print(evaluation.keys())
 
-    evaluation = {k.replace('encoder', 'fr'): np.mean(v).round(3) for k, v in trt.items()}
-    # print([v.shape for k, v in tmp_evaluation.items()])
-    # print(tmp_evaluation.keys())
     evaluations.append(evaluation)
 
-# firings = [{k.replace('firing_rate_ma_lsnn', 'fr'): round(v, 3)
-#             for k, v in e.items() if 'firing_rate_ma_lsnn' in k}
-#            for e in evaluations]
+if args.condition == '_conditionI_':
+    firings = [{k: v for k, v in e.items()} for e in evaluations]
 
-# firings = [{k: round(v, 3) for k, v in e.items()} for e in evaluations]
-firings = [{k: v for k, v in e.items()} for e in evaluations]
+    x = PrettyTable()
+    x.field_names = ["metric", args.condition, "unconditioned"]
+    for k in firings[0].keys():
+        x.add_row([k, firings[0][k], firings[1][k]])
 
-x = PrettyTable()
-x.field_names = ["metric", args.condition, "unconditioned"]
-for k in firings[0].keys():
-    x.add_row([k, firings[0][k], firings[1][k]])
+    print(x)
 
-print(x)
+elif args.condition == '_conditionII_':
+    pass
