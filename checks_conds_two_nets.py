@@ -43,7 +43,7 @@ print(all_conditions)
 parser = argparse.ArgumentParser()
 
 # Required parameters
-parser.add_argument("--condition", default='_conditionII_', type=str,
+parser.add_argument("--condition", default='_conditionIII_', type=str,
                     help="Condition to test: " + ", ".join(all_conditions))
 parser.add_argument("--task_name", default='sl_mnist', type=str, help="Task to test")
 parser.add_argument("--steps_per_epoch", default=2, type=int, help="Steps per Epoch")
@@ -56,7 +56,7 @@ print(json.dumps(vars(args), sort_keys=True, indent=4))
 
 steps_per_epoch = None if args.steps_per_epoch == -1 else args.steps_per_epoch
 
-base_comments = '6_exponentialpseudod_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
+base_comments = '6_exponentialpseudod_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_test'
 
 timerepeat = str2val(base_comments, 'timerepeat', int, default=1)
 maxlen = str2val(base_comments, 'maxlen', int, default=100)
@@ -124,7 +124,11 @@ for comment in tqdm([comment, comment.replace('condition', '')]):
         test_results = Tests(args.task_name, gen, model, EXPERIMENT, save_pickle=False,
                              subdir_name='init', save_plots=False, model_args=model_args,
                              grad_tests=grad_tests, seed=s)
-        evaluation = model.evaluate(gen, return_dict=True, verbose=False)
+
+
+        print(test_results.keys())
+        # evaluation
+
 
     tf.keras.backend.clear_session()
     del model

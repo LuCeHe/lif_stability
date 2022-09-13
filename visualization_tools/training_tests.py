@@ -2,6 +2,7 @@ import os, pickle, logging
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
+
 import tensorflow as tf
 
 from sg_design_lif.visualization_tools.plotting_tools import smart_plot, bpc_prior
@@ -154,9 +155,14 @@ def do_grad_tests(model_args, batch, task, batch_size, seed=None):
     all_maxs = [[] for _ in stack]
     all_vars = [[] for _ in stack]
     time_steps = batch[0][0].shape[1]
-    time_steps = int(time_steps/2) + 2
+    timei = int(time_steps/2)
+    print(model_args['comments'])
+    if 'test' in model_args['comments']:
+        timef = int(time_steps/2) + 2
+    else:
+        timef = int(time_steps/2) + 2
 
-    for t in tqdm(range(int(time_steps/2), time_steps)):
+    for t in tqdm(range(timei, timef)):
         # print(t, '-' * 30)
         tf.random.set_seed(seed)
         bt = batch[0][0][:, t, :][:, None]

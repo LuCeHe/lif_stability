@@ -104,6 +104,13 @@ class baseLSNN(tf.keras.layers.Layer):
 
             recurrent_init = PluriInitializerI(mean=mean_rec, scale=tf.math.sqrt(var_rec))
 
+        if 'wrecm' in self.config:
+            wrecm = str2val(self.config, f'wrecm{stacki}', float, default=0)
+            recurrent_init = PluriInitializerI(mean=wrecm)
+
+        self.recurrent_weights = self.add_weight(shape=(n_rec, n_rec), initializer=recurrent_init,
+                                                 name='recurrent_weights')
+
         if 'conditionIII' in self.config:
             od_type = str2val(self.config, 'conditionIII', str, default='c')
             thr = self.thr if not 'multreset' in self.config else 0
@@ -138,13 +145,6 @@ class baseLSNN(tf.keras.layers.Layer):
         spath = os.path.join(exp, 'trained_models', 'sharpness_stacki{}.npy'.format(stacki))
         np.save(spath, sharpness)
         self.spike_type = SurrogatedStep(config=self.config, dampening=dampening, sharpness=sharpness)
-
-        if 'wrecm' in self.config:
-            wrecm = str2val(self.config, f'wrecm{stacki}', float, default=0)
-            recurrent_init = PluriInitializerI(mean=wrecm)
-
-        self.recurrent_weights = self.add_weight(shape=(n_rec, n_rec), initializer=recurrent_init,
-                                                 name='recurrent_weights')
 
         # print(stacki, wrecm, np.mean(self.recurrent_weights))
 
@@ -346,7 +346,6 @@ class aLSNN(baseLSNN):
             self.__dict__.update({k: p})
 
         if '_learnv0' in self.config or 'v0m' in self.config:
-
             stacki = str2val(self.config, 'stacki', int, default=0)
             v0m = str2val(self.config, f'v0m{stacki}', float, default=0)
             initializer = tf.keras.initializers.RandomNormal(mean=v0m)
