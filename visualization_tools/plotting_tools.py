@@ -280,7 +280,7 @@ def img2gif(destination_path, name_clue=''):
         writer.append_data(image)
 
 
-def smart_plot(nts, pathplot=None, batch_sample=0, clean=True):
+def smart_plot(nts, pathplot=None, batch_sample=0, clean=True, show=False):
     if not isinstance(nts, list): nts = [nts]
 
     if len(nts) == 1:
@@ -334,6 +334,9 @@ def smart_plot(nts, pathplot=None, batch_sample=0, clean=True):
 
     if not pathplot is None:
         fig.savefig(pathplot, bbox_inches='tight')
+
+    if show:
+        plt.show()
 
     if clean:
         plt.close('all')

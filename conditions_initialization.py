@@ -12,7 +12,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
 from GenericTools.stay_organized.utils import str2val, NumpyEncoder, setReproducible
-from sg_design_lif.generate_data.task_redirection import Task, checkTaskMeanVariance
+from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import Task, checkTaskMeanVariance
 from sg_design_lif.neural_models.config import default_config
 from sg_design_lif.neural_models.full_model import build_model
 from sg_design_lif.visualization_tools.training_tests import Tests
@@ -45,12 +45,13 @@ parser.add_argument(
 )
 parser.add_argument("--task_name", default='sl_mnist', type=str, help="Task to test")
 parser.add_argument("--steps_per_epoch", default=2, type=int, help="Steps per Epoch")
-parser.add_argument("--n_seeds", default=1, type=int, help="Steps per Epoch")
-parser.add_argument("--init_seed", default=1, type=int, help="Steps per Epoch")
+parser.add_argument("--n_seeds", default=1, type=int, help="Number of seeds")
+parser.add_argument("--init_seed", default=1, type=int, help="Initial seed")
 parser.add_argument("--plot", default=1, type=int, help="Plot")
+parser.add_argument("--same_length_data", default=0, type=int, help="Plot the same amount of seeds for every condition")
 parser.add_argument("--plot_existing", default=1, type=int, help="Plot existing seeds, or create new seeds")
 parser.add_argument("--histogram", default=1, type=int, help="Plot histogram or scatter")
-parser.add_argument("--redoseeds", default=1, type=int, help="Redo seeds that were already computed before")
+parser.add_argument("--redoseeds", default=0, type=int, help="Redo seeds that were already computed before")
 parser.add_argument("--tests", default=0, type=int, help="Test on smaller architectures for speed")
 args = parser.parse_args()
 print(json.dumps(vars(args), sort_keys=True, indent=4))
@@ -134,10 +135,21 @@ conditioned = {'cI': [], 'cII': [], 'cIII': [], 'cIV': [], }
 
 
 def condition_operation(c, config):
+    unique_layers_1 = [k.replace('_fr_mean_init', '') for k in config.keys() if '_fr_mean_init' in k]
     unique_layers_2 = [k.replace('var_in_ma_', '') for k in config.keys() if 'var_in_ma_' in k]
-    unique_layers_1 = [k.replace('_grad_III_mean_init', '') for k in config.keys() if '_grad_III_mean_init' in k]
+
+    unique_layers_3 = [k.replace('_grad_IV_init', '') for k in config.keys() if '_grad_IV_init' in k]
+    unique_layers_4 = [k.replace('_grad_III_init', '') for k in config.keys() if '_grad_III_init' in k]
+
+    print(config.keys())
+    print(unique_layers_1)
+    print(unique_layers_2)
+    print(unique_layers_3)
+    print(unique_layers_4)
 
     if c == 'cI':
+        print(config['encoder_0_0_fr_mean_init'])
+        print(unique_layers_1)
         result = np.mean([abs(config[l + '_fr_mean_init'] - .5) for l in unique_layers_1])
     elif c == 'cII':
         result = np.mean(
@@ -148,12 +160,12 @@ def condition_operation(c, config):
     elif c == 'cIII':
         result = np.mean(
             [config[l + '_grad_III_init'] / config[l + '_grad_III_mean_init']
-             for l in unique_layers_1]
+             for l in unique_layers_4]
         )
     elif c == 'cIV':
         result = np.mean(
             [config[l + '_grad_IV_init'] / config[l + '_grad_IV_mean_init']
-             for l in unique_layers_1]
+             for l in unique_layers_3]
         )
     else:
         raise NotImplementedError
@@ -183,10 +195,11 @@ if args.plot:
     print('conditioned  ', conditioned)
 
     # make sure the two lists have the same length for plotting conveniently after
-    for k in unconditioned.keys():
-        min_len = min(len(unconditioned[k]), len(conditioned[k]))
-        unconditioned[k] = unconditioned[k][:min_len]
-        conditioned[k] = conditioned[k][:min_len]
+    if args.same_length_data:
+        for k in unconditioned.keys():
+            min_len = min(len(unconditioned[k]), len(conditioned[k]))
+            unconditioned[k] = unconditioned[k][:min_len]
+            conditioned[k] = conditioned[k][:min_len]
 
     n_axis = len(tag_conditions)
     fig, axs = plt.subplots(n_axis, 1, gridspec_kw={'wspace': .0, 'hspace': 0.}, figsize=(6, 6), sharex=True)
