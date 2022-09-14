@@ -26,7 +26,7 @@ if args.type == 'send':
     save_model = False
     # final_experiments(seed)
     experiments = []
-    send_fs = ['sparsity']  # 1, 2, 3, 4, 5, 6 'extra' sparsity adaptsg
+    send_fs = ['sparsity']  # 1, 2, 3, 4, 5, lrs 'extra' sparsity adaptsg conditions
 
     # f1
     if 1 in send_fs:
@@ -175,7 +175,7 @@ if args.type == 'send':
             }
             experiments.append(experiment)
 
-    if 5 in send_fs:
+    if 'conditions' in send_fs:
         # f5
         combinations_conditions = [
             'naive',
@@ -212,7 +212,7 @@ if args.type == 'send':
         }
         experiments.append(experiment)
 
-    if 6 in send_fs:
+    if 'lrs' in send_fs:
         incomplete_comments = '6_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'
         comments = [incomplete_comments + p for p in possible_pseudod]
 
@@ -237,6 +237,7 @@ if args.type == 'send':
 
     if 'sparsity' in send_fs:
         incomplete_comment = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_v0m_'
+        incomplete_comment = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_v0m_originalpseudod_'
 
         incomplete_comments = [incomplete_comment + f'adjfi:{i}_' for i in [.01, .1, .3, .5, .7, .9, .99]]
 
@@ -245,7 +246,8 @@ if args.type == 'send':
             comments.extend([c + ff for c in incomplete_comments])
 
         experiment = {
-            'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
+            # 'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
+            'task_name': ['heidelberg'], 'net_name': ['maLSNN'],
             'comments': comments, 'seed': seeds,
         }
         experiments.append(experiment)

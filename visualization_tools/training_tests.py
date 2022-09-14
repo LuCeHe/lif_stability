@@ -196,19 +196,24 @@ def do_grad_tests(model_args, batch, task, batch_size, seed=None):
 
         states = states_p1
         for i, g in enumerate(grads):
+            print('-'*30)
+            print(g)
             all_maxs[i].append(np.max(g, axis=-1)[..., None])
             all_vars[i].append(np.var(g, axis=-1)[..., None])
 
     all_maxs = [np.concatenate(gs, axis=1) for i, gs in enumerate(all_maxs)]
     all_vars = [np.concatenate(gs, axis=1) for i, gs in enumerate(all_vars)]
 
+    print(all_maxs)
     all_maxs_means = {f'encoder_{i}_1_grad_III_maxs': np.mean(gs) for i, gs in enumerate(all_maxs)}
     all_maxs_diff = {f'encoder_{i}_1_grad_III_maxs_diff': np.mean(np.diff(gs)) for i, gs in enumerate(all_maxs)}
     all_vars_means = {f'encoder_{i}_1_grad_vars': np.mean(gs, axis=1) for i, gs in enumerate(all_vars)}
     all_vars_diff = {f'encoder_{i}_1_vars_diff': np.mean(np.diff(gs)) for i, gs in enumerate(all_vars)}
+    results = {}
+
     for d in [all_maxs_means, all_maxs_diff, all_vars_means, all_vars_diff]:
-        task.update(d)
-    return task
+        results.update(d)
+    return results
 
 
 def Tests(task_name, gen, train_model, images_dir, max_pics=3, subdir_name='trained', png_suffix='', save_pickle=True,
@@ -223,9 +228,10 @@ def Tests(task_name, gen, train_model, images_dir, max_pics=3, subdir_name='trai
     trt = {name: pred for name, pred in zip(test_model.output_names, trt)}
     task.update(trt)
     if grad_tests:
-        task = do_grad_tests(model_args, batch, task, batch_size=gen.batch_size, seed=seed)
+        gresults = do_grad_tests(model_args, batch, task, batch_size=gen.batch_size, seed=seed)
     cresults = check_assumptions(task)
     test_results.update(cresults)
+    test_results.update(gresults)
 
     trained_images_dir = os.path.join(*[images_dir, subdir_name])
     if not os.path.isdir(trained_images_dir):

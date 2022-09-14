@@ -48,7 +48,7 @@ parser.add_argument("--condition", default='_conditionIII_', type=str,
 parser.add_argument("--task_name", default='sl_mnist', type=str, help="Task to test")
 parser.add_argument("--steps_per_epoch", default=2, type=int, help="Steps per Epoch")
 parser.add_argument("--seed", default=2, type=int, help="Random seed")
-parser.add_argument("--tests", default=0, type=int, help="Test on smaller architectures for speed")
+parser.add_argument("--tests", default=1, type=int, help="Test on smaller architectures for speed")
 args = parser.parse_args()
 
 setReproducible(args.seed)
@@ -56,7 +56,7 @@ print(json.dumps(vars(args), sort_keys=True, indent=4))
 
 steps_per_epoch = None if args.steps_per_epoch == -1 else args.steps_per_epoch
 
-base_comments = '6_exponentialpseudod_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_test'
+base_comments = '6_exponentialpseudod_embproj_noalif_multreset2_nogradreset_dropout:.3_timerepeat:2_test_reoldspike'
 
 timerepeat = str2val(base_comments, 'timerepeat', int, default=1)
 maxlen = str2val(base_comments, 'maxlen', int, default=100)
@@ -74,12 +74,12 @@ base_comments += f'_batchsize:{batch_size}_'
 c = args.condition
 s = args.seed
 
-comment = base_comments + c
+full_comment = base_comments + c
 
 evaluations = []
 print('\nLoading Models...\n')
 
-for comment in tqdm([comment, comment.replace('condition', '')]):
+for comment in tqdm([full_comment, full_comment.replace('condition', '')]):
     gen = Task(timerepeat=timerepeat, batch_size=batch_size, steps_per_epoch=steps_per_epoch,
                name=args.task_name, train_val_test='val', maxlen=maxlen, comments=base_comments)
 
@@ -125,6 +125,10 @@ for comment in tqdm([comment, comment.replace('condition', '')]):
                              subdir_name='init', save_plots=False, model_args=model_args,
                              grad_tests=grad_tests, seed=s)
 
+
+        # maxs_diff_init
+        # grad_III_maxs_init
+        evaluation = {k: v for k, v in test_results.items() if 'grad_III_maxs_init' in k}
 
         print(test_results.keys())
         # evaluation
