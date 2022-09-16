@@ -48,12 +48,12 @@ def config():
     seed = 41
 
     # task and net
-    # ptb time_ae simplest_random time_ae_merge ps_mnist heidelberg wiki103 wmt14 s_mnist xor small_s_mnist
-    # wordptb sl_mnist
+    # ptb time_ae simplest_random time_ae_merge ps_mnist wiki103 wmt14 s_mnist xor small_s_mnist
+    # wordptb sl_mnist heidelberg
     task_name = 'heidelberg'
 
     # test configuration
-    epochs = 3
+    epochs = 10
     steps_per_epoch = 1
     batch_size = 2
     stack = None
@@ -65,7 +65,8 @@ def config():
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
-    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m_test'
+    # comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m_test_annealing'
+    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjff:.01_v0m_test_annealing'
     # comments = '8_embproj_nogradreset_dropout:.3_timerepeat:2_readaptsg:3_asgname:movedfastsigmoid'
 
     # optimizer properties
@@ -124,6 +125,8 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
                      name=task_name, train_val_test='train', maxlen=maxlen, comments=comments)
     gen_val = Task(timerepeat=timerepeat, batch_size=batch_size, steps_per_epoch=steps_per_epoch,
                    name=task_name, train_val_test='val', maxlen=maxlen, comments=comments)
+    gen_val2 = Task(timerepeat=timerepeat, batch_size=batch_size, steps_per_epoch=steps_per_epoch,
+                    name=task_name, train_val_test='val', maxlen=maxlen, comments=comments)
     gen_test = Task(timerepeat=timerepeat, batch_size=batch_size, steps_per_epoch=steps_per_epoch,
                     name=task_name, train_val_test='test', maxlen=maxlen, comments=comments)
 
@@ -166,20 +169,20 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
     checkpoint_filepath = os.path.join(models_dir, 'checkpoint')
     callbacks = [
         LearningRateLogger(),
-        # VariablesLogger(variables_to_log=['hard_heaviside']),
+        VariablesLogger(variables_to_log=['switch']),
         TimeStopping(stop_time, 1),  # 22h=79200 s, 21h=75600 s, 20h=72000 s, 12h = 43200 s, 6h = 21600 s, 72h = 259200
         tf.keras.callbacks.ModelCheckpoint(
             filepath=checkpoint_filepath, save_weights_only=True, monitor='val_loss', mode='min', save_best_only=True
         ),
-        MultipleValidationSets({'v': gen_val, 't': gen_test}, verbose=0),
+        MultipleValidationSets({'v': gen_val2, 't': gen_test}, verbose=0),
         tf.keras.callbacks.CSVLogger(history_path),
     ]
 
     if 'annealing' in comments:
-        annealing_schedule = str2val(comments, 'annealing', str, default='ha')
+        annealing_schedule = str2val(comments, 'annealing', str, default='ea')
         callbacks.append(
             AnnealingCallback(
-                epochs=final_epochs, variables_to_anneal=['hard_heaviside'], annealing_schedule=annealing_schedule,
+                epochs=final_epochs, variables_to_anneal=['switch'], annealing_schedule=annealing_schedule,
             )
         )
 
@@ -200,16 +203,13 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
     # evaluation = train_model.evaluate(gen_val, return_dict=True, verbose=True)
 
     if 'adjfi' in comments:
-
         new_model_args = copy.deepcopy(model_args)
-        new_model_args['comments'] = new_model_args['comments'].replace('adjff:','')
-
+        new_model_args['comments'] = new_model_args['comments'].replace('adjff:', '')
 
         tf.keras.backend.clear_session()
         del train_model
 
         train_model = build_model(**new_model_args)
-
 
         target_firing_rate = str2val(comments, 'adjfi', float, default=.1)
         adjfi_epochs = 2 if 'test' in comments else 15
@@ -255,18 +255,28 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
 
         actual_epochs = history_df['epoch'].iloc[-1] + 1
         results['accumulated_epochs'] = str(int(results['accumulated_epochs']) + int(actual_epochs))
-        history_dict = {k: history_df[k].tolist() for k in history_df.columns.tolist()}
 
-        plot_filename = os.path.join(*[images_dir, 'history.png'])
-        plot_history(histories=history_dict, plot_filename=plot_filename, epochs=final_epochs)
-        json_filename = os.path.join(*[other_dir, 'history.json'])
+        history_dict = {k: history_df[k].tolist() for k in history_df.columns.tolist()}
+        json_filename = os.path.join(other_dir, 'history.json')
         history_jsonable = {k: np.array(v).astype(float).tolist() for k, v in history_dict.items()}
         json.dump(history_jsonable, open(json_filename, "w"))
 
-        # plot only validation curves
-        history_dict = {k: history_df[k].tolist() if 'val' in k else [] for k in history_df.columns.tolist()}
-        plot_filename = os.path.join(images_dir, 'history_val.png')
-        plot_history(histories=history_dict, plot_filename=plot_filename, epochs=final_epochs)
+        history_keys = history_df.columns.tolist()
+        lengh_keys = 6
+        no_vals_keys = [k for k in history_keys if not k.startswith('val_')]
+        all_chunks = [no_vals_keys[x:x + lengh_keys] for x in range(0, len(no_vals_keys), lengh_keys)]
+        for i, subkeys in enumerate(all_chunks):
+            history_dict = {k: history_df[k].tolist() for k in subkeys}
+            history_dict.update(
+                {'val_' + k: history_df['val_' + k].tolist() for k in subkeys if 'val_' + k in history_keys}
+            )
+            plot_filename = os.path.join(images_dir, f'history_{i}.png')
+            plot_history(histories=history_dict, plot_filename=plot_filename, epochs=final_epochs)
+
+            # plot only validation curves
+            # history_dict = {k: history_df[k].tolist() if 'val' in k else [] for k in subkeys}
+            # plot_filename = os.path.join(images_dir, f'history_val_{i}.png')
+            # plot_history(histories=history_dict, plot_filename=plot_filename, epochs=final_epochs)
 
         removable_checkpoints = sorted([d for d in os.listdir(models_dir) if 'checkpoint' in d])
         for d in removable_checkpoints: os.remove(os.path.join(models_dir, d))
@@ -290,7 +300,7 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
 
     evaluation = train_model.evaluate(gen_test, return_dict=True, verbose=True)
     for k in evaluation.keys():
-        results['test_'+ k] = evaluation[k]
+        results['test_' + k] = evaluation[k]
 
     results['n_params'] = train_model.count_params()
     results['final_epochs'] = str(actual_epochs)

@@ -196,7 +196,7 @@ def fix_df_comments(df):
 df = fix_df_comments(df)
 
 print(df.columns)
-early_cols = ['task_name', 'net_name', *metrics_oi, 'n_params', 'final_epochs', 'comments']
+early_cols = ['task_name', 'net_name', 'loss', *metrics_oi, 'n_params', 'final_epochs', 'comments']
 some_cols = [n for n in list(df.columns) if not n in early_cols]
 df = df[early_cols + some_cols]
 
@@ -554,12 +554,15 @@ elif args.type == 'sparsity':
     n_cols = 4
     n_rows = 1
     alpha = .7
-    data_split = 'v_'  # v_ t_ ''
+    data_split = 't_'  # v_ t_ ''
     metric = 'ppl'  # macc ppl
     metric = data_split + metric
-    task_name = 'SHD'  # sl-MNIST SHD PTB
+    task_name = 'PTB'  # sl-MNIST SHD PTB
 
     net_name = 'LIF'  # LIF sLSTM
+    triangular_sg = False
+
+    plot_1, plot_2, plot_3 = True, False, False
 
     legend_elements = [
         Line2D([], [], color='darksalmon', marker='o', linestyle='None', alpha=alpha,
@@ -568,88 +571,156 @@ elif args.type == 'sparsity':
                markersize=10, label='layer 2'),
     ]
 
-    fig, axs = plt.subplots(
-        n_rows, n_cols, figsize=(12, 7),
-        gridspec_kw={'wspace': .5, 'hspace': .5},
-        sharey=True
-    )
-
-    suplegend = fig.legend(ncol=2, handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -.1))
-
     mdf = mdf[mdf['comments'].str.contains('7_')]
     mdf = mdf[mdf['task_name'].str.contains(task_name)]
     df = df[df['comments'].str.contains('7_')]
     df = df[df['comments'].str.contains('_v0m')]
     df = df[df['task_name'].str.contains(task_name)]
 
-    # plot lr vs metric
-    idf = df
-    idf = idf[~df['comments'].str.contains('adjff')]
-
-    frs0i = idf[data_split + 'fr_initial'].values
-    frs1i = idf[data_split + 'fr_1_initial'].values
-    frs0f = idf[data_split + 'fr_final'].values
-    frs1f = idf[data_split + 'fr_1_final'].values
-
-    accs = idf[metric].values
-
-    r0 = np.corrcoef(accs, frs0i).round(2)[0, 1]
-    r1 = np.corrcoef(accs, frs1i).round(2)[0, 1]
-
-    axs[0].scatter(frs0i, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
-    axs[0].scatter(frs1i, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
-    axs[0].set_xlabel('Initial firing rate')
-
-    r0 = np.corrcoef(accs, frs0f).round(2)[0, 1]
-    r1 = np.corrcoef(accs, frs1f).round(2)[0, 1]
-
-    axs[1].scatter(frs0f, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
-    axs[1].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
-    axs[1].set_xlabel('Final firing rate')
-
-    idf = df
-    # idf = idf[df['comments'].str.contains('adjff:.01')]
-    idf = idf[df['comments'].str.contains('adjff')]
-
-    frs0i = idf[data_split + 'fr_initial'].values
-    frs1i = idf[data_split + 'fr_1_initial'].values
-    frs0f = idf[data_split + 'fr_final'].values
-    frs1f = idf[data_split + 'fr_1_final'].values
-    accs = idf[metric].values
-
-    r0 = np.corrcoef(accs, frs0i).round(2)[0, 1]
-    r1 = np.corrcoef(accs, frs1i).round(2)[0, 1]
-    axs[2].scatter(frs0i, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
-    axs[2].scatter(frs1i, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
-    axs[2].set_xlabel('Initial firing rate')
-
-    r0 = np.corrcoef(accs, frs0f).round(2)[0, 1]
-    r1 = np.corrcoef(accs, frs1f).round(2)[0, 1]
-    axs[3].scatter(frs0f, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
-    axs[3].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
-    axs[3].set_xlabel('Final firing rate')
-
-    if 'v_' in data_split:
-        ylabel = 'Validation accuracy'
-    elif 't_' in data_split:
-        ylabel = 'Test accuracy'
+    if triangular_sg:
+        mdf = mdf[mdf['comments'].str.contains('originalpseudod')]
+        df = df[df['comments'].str.contains('originalpseudod')]
     else:
-        ylabel = 'Train accuracy'
-    axs[0].set_ylabel(ylabel)
+        mdf = mdf[~mdf['comments'].str.contains('originalpseudod')]
+        df = df[~df['comments'].str.contains('originalpseudod')]
 
-    for ax in axs.reshape(-1):
-        ax.legend(loc='lower center', bbox_to_anchor=(0.5, .13))
-        for pos in ['right', 'left', 'bottom', 'top']:
-            ax.spines[pos].set_visible(False)
+    if plot_1:
+        fig, axs = plt.subplots(
+            n_rows, n_cols, figsize=(12, 7),
+            gridspec_kw={'wspace': .5, 'hspace': .5},
+            sharey=True
+        )
 
-    fig.text(0.73, .93, 'Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center',
-             fontsize=14)
-    fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center',
-             fontsize=14)
+        fig.legend(ncol=2, handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -.1))
 
-    plt.show()
-    plot_filename = f'experiments/{data_split}_sparsity.pdf'
-    fig.savefig(plot_filename, bbox_inches='tight')
+
+        # plot lr vs metric
+        idf = df
+        idf = idf[~idf['comments'].str.contains('adjff')]
+
+        frs0i = idf[data_split + 'fr_initial'].values
+        frs1i = idf[data_split + 'fr_1_initial'].values
+        frs0f = idf[data_split + 'fr_final'].values
+        frs1f = idf[data_split + 'fr_1_final'].values
+
+        accs = idf[metric].values
+
+        r0 = np.corrcoef(accs, frs0i).round(2)[0, 1]
+        r1 = np.corrcoef(accs, frs1i).round(2)[0, 1]
+
+        axs[0].scatter(frs0i, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
+        axs[0].scatter(frs1i, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
+        axs[0].set_xlabel('Initial firing rate')
+
+        r0 = np.corrcoef(accs, frs0f).round(2)[0, 1]
+        r1 = np.corrcoef(accs, frs1f).round(2)[0, 1]
+
+        axs[1].scatter(frs0f, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
+        axs[1].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
+        axs[1].set_xlabel('Final firing rate')
+
+
+        # idf = idf[df['comments'].str.contains('adjff:.01')]
+        idf = df
+        idf = idf[idf['comments'].str.contains('adjff')]
+
+        frs0i = idf[data_split + 'fr_initial'].values
+        frs1i = idf[data_split + 'fr_1_initial'].values
+        frs0f = idf[data_split + 'fr_final'].values
+        frs1f = idf[data_split + 'fr_1_final'].values
+        accs = idf[metric].values
+
+        r0 = np.corrcoef(accs, frs0i).round(2)[0, 1]
+        r1 = np.corrcoef(accs, frs1i).round(2)[0, 1]
+        axs[2].scatter(frs0i, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
+        axs[2].scatter(frs1i, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
+        axs[2].set_xlabel('Initial firing rate')
+
+        r0 = np.corrcoef(accs, frs0f).round(2)[0, 1]
+        r1 = np.corrcoef(accs, frs1f).round(2)[0, 1]
+        axs[3].scatter(frs0f, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
+        axs[3].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
+        axs[3].set_xlabel('Final firing rate')
+
+        if 'v_' in data_split:
+            ylabel = 'Validation accuracy'
+        elif 't_' in data_split:
+            ylabel = 'Test accuracy'
+        else:
+            ylabel = 'Train accuracy'
+        axs[0].set_ylabel(ylabel)
+
+        for ax in axs.reshape(-1):
+            ax.legend(loc='lower center', bbox_to_anchor=(0.5, .13))
+            for pos in ['right', 'left', 'bottom', 'top']:
+                ax.spines[pos].set_visible(False)
+
+        fig.text(0.73, .93, 'Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center',
+                 fontsize=14)
+        fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center',
+                 fontsize=14)
+
+        plt.show()
+        plot_filename = f'experiments/{data_split}_sparsity_tsg{triangular_sg}.pdf'
+        fig.savefig(plot_filename, bbox_inches='tight')
+
+
+    if plot_2:
+        fig, axs = plt.subplots(
+            2, 1, figsize=(12, 7),
+            gridspec_kw={'wspace': .5, 'hspace': .5},
+            sharey=True
+        )
+
+        for i, adj in enumerate([True, False]):
+            idf = df
+            if adj:
+                idf = idf[idf['comments'].str.contains('adjff')]
+            else:
+                idf = idf[~idf['comments'].str.contains('adjff')]
+
+            for _, row in idf.iterrows():
+                hyperparams_path = os.path.join(row['d_name'], 'other_outputs', 'results.json')
+
+                with open(hyperparams_path) as f:
+                    results = json.load(f)
+
+                loss = results['firing_rate_ma_lsnn_sparsification']
+                axs[i].plot(loss)
+                loss = results['firing_rate_ma_lsnn_1_sparsification']
+                axs[i].plot(loss)
+
+        fig.suptitle('pretraining')
+        plt.show()
+
+
+    if plot_3:
+        fig, axs = plt.subplots(
+            2, 1, figsize=(12, 7),
+            gridspec_kw={'wspace': .5, 'hspace': .5},
+            sharey=True
+        )
+
+        for i, adj in enumerate([True, False]):
+            idf = df
+            if adj:
+                idf = idf[idf['comments'].str.contains('adjff')]
+            else:
+                idf = idf[~idf['comments'].str.contains('adjff')]
+
+            for _, row in idf.iterrows():
+                hyperparams_path = os.path.join(row['d_name'], 'other_outputs', 'history.json')
+
+                with open(hyperparams_path) as f:
+                    results = json.load(f)
+
+                loss = results['firing_rate_ma_lsnn']
+                axs[i].plot(loss)
+                loss = results['firing_rate_ma_lsnn_1']
+                axs[i].plot(loss)
+
+        fig.suptitle('training')
+        plt.show()
 
 elif args.type == 'init_sg':
 

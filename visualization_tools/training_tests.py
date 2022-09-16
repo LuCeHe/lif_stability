@@ -227,11 +227,12 @@ def Tests(task_name, gen, train_model, images_dir, max_pics=3, subdir_name='trai
     trt = test_model.predict(batch, batch_size=gen.batch_size)
     trt = {name: pred for name, pred in zip(test_model.output_names, trt)}
     task.update(trt)
-    if grad_tests:
-        gresults = do_grad_tests(model_args, batch, task, batch_size=gen.batch_size, seed=seed)
     cresults = check_assumptions(task)
     test_results.update(cresults)
-    test_results.update(gresults)
+
+    if grad_tests:
+        gresults = do_grad_tests(model_args, batch, task, batch_size=gen.batch_size, seed=seed)
+        test_results.update(gresults)
 
     trained_images_dir = os.path.join(*[images_dir, subdir_name])
     if not os.path.isdir(trained_images_dir):
