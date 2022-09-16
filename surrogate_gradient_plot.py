@@ -557,10 +557,10 @@ elif args.type == 'sparsity':
     data_split = 't_'  # v_ t_ ''
     metric = 'ppl'  # macc ppl
     metric = data_split + metric
-    task_name = 'PTB'  # sl-MNIST SHD PTB
+    task_name = 'sl-MNIST'  # sl-MNIST SHD PTB
 
     net_name = 'LIF'  # LIF sLSTM
-    triangular_sg = False
+    triangular_sg = False # False True
 
     plot_1, plot_2, plot_3 = True, False, False
 

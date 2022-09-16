@@ -5,6 +5,7 @@ from tensorflow.keras.losses import sparse_categorical_crossentropy
 from GenericTools.keras_tools.esoteric_layers import *
 from GenericTools.keras_tools.esoteric_layers.combine_tensors import CombineTensors
 from GenericTools.keras_tools.esoteric_layers.sentence_order_prediction import SentenceOrderPrediction, SOP_loss
+from GenericTools.keras_tools.esoteric_models.model import modifiedModel
 from GenericTools.keras_tools.esoteric_optimizers.optimizer_selection import get_optimizer
 from GenericTools.stay_organized.utils import str2val
 from GenericTools.keras_tools.esoteric_losses.loss_redirection import get_loss
@@ -399,7 +400,7 @@ def build_model(task_name, net_name, n_neurons, lr, stack,
 
     # train model
     if initial_state is None:
-        train_model = tf.keras.models.Model([input_words, output_words], output_net, name=net_name)
+        train_model = modifiedModel([input_words, output_words], output_net, name=net_name)
     else:
         train_model = tf.keras.models.Model(
             [input_words, output_words] + all_input_states,

@@ -53,7 +53,7 @@ def config():
     task_name = 'heidelberg'
 
     # test configuration
-    epochs = 10
+    epochs = 2
     steps_per_epoch = 1
     batch_size = 2
     stack = None
@@ -175,7 +175,7 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
             filepath=checkpoint_filepath, save_weights_only=True, monitor='val_loss', mode='min', save_best_only=True
         ),
         MultipleValidationSets({'v': gen_val2, 't': gen_test}, verbose=0),
-        tf.keras.callbacks.CSVLogger(history_path),
+        CSVLogger(history_path),
     ]
 
     if 'annealing' in comments:

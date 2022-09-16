@@ -236,13 +236,23 @@ if args.type == 'send':
         experiments = []
 
     if 'sparsity' in send_fs:
-        incomplete_comment = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_v0m_'
-        incomplete_comment = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_v0m_originalpseudod_'
+        incomplete_comment = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_annealing_v0m_'
+        incomplete_comment = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_annealing_v0m_originalpseudod_'
 
-        incomplete_comments = [incomplete_comment + f'adjfi:{i}_' for i in [.01, .1, .3, .5, .7, .9, .99]]
+        incomplete_comments = [
+            '7_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_',
+            '7_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_originalpseudod_',
+            '7_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_exponentialpseudod_'
+        ]
+
+        incomplete_comments = [
+            c + f'adjfi:{i}_'
+            for i in [.01, .1, .3, .5, .7, .9, .99]
+            for c in incomplete_comments
+        ]
 
         comments = []
-        for ff in ['', 'adjff:.1', 'adjff:.01']:  # ['', ]
+        for ff in ['', 'adjff:.1', 'adjff:.01']:  # ['', 'adjff:.1', 'adjff:.01']
             comments.extend([c + ff for c in incomplete_comments])
 
         experiment = {
