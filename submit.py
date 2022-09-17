@@ -236,9 +236,7 @@ if args.type == 'send':
         experiments = []
 
     if 'sparsity' in send_fs:
-        incomplete_comment = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_annealing_v0m_'
-        incomplete_comment = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_annealing_v0m_originalpseudod_'
-
+        # focus on different tasks
         incomplete_comments = [
             '7_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_',
             # '7_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_originalpseudod_',
@@ -247,20 +245,44 @@ if args.type == 'send':
 
         incomplete_comments = [
             c + f'adjfi:{i}_'
-            for i in [.99]  # [.01, .1, .3, .5, .7, .9, .99]
+            for i in [.01, .1, .3, .5, .7, .9, .99]
             for c in incomplete_comments
         ]
 
         comments = []
-        for ff in ['adjff:.01']:  # ['', 'adjff:.1', 'adjff:.01']
+        for ff in ['', 'adjff:.01', 'adjff:.01']:  # ['', 'adjff:.1', 'adjff:.01']
             comments.extend([c + ff for c in incomplete_comments])
 
         experiment = {
-            # 'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
-            'task_name': ['heidelberg'], 'net_name': ['maLSNN'],
+            'task_name': ['sl_mnist', 'heidelberg', 'wordptb'], 'net_name': ['maLSNN'],
+            # 'task_name': ['heidelberg'], 'net_name': ['maLSNN'],
             'comments': comments, 'seed': seeds,
         }
         experiments.append(experiment)
+
+        # focus on different SG shapes
+        # incomplete_comments = [
+        #     '7_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_',
+        #     '7_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_originalpseudod_',
+        #     '7_embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_exponentialpseudod_'
+        # ]
+        #
+        # incomplete_comments = [
+        #     c + f'adjfi:{i}_'
+        #     for i in [.01, .1, .3, .5, .7, .9, .99]
+        #     for c in incomplete_comments
+        # ]
+        #
+        # comments = []
+        # for ff in ['', 'adjff:.01', 'adjff:.01']:  # ['', 'adjff:.1', 'adjff:.01']
+        #     comments.extend([c + ff for c in incomplete_comments])
+        #
+        # experiment = {
+        #     'task_name': ['heidelberg'], 'net_name': ['maLSNN'],
+        #     # 'task_name': ['heidelberg'], 'net_name': ['maLSNN'],
+        #     'comments': comments, 'seed': seeds,
+        # }
+        # experiments.append(experiment)
 
     if 'adaptsg' in send_fs:
         incomplete_comments = '8_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_'

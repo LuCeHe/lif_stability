@@ -53,7 +53,7 @@ def config():
     task_name = 'heidelberg'
 
     # test configuration
-    epochs = 2
+    epochs = 10
     steps_per_epoch = 1
     batch_size = 2
     stack = None
@@ -179,7 +179,7 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
     ]
 
     if 'annealing' in comments:
-        annealing_schedule = str2val(comments, 'annealing', str, default='ea')
+        annealing_schedule = str2val(comments, 'annealing', str, default='la')
         callbacks.append(
             AnnealingCallback(
                 epochs=final_epochs, variables_to_anneal=['switch'], annealing_schedule=annealing_schedule,
