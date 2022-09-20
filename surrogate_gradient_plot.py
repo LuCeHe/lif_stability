@@ -179,7 +179,6 @@ df = simplify_col_names(df)
 def fix_df_comments(df):
     df['comments'] = df['comments'].str.replace('_ptb2', '')
     for ps in possible_pseudod:
-        print('timerepeat:2' + ps, '->', 'timerepeat:2_' + ps)
         df['comments'] = df['comments'].str.replace('timerepeat:2' + ps, 'timerepeat:2_' + ps)
 
     # df = df[df['task_name'].str.contains('PTB')]
@@ -551,16 +550,20 @@ elif args.type == 'lr_sg':
 
 
 elif args.type == 'sparsity':
+    from scipy import stats
+
     n_cols = 4
     n_rows = 1
     alpha = .7
     data_split = 't_'  # v_ t_ ''
     metric = 'ppl'  # macc ppl
+    ylabel = 'Perplexity' if metric == 'ppl' else 'Accuracy'
     metric = data_split + metric
-    task_name = 'sl-MNIST'  # sl-MNIST SHD PTB
+    task_name = 'SHD'  # sl-MNIST SHD PTB
 
     net_name = 'LIF'  # LIF sLSTM
-    triangular_sg = False # False True
+    change_sg = 'originalpseudod'  # exponentialpseudod originalpseudod fastsigmoidpseudod
+    pseudoname = clean_pseudname(change_sg if len(change_sg) else 'fastsigmoidpseudod')
 
     plot_1, plot_2, plot_3 = True, False, False
 
@@ -577,12 +580,13 @@ elif args.type == 'sparsity':
     df = df[df['comments'].str.contains('_v0m')]
     df = df[df['task_name'].str.contains(task_name)]
 
-    if triangular_sg:
-        mdf = mdf[mdf['comments'].str.contains('originalpseudod')]
-        df = df[df['comments'].str.contains('originalpseudod')]
+    print(len(change_sg))
+    if not change_sg == 'fastsigmoidpseudod':
+        mdf = mdf[mdf['comments'].str.contains(change_sg)]
+        df = df[df['comments'].str.contains(change_sg)]
     else:
-        mdf = mdf[~mdf['comments'].str.contains('originalpseudod')]
-        df = df[~df['comments'].str.contains('originalpseudod')]
+        mdf = mdf[~mdf['comments'].str.contains('pseudod')]
+        df = df[~df['comments'].str.contains('pseudod')]
 
     if plot_1:
         fig, axs = plt.subplots(
@@ -592,8 +596,8 @@ elif args.type == 'sparsity':
         )
 
         fig.legend(ncol=2, handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -.1))
-
-
+        ps = []
+        rs = []
         # plot lr vs metric
         idf = df
         idf = idf[~idf['comments'].str.contains('adjff')]
@@ -605,23 +609,34 @@ elif args.type == 'sparsity':
 
         accs = idf[metric].values
 
-        r0 = np.corrcoef(accs, frs0i).round(2)[0, 1]
-        r1 = np.corrcoef(accs, frs1i).round(2)[0, 1]
+        r0, p0 = stats.pearsonr(accs, frs0i)
+        r0 = r0.round(3)
+        r1, p1 = stats.pearsonr(accs, frs1i)
+        r1 = r1.round(3)
+        ps.extend([p0, p1])
+        rs.extend([r0, r1])
+        print(r0, p0, r1, p1)
+        print(rs, ps)
 
         axs[0].scatter(frs0i, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
         axs[0].scatter(frs1i, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
         axs[0].set_xlabel('Initial firing rate')
 
-        r0 = np.corrcoef(accs, frs0f).round(2)[0, 1]
-        r1 = np.corrcoef(accs, frs1f).round(2)[0, 1]
+        r0, p0 = stats.pearsonr(accs, frs0f)
+        r0 = r0.round(3)
+        r1, p1 = stats.pearsonr(accs, frs1f)
+        r1 = r1.round(3)
+        ps.extend([p0, p1])
+        rs.extend([r0, r1])
+        print(r0, p0, r1, p1)
+        print(rs, ps)
 
         axs[1].scatter(frs0f, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
         axs[1].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
         axs[1].set_xlabel('Final firing rate')
 
-
-        # idf = idf[df['comments'].str.contains('adjff:.01')]
         idf = df
+        # idf = idf[idf['comments'].str.contains('adjff:.01')]
         idf = idf[idf['comments'].str.contains('adjff')]
 
         frs0i = idf[data_split + 'fr_initial'].values
@@ -630,40 +645,60 @@ elif args.type == 'sparsity':
         frs1f = idf[data_split + 'fr_1_final'].values
         accs = idf[metric].values
 
-        r0 = np.corrcoef(accs, frs0i).round(2)[0, 1]
-        r1 = np.corrcoef(accs, frs1i).round(2)[0, 1]
+        r0, p0 = stats.pearsonr(accs, frs0i)
+        r0 = r0.round(3)
+        r1, p1 = stats.pearsonr(accs, frs1i)
+        r1 = r1.round(3)
+        ps.extend([p0, p1])
+        rs.extend([r0, r1])
+        print(r0, p0, r1, p1)
+        print(rs, ps)
+
         axs[2].scatter(frs0i, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
         axs[2].scatter(frs1i, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
         axs[2].set_xlabel('Initial firing rate')
 
-        r0 = np.corrcoef(accs, frs0f).round(2)[0, 1]
-        r1 = np.corrcoef(accs, frs1f).round(2)[0, 1]
+        r0, p0 = stats.pearsonr(accs, frs0f)
+        r0 = r0.round(3)
+        r1, p1 = stats.pearsonr(accs, frs1f)
+        r1 = r1.round(3)
+        ps.extend([p0, p1])
+        rs.extend([r0, r1])
+        print(r0, p0, r1, p1)
+        print(rs, ps)
+
         axs[3].scatter(frs0f, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
         axs[3].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
         axs[3].set_xlabel('Final firing rate')
 
         if 'v_' in data_split:
-            ylabel = 'Validation accuracy'
+            ylabel = 'Validation ' + ylabel
         elif 't_' in data_split:
-            ylabel = 'Test accuracy'
+            ylabel = 'Test ' + ylabel
         else:
-            ylabel = 'Train accuracy'
+            ylabel = 'Train ' + ylabel
         axs[0].set_ylabel(ylabel)
 
+        i = 0
         for ax in axs.reshape(-1):
-            ax.legend(loc='lower center', bbox_to_anchor=(0.5, .13))
+            l = ax.legend(loc='lower center', bbox_to_anchor=(0.5, .13))
+            for t in l.get_texts():
+                print(ps[i], rs[i])
+                if ps[i] < 0.05:
+                    t.set_weight('bold')
+                i += 1
+                print(t)
+            print()
             for pos in ['right', 'left', 'bottom', 'top']:
                 ax.spines[pos].set_visible(False)
 
-        fig.text(0.73, .93, 'Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center',
-                 fontsize=14)
-        fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', horizontalalignment='center', verticalalignment='center',
-                 fontsize=14)
+        fig.text(0.73, .93, 'Sparsity Encouraging\nLoss Term', ha='center', va='center', fontsize=14)
+        fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', ha='center', va='center', fontsize=14)
+        plt.suptitle(f'{pseudoname} on {task_name}', y=1.05)
 
         plt.show()
-        plot_filename = f'experiments/{data_split}_sparsity_tsg{triangular_sg}.pdf'
+        plot_filename = f'experiments/{data_split}_sparsity_tsg{change_sg}_t{task_name}.pdf'
         fig.savefig(plot_filename, bbox_inches='tight')
-
 
     if plot_2:
         fig, axs = plt.subplots(
@@ -692,7 +727,6 @@ elif args.type == 'sparsity':
 
         fig.suptitle('pretraining')
         plt.show()
-
 
     if plot_3:
         fig, axs = plt.subplots(

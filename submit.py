@@ -274,7 +274,7 @@ if args.type == 'send':
         ]
 
         comments = []
-        for ff in ['', 'adjff:.01', 'adjff:.01']:  # ['', 'adjff:.1', 'adjff:.01']
+        for ff in ['', 'adjff:.1', 'adjff:.01']:  # ['', 'adjff:.1', 'adjff:.01']
             comments.extend([c + ff for c in incomplete_comments])
 
         experiment = {
