@@ -41,27 +41,31 @@ CDIR = os.path.dirname(os.path.realpath(__file__))
 EXPERIMENTS = os.path.join(CDIR, 'experiments')
 
 GEXPERIMENTS = [
-    r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
+    # r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-21--adaptsg',
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
-    # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
+    # r'D:\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
+    r'D:\work\stochastic_spiking\good_experiments\2022-01-12--decent-SHD-conditions',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
 ]
-# EXPERIMENTS = GEXPERIMENTS[0]
+EXPERIMENTS = r'D:\work\stochastic_spiking\experiments'
 
 CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 
 metric_sort = 'v_ppl'
+metric_sort = 'val_macc'
 metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc', 'fr_initial', 'fr_final', 'fr_1_initial', 'fr_1_final']
+metrics_oi = ['val_macc', 'macc_test']
 reduce_samples = False
 group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
+group_cols = ['net_name', 'task_name', 'initializer', 'comments']
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='sparsity', type=str, help='main behavior',
+    '--type', default='conditions', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -150,10 +154,12 @@ else:
     with open(HSITORIESPATH) as f:
         histories = json.load(f)
 
+print(df.columns)
 history_keys = [
     'perplexity', 'sparse_mode_accuracy', 'loss',
     'v_perplexity', 'v_sparse_mode_accuracy', 'v_loss',
     't_perplexity', 't_sparse_mode_accuracy', 't_loss',
+    'val_sparse_mode_accuracy', 'sparse_mode_accuracy_test',
     'firing_rate_ma_lsnn_initial', 'firing_rate_ma_lsnn_final',
     'firing_rate_ma_lsnn_1_initial', 'firing_rate_ma_lsnn_1_final',
     'v_firing_rate_ma_lsnn_initial', 'v_firing_rate_ma_lsnn_final',
@@ -188,7 +194,7 @@ def fix_df_comments(df):
 
     # df = df[(df['d_name'].str.contains('2022-08-12--'))|(df['d_name'].str.contains('2022-08-13--'))]
     # df = df[(df['d_name'].str.contains('2022-08-27--'))]
-    # df['comments'] = df['comments'].replace({'1_embproj_nogradres': '6_embproj_nogradres'}, regex=True)
+    df['comments'] = df['comments'].replace({'1_embproj_nogradres': '6_embproj_nogradres'}, regex=True)
     return df
 
 
@@ -204,7 +210,7 @@ df = df[early_cols + some_cols]
 # group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
 # only 4 experiments of the same type, so they have comparable statistics
 
-if reduce_samples:
+if reduce_samples or args.type == 'lr_sg':
     df = df.sort_values(by='d_name', ascending=True)
     df = df.groupby(group_cols).sample(4, replace=True)
 
@@ -250,17 +256,22 @@ if args.type == 'excel':
 
 
 elif args.type == 'n_tail':
-    idf = df[df['comments'].str.contains('2_')]
-    idf = df[df['comments'].str.contains('_tailvalue')]
+
+    idf = df[df['comments'].str.contains('_tailvalue') & df['comments'].str.contains('2_')]
     counts = idf.groupby(['comments', ]).size().reset_index(name='counts')
     left = counts[counts['counts'] < 4]
     done = counts[counts['counts'] == 4]['comments'].values
+    print('done:')
     print(done)
 
     print()
     idf = mdf[mdf['comments'].str.contains('2_')]
+    print('is mdf fine?')
+    print(mdf.to_string(index=False))
+    print(idf.to_string(index=False))
     idf = idf.loc[idf['comments'].isin(done)]
     idf = idf.sort_values(by='mean_val_macc', ascending=False)
+    print('here!')
     print(idf.to_string(index=False))
 
     idf = idf[idf['comments'].str.contains('tailvalue')]
@@ -274,7 +285,7 @@ elif args.type == 'n_tail':
 
     cm = plt.get_cmap('Oranges')
     # print(idf.to_string(index=False))
-    fig, axs = plt.subplots(1, 1, gridspec_kw={'wspace': .0, 'hspace': 0.}, figsize=(6, 6))
+    fig, axs = plt.subplots(1, 1, gridspec_kw={'wspace': .0, 'hspace': 0.}, figsize=(4, 4))
     axs.plot(tails, accs, color=cm(.5))
     axs.fill_between(tails, accs - stds, accs + stds, alpha=0.5, color=cm(.5))
 
@@ -300,12 +311,12 @@ elif args.type == 'n_tail':
     for pos in ['right', 'left', 'bottom', 'top']:
         axs.spines[pos].set_visible(False)
 
-    axs.set_xlabel('$q$ tail fatness')
+    axs.set_xlabel('$q$ Tail fatness')
     axs.set_xscale('log')
     axs.set_yticks([0.89, .9, .91])
 
     # axs[1].set_ylabel('mean gradient\nmagnitude')
-    axs.set_ylabel('accuracy')
+    axs.set_ylabel('Validation Accuracy')
     plot_filename = r'experiments/figure2_tails.pdf'
     fig.savefig(plot_filename, bbox_inches='tight')
 
@@ -330,7 +341,7 @@ elif args.type == 'sharpness_dampening':
         print(idf.to_string(index=False))
 
         comments = np.unique(mdf['comments'])
-        fig, axs = plt.subplots(1, 1, gridspec_kw={'wspace': .0, 'hspace': 0.}, figsize=(6, 6))
+        fig, axs = plt.subplots(1, 1, gridspec_kw={'wspace': .0, 'hspace': 0.}, figsize=(4, 4))
 
         for pn in possible_pseudod:
             iidf = idf[idf['comments'].str.contains(pn)].sort_values(by='comments', ascending=False)
@@ -346,8 +357,9 @@ elif args.type == 'sharpness_dampening':
         for pos in ['right', 'left', 'bottom', 'top']:
             axs.spines[pos].set_visible(False)
 
-        axs.set_xlabel(feature)
-        axs.set_ylabel('accuracy')
+        axs.set_yticks([.9, .7, .5, .3, .1])
+        axs.set_xlabel(feature.capitalize())
+        axs.set_ylabel('Validation Accuracy')
         plot_filename = r'experiments/figure2_{}.pdf'.format(feature)
         fig.savefig(plot_filename, bbox_inches='tight')
 
@@ -395,8 +407,8 @@ elif args.type == 'lr_sg':
     net_sensitivity_std = {}
 
     fig, axs = plt.subplots(
-        2, 3 + 1, figsize=(12, 7),
-        gridspec_kw={'wspace': .5, 'hspace': .5, 'width_ratios': [1, 1, 1, 2]}
+        2, 3 + 1, figsize=(12, 5),
+        gridspec_kw={'wspace': .5, 'hspace': .5, 'width_ratios': [1, 1, 1, 1.3]}
     )
 
     # if not isinstance(axs, list):
@@ -507,12 +519,12 @@ elif args.type == 'lr_sg':
     axs[0, 0].set_ylabel('Validation Perplexity')
 
     axs[0, -1].bar(all_tasks, task_sensitivity.values(),
-                   yerr=np.array(list(task_sensitivity_std.values())) / 2, color='maroon', width=0.4)
+                   yerr=np.array(list(task_sensitivity_std.values())) / 2, color='maroon', width=0.6)
     axs[0, -1].set_ylabel('Sensitivity')
     axs[0, -1].set_xlabel('Task')
 
     axs[1, -1].bar(all_nets, net_sensitivity.values(),
-                   yerr=np.array(list(net_sensitivity_std.values())) / 2, color='maroon', width=0.4)
+                   yerr=np.array(list(net_sensitivity_std.values())) / 2, color='maroon', width=0.6)
     axs[1, -1].set_ylabel('Sensitivity')
     axs[1, -1].set_xlabel('Neural Model')
 
@@ -523,6 +535,9 @@ elif args.type == 'lr_sg':
                    horizontalalignment='center', verticalalignment='center', rotation='vertical',
                    transform=axs[1, 0].transAxes)
 
+    axs[0, 0].set_yticks([2, 4, 6, 8, 10])
+    axs[0, 2].set_yticks([100, 650, 1200])
+
     for i in [0, 1]:
         box = axs[i, -1].get_position()
         box.x0 = box.x0 + 0.05
@@ -530,18 +545,22 @@ elif args.type == 'lr_sg':
         axs[i, -1].set_position(box)
 
     for i, label in enumerate('abcg'):
-        axs[0, i].text(-.3, 1.2, f'{label})', fontsize=14, color='#535353',
+        axs[0, i].text(-.1, 1.2, f'{label})', fontsize=14, color='#535353',
                        horizontalalignment='center', verticalalignment='center',
                        transform=axs[0, i].transAxes)
 
     for i, label in enumerate('defh'):
-        axs[1, i].text(-0.3, 1.2, f'{label})', fontsize=14, color='#535353',
+        axs[1, i].text(-0.1, 1.2, f'{label})', fontsize=14, color='#535353',
                        horizontalalignment='center', verticalalignment='center',
                        transform=axs[1, i].transAxes)
+        if 0 < i < 3:
+            axs[1, i].sharey(axs[1, 0])
+
+    # axs[1, i].sharey(axs[1, 0])
 
     legend_elements = [Line2D([0], [0], color=pseudod_color(n), lw=4, label=clean_pseudname(n))
                        for n in possible_pseudod]
-    plt.legend(ncol=3, handles=legend_elements, loc='lower center', bbox_to_anchor=(-1.4, -.85))
+    # plt.legend(ncol=3, handles=legend_elements, loc='lower center', bbox_to_anchor=(-1.4, -.85))
 
     plt.show()
     plot_filename = f'experiments/lr_sg.pdf'
@@ -590,12 +609,12 @@ elif args.type == 'sparsity':
 
     if plot_1:
         fig, axs = plt.subplots(
-            n_rows, n_cols, figsize=(12, 7),
-            gridspec_kw={'wspace': .5, 'hspace': .5},
+            n_rows, n_cols, figsize=(9, 5),
+            gridspec_kw={'wspace': .2, 'hspace': .5},
             sharey=True
         )
 
-        fig.legend(ncol=2, handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -.1))
+        fig.legend(ncol=2, handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -.2))
         ps = []
         rs = []
         # plot lr vs metric
@@ -610,9 +629,9 @@ elif args.type == 'sparsity':
         accs = idf[metric].values
 
         r0, p0 = stats.pearsonr(accs, frs0i)
-        r0 = r0.round(3)
+        r0 = r0.round(2)
         r1, p1 = stats.pearsonr(accs, frs1i)
-        r1 = r1.round(3)
+        r1 = r1.round(2)
         ps.extend([p0, p1])
         rs.extend([r0, r1])
         print(r0, p0, r1, p1)
@@ -620,12 +639,12 @@ elif args.type == 'sparsity':
 
         axs[0].scatter(frs0i, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
         axs[0].scatter(frs1i, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
-        axs[0].set_xlabel('Initial firing rate')
+        axs[0].set_xlabel('Initial\nfiring rate')
 
         r0, p0 = stats.pearsonr(accs, frs0f)
-        r0 = r0.round(3)
+        r0 = r0.round(2)
         r1, p1 = stats.pearsonr(accs, frs1f)
-        r1 = r1.round(3)
+        r1 = r1.round(2)
         ps.extend([p0, p1])
         rs.extend([r0, r1])
         print(r0, p0, r1, p1)
@@ -633,7 +652,7 @@ elif args.type == 'sparsity':
 
         axs[1].scatter(frs0f, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
         axs[1].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
-        axs[1].set_xlabel('Final firing rate')
+        axs[1].set_xlabel('Final\nfiring rate')
 
         idf = df
         # idf = idf[idf['comments'].str.contains('adjff:.01')]
@@ -646,9 +665,9 @@ elif args.type == 'sparsity':
         accs = idf[metric].values
 
         r0, p0 = stats.pearsonr(accs, frs0i)
-        r0 = r0.round(3)
+        r0 = r0.round(2)
         r1, p1 = stats.pearsonr(accs, frs1i)
-        r1 = r1.round(3)
+        r1 = r1.round(2)
         ps.extend([p0, p1])
         rs.extend([r0, r1])
         print(r0, p0, r1, p1)
@@ -656,12 +675,12 @@ elif args.type == 'sparsity':
 
         axs[2].scatter(frs0i, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
         axs[2].scatter(frs1i, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
-        axs[2].set_xlabel('Initial firing rate')
+        axs[2].set_xlabel('Initial\nfiring rate')
 
         r0, p0 = stats.pearsonr(accs, frs0f)
-        r0 = r0.round(3)
+        r0 = r0.round(2)
         r1, p1 = stats.pearsonr(accs, frs1f)
-        r1 = r1.round(3)
+        r1 = r1.round(2)
         ps.extend([p0, p1])
         rs.extend([r0, r1])
         print(r0, p0, r1, p1)
@@ -669,7 +688,7 @@ elif args.type == 'sparsity':
 
         axs[3].scatter(frs0f, accs, alpha=alpha, color='darksalmon', label=f'$r_1=${r0}')
         axs[3].scatter(frs1f, accs, alpha=alpha, color='sienna', label=f'$r_2=${r1}')
-        axs[3].set_xlabel('Final firing rate')
+        axs[3].set_xlabel('Final\nfiring rate')
 
         if 'v_' in data_split:
             ylabel = 'Validation ' + ylabel
@@ -681,19 +700,25 @@ elif args.type == 'sparsity':
 
         i = 0
         for ax in axs.reshape(-1):
-            l = ax.legend(loc='lower center', bbox_to_anchor=(0.5, .13))
+            bbox_to_anchor = (0.5, .65) if not task_name == 'PTB' else (0.5, .4)
+            l = ax.legend(loc='lower center', bbox_to_anchor=bbox_to_anchor, handlelength=0, handletextpad=0,
+                          fancybox=True,
+                          facecolor=(1, 1, 1, 0.8))
+
+            for item in l.legendHandles:
+                item.set_visible(False)
+
             for t in l.get_texts():
                 print(ps[i], rs[i])
                 if ps[i] < 0.05:
                     t.set_weight('bold')
                 i += 1
-                print(t)
-            print()
+
             for pos in ['right', 'left', 'bottom', 'top']:
                 ax.spines[pos].set_visible(False)
 
-        fig.text(0.73, .93, 'Sparsity Encouraging\nLoss Term', ha='center', va='center', fontsize=14)
-        fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', ha='center', va='center', fontsize=14)
+        fig.text(0.72, .93, 'Sparsity Encouraging\nLoss Term', ha='center', va='center', fontsize=16)
+        fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', ha='center', va='center', fontsize=16)
         plt.suptitle(f'{pseudoname} on {task_name}', y=1.05)
 
         plt.show()
@@ -788,7 +813,7 @@ elif args.type == 'init_sg':
 
     fig = plt.figure(figsize=(15, 5))
 
-    gs = fig.add_gridspec(1, 4)
+    gs = fig.add_gridspec(1, 4, wspace=0.3)
     ax1 = fig.add_subplot(gs[0, :2])
     ax2 = fig.add_subplot(gs[0, 2])
     ax3 = fig.add_subplot(gs[0, 3])
@@ -815,7 +840,7 @@ elif args.type == 'init_sg':
 
     ax1.set_xticks(np.arange(len(desired_initializers)))
     ax1.set_xticklabels(clean_initializers_n)
-    ax1.set_ylabel('accuracy')
+    ax1.set_ylabel('Validation Accuracy')
 
     import seaborn as sns
 
@@ -895,32 +920,32 @@ elif args.type == 'conditions':
     idf['comments'] = idf['comments'].apply(lambda x: "I+II" + x[4:] if x.startswith("II+I") else x)
     idf['comments'] = idf['comments'].apply(lambda x: x.replace('+III', '\n+III'))
 
-    idf = idf.sort_values(by='mean_test_macc', ascending=True)  # mean_test_macc mean_val_macc
+    idf = idf.sort_values(by='mean_macc_test', ascending=True)  # mean_test_macc mean_val_macc
     order_conditions = idf['comments'].values
     order_conditions = ['no\nconditions' if o == 'naive' else o for o in order_conditions]
     print(idf)
     print(order_conditions)
     means_val = idf['mean_val_macc'].values
     stds_val = idf['std_val_macc'].values
-    means_test = idf['mean_test_macc'].values
-    stds_test = idf['std_test_macc'].values
+    means_test = idf['mean_macc_test'].values
+    stds_test = idf['std_macc_test'].values
 
     fig, axs = plt.subplots(2, 1, figsize=(10, 6))
     niceblue = '#0883E0'
-    colors = [niceblue, niceblue, '#97A7B3', niceblue, niceblue, niceblue, niceblue, niceblue]
+    colors = [niceblue, '#97A7B3', niceblue, niceblue, niceblue, niceblue, niceblue, niceblue]
 
     axs[1].bar(range(len(means_val)), means_val, yerr=stds_val, width=.8, color=colors)
     axs[0].bar(range(len(means_test)), means_test, yerr=stds_test, width=.8, color=colors)
-    axs[1].set_ylim([.8, .95])
+    axs[1].set_ylim([.77, .95])
     axs[1].set_yticks([.8, .85, .9, .95])
-    axs[0].set_ylim([.5, .7])
-    axs[0].set_yticks([.5, .6, .7])
+    axs[0].set_ylim([.57, .8])
+    axs[0].set_yticks([.6, .7, .8])
     axs[0].set_xticks([])
     axs[1].set_xticks(np.arange(len(order_conditions)))
     axs[1].set_xticklabels(order_conditions, ha='center')
-    axs[1].set_xlabel('conditions')
-    axs[1].set_ylabel('validation\naccuracy')
-    axs[0].set_ylabel('test\naccuracy')
+    axs[1].set_xlabel('Conditions')
+    axs[1].set_ylabel('Validation\nAccuracy')
+    axs[0].set_ylabel('Test\nAccuracy')
 
     for ax in axs:
         for pos in ['right', 'left', 'bottom', 'top']:
