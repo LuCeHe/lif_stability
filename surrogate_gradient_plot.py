@@ -919,6 +919,7 @@ elif args.type == 'conditions':
     # idf['comments'] = idf['comments'].str.replace('+III', '\n+III')
     idf['comments'] = idf['comments'].apply(lambda x: "I+II" + x[4:] if x.startswith("II+I") else x)
     idf['comments'] = idf['comments'].apply(lambda x: x.replace('+III', '\n+III'))
+    idf['comments'] = idf['comments'].apply(lambda x: x.replace('+IV', '\n+IV'))
 
     idf = idf.sort_values(by='mean_macc_test', ascending=True)  # mean_test_macc mean_val_macc
     order_conditions = idf['comments'].values
@@ -930,7 +931,7 @@ elif args.type == 'conditions':
     means_test = idf['mean_macc_test'].values
     stds_test = idf['std_macc_test'].values
 
-    fig, axs = plt.subplots(2, 1, figsize=(10, 6))
+    fig, axs = plt.subplots(2, 1, figsize=(5, 6))
     niceblue = '#0883E0'
     colors = [niceblue, '#97A7B3', niceblue, niceblue, niceblue, niceblue, niceblue, niceblue]
 
@@ -938,14 +939,15 @@ elif args.type == 'conditions':
     axs[0].bar(range(len(means_test)), means_test, yerr=stds_test, width=.8, color=colors)
     axs[1].set_ylim([.77, .95])
     axs[1].set_yticks([.8, .85, .9, .95])
-    axs[0].set_ylim([.57, .8])
-    axs[0].set_yticks([.6, .7, .8])
+    axs[0].set_ylim([.62, .8])
+    axs[0].set_yticks([.65, .7, .75, .8])
     axs[0].set_xticks([])
     axs[1].set_xticks(np.arange(len(order_conditions)))
     axs[1].set_xticklabels(order_conditions, ha='center')
     axs[1].set_xlabel('Conditions')
-    axs[1].set_ylabel('Validation\nAccuracy')
-    axs[0].set_ylabel('Test\nAccuracy')
+    axs[1].set_ylabel('Validation Accuracy')
+    axs[0].set_ylabel('Test Accuracy')
+    fig.align_ylabels(axs[:])
 
     for ax in axs:
         for pos in ['right', 'left', 'bottom', 'top']:
