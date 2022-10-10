@@ -50,7 +50,7 @@ def config():
     # task and net
     # ptb time_ae simplest_random time_ae_merge ps_mnist wiki103 wmt14 s_mnist xor small_s_mnist
     # wordptb sl_mnist heidelberg
-    task_name = 'heidelberg'
+    task_name = 'sl_mnist'
 
     # test configuration
     epochs = 10

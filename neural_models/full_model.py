@@ -400,7 +400,8 @@ def build_model(task_name, net_name, n_neurons, lr, stack,
 
     # train model
     if initial_state is None:
-        train_model = modifiedModel([input_words, output_words], output_net, name=net_name)
+        # train_model = modifiedModel([input_words, output_words], output_net, name=net_name)
+        train_model = tf.keras.models.Model([input_words, output_words], output_net, name=net_name)
     else:
         train_model = tf.keras.models.Model(
             [input_words, output_words] + all_input_states,
@@ -413,6 +414,7 @@ def build_model(task_name, net_name, n_neurons, lr, stack,
     optimizer = get_optimizer(optimizer_name=optimizer_name, lr_schedule=lr_schedule,
                               total_steps=final_epochs, lr=lr, weight_decay=weight_decay,
                               clipnorm=clipnorm, exclude_from_weight_decay=exclude_from_weight_decay)
-    train_model.compile(optimizer=optimizer, loss=lambda x, y: 0.)
+    # train_model.compile(optimizer=optimizer, loss=lambda x, y: 0.)
+    train_model.compile(optimizer=optimizer, loss=None)
 
     return train_model

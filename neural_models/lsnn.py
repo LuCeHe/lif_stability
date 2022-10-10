@@ -116,9 +116,9 @@ class baseLSNN(tf.keras.layers.Layer):
             thr = self.thr if not 'multreset' in self.config else 0
             dampening = optimize_dampening(self.recurrent_weights, thr=thr, decay=decay_v, w_in=self.input_weights,
                                            dampening_in=dampening_in, od_type=od_type)
-        print('dampening', np.mean(dampening))
-        print('dampening', np.mean(dampening))
-        print('         ', dampening)
+        # print('dampening', np.mean(dampening))
+        # print('dampening', np.mean(dampening))
+        # print('         ', dampening)
 
         if 'conditionIV' in self.config and not 'optimizetail' in self.config:
             assert 'exponentialpseudod' in self.config, \
