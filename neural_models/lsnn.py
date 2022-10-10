@@ -342,7 +342,7 @@ class aLSNN(baseLSNN):
             else:
                 initializer = tf.keras.initializers.RandomNormal(stddev=1. / tf.sqrt(n_input))
 
-            if k == 'beta' and 'negbeta' in self.config:
+            if k == 'beta' and 'gaussbeta' in self.config:
                 initializer = tf.keras.initializers.RandomNormal(stddev=p / tf.sqrt(tf.cast(n_input, tf.float32)))
 
             p = self.add_weight(shape=(self.num_neurons,), initializer=initializer, name=k, trainable=True)
