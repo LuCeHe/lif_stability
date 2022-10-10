@@ -37,12 +37,14 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, lsc =
         if 'mnist' in task_name or task_name in ['heidelberg', 'lca']:
             stack = 2
         elif task_name in language_tasks:
-            if not lsc:
-                stack = '1700:300'
-                embedding = 'learned:None:None:300'
-            else:
-                stack = '1000:300'
-                embedding = 'learned:None:None:300'
+            stack = '1700:300'
+            embedding = 'learned:None:None:300'
+            # if not lsc:
+            #     stack = '1700:300'
+            #     embedding = 'learned:None:None:300'
+            # else:
+            #     stack = '1000:300'
+            #     embedding = 'learned:None:None:300'
         else:
             raise NotImplementedError
 
