@@ -113,19 +113,25 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
     if 'LSNN' in net_name:
         cell = models.net(net_name)(
             num_neurons=n_neurons, tau=tau, tau_adaptation=tau_adaptation,
-                                    initializer=initializer, config=comments + stack_info, thr=thr)
+            initializer=initializer, config=comments + stack_info, thr=thr)
         rnn = RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij, stateful=stateful)
         rnn.build((batch_size, maxlen, nin))
 
     elif 'Performer' in net_name or 'GPT' in net_name:
         rnn = models.net(net_name)(num_neurons=n_neurons, comments=comments)
 
-    elif not net_name == 'LSTM':
-        cell = models.net(net_name)(num_neurons=n_neurons, config=comments)
+    elif net_name == 'LSTM':
+        cell = tf.keras.layers.LSTMCell(units=n_neurons)
         rnn = RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij, stateful=stateful)
         rnn.build((batch_size, maxlen, nin))
+
+    elif net_name == 'GRU':
+        cell = tf.keras.layers.GRUCell(units=n_neurons)
+        rnn = RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij, stateful=stateful)
+        rnn.build((batch_size, maxlen, nin))
+
     else:
-        cell = tf.keras.layers.LSTMCell(units=n_neurons)
+        cell = models.net(net_name)(num_neurons=n_neurons, config=comments)
         rnn = RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij, stateful=stateful)
         rnn.build((batch_size, maxlen, nin))
 
@@ -155,7 +161,8 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
                 output_cell = v
             else:
                 output_cell = b
-        elif 'LSTM' in net_name:
+
+        elif 'LSTM' in net_name or 'GRU' in net_name:
             all_out = rnn(inputs=skipped_connection_input, initial_state=initial_state)
             output_cell, states = all_out[0], all_out[1:]
         else:
@@ -270,7 +277,7 @@ def build_model(task_name, net_name, n_neurons, lr, stack,
 
     all_states = []
     all_input_states = []
-    n_states = 4 if 'LSNN' in  net_name else 2
+    n_states = 4 if 'LSNN' in net_name else 2
     for i, layer_width in enumerate(stack):
         skip_input = [skip_input] if not isinstance(skip_input, list) else skip_input
         os_e = []
