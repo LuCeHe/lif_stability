@@ -1,8 +1,7 @@
-
 from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import language_tasks
 
 
-def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, lsc = False):
+def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_name):
     if n_neurons is None:
         if task_name in language_tasks:
             n_neurons = 1300
@@ -50,4 +49,15 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, lsc =
 
     if embedding == None:
         embedding = False
+
+    if task_name == 'heidelberg':
+        sLSTM_factor = .37  # 1 / 3
+    elif task_name == 'sl_mnist':
+        sLSTM_factor = 1 / 3
+    else:
+        sLSTM_factor = 1 / 3
+
+    n_neurons = n_neurons if not 'LSTM' in net_name else int(n_neurons * sLSTM_factor)
+    stack = '700:300' if ('LSTM' in net_name and task_name == 'wordptb') else stack
+
     return stack, batch_size, embedding, n_neurons, lr
