@@ -63,12 +63,13 @@ class baseLSNN(tf.keras.layers.Layer):
         dampening = self.dampening_factor
         sharpness = 1.
 
-        exp = str2val(self.config, 'folder', str, default=0, split_symbol='**')
-        dpath = os.path.join(exp, 'trained_models', 'dampening_stacki{}.npy'.format(stacki - 1))
-        dampening_in = 0 if stacki == 0 or not 'deltain' in self.config else np.load(dpath)
+        if 'conditionIV' in self.config or 'conditionIII' in self.config:
+            exp = str2val(self.config, 'folder', str, default='', split_symbol='**')
+            dpath = os.path.join(exp, 'trained_models', 'dampening_stacki{}.npy'.format(stacki - 1))
+            dampening_in = 0 if stacki == 0 or not 'deltain' in self.config else np.load(dpath)
 
-        spath = os.path.join(exp, 'trained_models', 'sharpness_stacki{}.npy'.format(stacki - 1))
-        sharpness_in = 0 if stacki == 0 or not 'deltain' in self.config else np.load(spath)
+            spath = os.path.join(exp, 'trained_models', 'sharpness_stacki{}.npy'.format(stacki - 1))
+            sharpness_in = 0 if stacki == 0 or not 'deltain' in self.config else np.load(spath)
 
         input_init = self.initializer
 
@@ -143,13 +144,14 @@ class baseLSNN(tf.keras.layers.Layer):
         # self.inh_exc = tf.ones(self.num_neurons)
         self._beta = tf.concat([tf.zeros(self.n_regular), tf.ones(n_rec - self.n_regular) * self.beta], axis=0)
 
-        dpath = os.path.join(exp, 'trained_models', 'dampening_stacki{}.npy'.format(stacki))
-        np.save(dpath, dampening)
-        spath = os.path.join(exp, 'trained_models', 'sharpness_stacki{}.npy'.format(stacki))
-        np.save(spath, sharpness)
-        self.spike_type = SurrogatedStep(config=self.config, dampening=dampening, sharpness=sharpness)
 
-        # print(stacki, wrecm, np.mean(self.recurrent_weights))
+        if 'conditionIV' in self.config or 'conditionIII' in self.config:
+            dpath = os.path.join(exp, 'trained_models', 'dampening_stacki{}.npy'.format(stacki))
+            np.save(dpath, dampening)
+            spath = os.path.join(exp, 'trained_models', 'sharpness_stacki{}.npy'.format(stacki))
+            np.save(spath, sharpness)
+
+        self.spike_type = SurrogatedStep(config=self.config, dampening=dampening, sharpness=sharpness)
 
         self.built = True
         super().build(input_shape)
