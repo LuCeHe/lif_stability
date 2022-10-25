@@ -4,8 +4,6 @@ from tensorflow.keras.losses import sparse_categorical_crossentropy
 
 from GenericTools.keras_tools.esoteric_layers import *
 from GenericTools.keras_tools.esoteric_layers.combine_tensors import CombineTensors
-from GenericTools.keras_tools.esoteric_layers.sentence_order_prediction import SentenceOrderPrediction, SOP_loss
-from GenericTools.keras_tools.esoteric_models.model import modifiedModel
 from GenericTools.keras_tools.esoteric_optimizers.optimizer_selection import get_optimizer
 from GenericTools.stay_organized.utils import str2val
 from GenericTools.keras_tools.esoteric_losses.loss_redirection import get_loss
@@ -131,9 +129,7 @@ def Expert(i, j, stateful, task_name, net_name, n_neurons, tau, initializer,
         rnn.build((batch_size, maxlen, nin))
 
     else:
-        cell = models.net(net_name)(num_neurons=n_neurons, config=comments)
-        rnn = RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij, stateful=stateful)
-        rnn.build((batch_size, maxlen, nin))
+        raise NotImplementedError
 
     lsb = LayerSupervision(n_classes=n_out, name='b' + ij)
     lsv = LayerSupervision(n_classes=n_out, name='v' + ij)
