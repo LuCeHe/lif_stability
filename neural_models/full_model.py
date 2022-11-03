@@ -418,6 +418,6 @@ def build_model(task_name, net_name, n_neurons, lr, stack,
                               total_steps=final_epochs, lr=lr, weight_decay=weight_decay,
                               clipnorm=clipnorm, exclude_from_weight_decay=exclude_from_weight_decay)
     # train_model.compile(optimizer=optimizer, loss=lambda x, y: 0.)
-    train_model.compile(optimizer=optimizer, loss=None)
+    train_model.compile(optimizer=optimizer, loss=None,run_eagerly=True)
 
     return train_model
