@@ -1,7 +1,7 @@
 from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import language_tasks
 
 
-def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_name):
+def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_name, setting='LIF'):
     if n_neurons is None:
         if task_name in language_tasks:
             n_neurons = 1300
@@ -13,12 +13,33 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
             raise NotImplementedError
 
     if lr is None:
-        if task_name in language_tasks:
-            lr = 3.16e-5
-        elif task_name in ['heidelberg', 'lca']:
-            lr = 3.16e-4
-        elif 'mnist' in task_name:
-            lr = 3.16e-4
+        if setting == 'LIF':
+            if task_name in language_tasks:
+                lr = 3.16e-5
+            elif task_name in ['heidelberg', 'lca']:
+                lr = 3.16e-4
+            elif 'mnist' in task_name:
+                lr = 3.16e-4
+            else:
+                raise NotImplementedError
+
+        elif setting == 'LSC':
+            if net_name == 'maLSNN':
+                lr = 1e-3
+            elif net_name == 'LSTM':
+
+                if task_name == 'wordptb':
+                    lr = 3.16e-4
+                elif task_name in ['heidelberg', 'lca']:
+                    lr = 1e-3
+                elif 'mnist' in task_name:
+                    lr = 1e-2
+                else:
+                    raise NotImplementedError
+
+            else:
+                raise NotImplementedError
+
         else:
             raise NotImplementedError
 
