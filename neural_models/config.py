@@ -2,6 +2,8 @@ from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import langua
 
 
 def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_name, setting='LIF'):
+    assert setting in ['LIF', 'LSC']
+
     if n_neurons is None:
         if task_name in language_tasks:
             n_neurons = 1300
@@ -57,7 +59,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
         if 'mnist' in task_name or task_name in ['heidelberg', 'lca']:
             stack = 2
         elif task_name in language_tasks:
-            stack = '1700:300'
+            stack = '1700:300' if setting == 'LIF' else '1700:300'
             embedding = 'learned:None:None:300'
             # if not lsc:
             #     stack = '1700:300'
