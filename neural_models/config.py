@@ -47,7 +47,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
         if task_name in language_tasks:
             batch_size = 32
         elif task_name in ['heidelberg', 'lca']:
-            batch_size = 256
+            batch_size = 128
         elif 'mnist' in task_name:
             batch_size = 256
         else:
