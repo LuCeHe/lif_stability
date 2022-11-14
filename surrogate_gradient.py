@@ -3,6 +3,9 @@ import os, shutil, logging, json, sys, copy
 import numpy as np
 import pandas as pd
 
+from GenericTools.keras_tools.silence_tensorflow import silence_tf
+silence_tf()
+
 import tensorflow as tf
 
 from sg_design_lif.neural_models.adaptsg import adapt_sg_shape
@@ -53,7 +56,7 @@ def config():
     task_name = 'sl_mnist'
 
     # test configuration
-    epochs = 10
+    epochs = 2
     steps_per_epoch = 1
     batch_size = 2
     stack = None
@@ -71,7 +74,7 @@ def config():
 
     # optimizer properties
     lr = None  # 7e-4
-    optimizer_name = 'SWAAdaBelief'  # AdaBelief AdamW SWAAdaBelief
+    optimizer_name = 'AdamW'  # AdaBelief AdamW SWAAdaBelief
     lr_schedule = ''  # 'warmup_cosine_restarts'
     weight_decay_prop_lr = None
     weight_decay = .01 if not 'mnist' in task_name else 0.  # weight_decay_prop_lr * lr
@@ -92,7 +95,8 @@ def config():
 def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
          continue_training, save_model, seed, net_name, n_neurons, lr, stack, loss_name, embedding, optimizer_name,
          lr_schedule, weight_decay, clipnorm, initializer, stop_time, _log):
-    stack, batch_size, embedding, n_neurons, lr = default_config(stack, batch_size, embedding, n_neurons, lr, task_name)
+    stack, batch_size, embedding, n_neurons, lr = default_config(stack, batch_size, embedding, n_neurons, lr, task_name,
+                                                                 net_name)
     sLSTM_factor = 2 / 3 if task_name == 'wordptb' else 1 / 3
     n_neurons = n_neurons if not 'LSTM' in net_name else int(n_neurons * sLSTM_factor)
 
