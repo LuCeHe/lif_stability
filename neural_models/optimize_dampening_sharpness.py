@@ -116,7 +116,7 @@ def equation_IV_mult_reset2_tail(s, dampening, decay, thr, w_rec, w_in, s_in, d_
 
 class OptimizeVariance(tf.keras.layers.Layer):
 
-    def __init__(self, w_rec, w_in, decay, thr, dampening, s_in, d_in, equation_0, **kwargs):
+    def __init__(self, w_rec, w_in, decay, thr, dampening, s_in, d_in, equation_0, minmax =[.2, 2.],**kwargs):
         super().__init__(**kwargs)
         self.w_rec = tf.cast(w_rec, tf.float32)
         self.w_in = tf.cast(w_in, tf.float32)
@@ -126,6 +126,7 @@ class OptimizeVariance(tf.keras.layers.Layer):
         self.s_in = tf.cast(s_in, tf.float32).numpy()
         self.d_in = tf.cast(d_in, tf.float32)
         self.equation_0 = equation_0
+        self.minmax = minmax
 
         self.n_rec = tf.cast(self.w_rec.shape[0], tf.float32)
         self.n_in = tf.cast(tf.shape(w_in)[0], tf.float32)
@@ -133,9 +134,10 @@ class OptimizeVariance(tf.keras.layers.Layer):
     def build(self, input_shape):
         self.s = self.add_weight(
             name='sharpness', shape=(int(self.n_rec.numpy()),),
-            initializer=tf.keras.initializers.RandomUniform(minval=.2, maxval=2.),# for s
+            # initializer=tf.keras.initializers.RandomUniform(minval=.2, maxval=2.),# for s
             # for tail optimization, to avoid nans when q<1.0:
             # initializer=tf.keras.initializers.RandomUniform(minval=1.01, maxval=10.),
+            initializer=tf.keras.initializers.RandomUniform(minval=self.minmax[0], maxval=self.minmax[1]),
             trainable=True
         )
         self.built = True
@@ -266,12 +268,13 @@ def optimize_sharpness(w_rec, w_in, decay, thr, dampening, dampening_in, sharpne
 
 def optimize_tail(w_rec, w_in, decay, thr, dampening, s_in, d_in, epochs=1000):
     equation_0 = equation_IV_mult_reset2_tail
-    sharpness_layer = OptimizeVariance(w_rec, w_in, decay, thr, dampening, s_in, d_in, equation_0)
+    sharpness_layer = OptimizeVariance(w_rec, w_in, decay, thr, dampening, s_in, d_in, equation_0, minmax=[1.01, 3.0])
     input_layer = tf.keras.layers.Input((1,))
     output = sharpness_layer(input_layer)
     model = tf.keras.models.Model(input_layer, output)
 
-    model.compile('Adam', None)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.01,    name="Adam")
+    model.compile(optimizer, None)
     t = tf.random.uniform((1, 1))
     history = model.fit(t, t, epochs=epochs, verbose=1)
     import matplotlib.pyplot as plt

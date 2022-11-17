@@ -45,8 +45,8 @@ GEXPERIMENTS = [
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-21--adaptsg',
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
-    # r'D:\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
-    r'D:\work\stochastic_spiking\good_experiments\2022-01-12--decent-SHD-conditions',
+    r'D:\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
+    # r'D:\work\stochastic_spiking\good_experiments\2022-01-12--decent-SHD-conditions',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
 ]
@@ -65,7 +65,7 @@ group_cols = ['net_name', 'task_name', 'initializer', 'comments']
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='conditions', type=str, help='main behavior',
+    '--type', default='n_tail', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -154,7 +154,7 @@ else:
     with open(HSITORIESPATH) as f:
         histories = json.load(f)
 
-print(df.columns)
+print(list(df.columns))
 history_keys = [
     'perplexity', 'sparse_mode_accuracy', 'loss',
     'v_perplexity', 'v_sparse_mode_accuracy', 'v_loss',
@@ -167,6 +167,12 @@ history_keys = [
     't_firing_rate_ma_lsnn_initial', 't_firing_rate_ma_lsnn_final',
     't_firing_rate_ma_lsnn_1_initial', 't_firing_rate_ma_lsnn_1_final',
 ]
+
+df = df.rename(columns={
+    "val_sparse_mode_accuracy max": "val_sparse_mode_accuracy", "loss min": "loss",
+    # "sparse_mode_accuracy_test max": "sparse_mode_accuracy_test",
+    "sparse_mode_accuracy_test_2": "sparse_mode_accuracy_test"
+})
 
 config_keys = ['comments', 'initializer', 'optimizer_name', 'seed', 'weight_decay', 'clipnorm', 'task_name', 'net_name']
 hyperparams_keys = [
@@ -288,6 +294,9 @@ elif args.type == 'n_tail':
     fig, axs = plt.subplots(1, 1, gridspec_kw={'wspace': .0, 'hspace': 0.}, figsize=(4, 4))
     axs.plot(tails, accs, color=cm(.5))
     axs.fill_between(tails, accs - stds, accs + stds, alpha=0.5, color=cm(.5))
+
+    value = 1.8984
+    axs.axvline(x=value, color='k', linestyle='--')
 
     # max_means = {k: [] for k in tails}
     # for index, row in idf.iterrows():
@@ -835,7 +844,7 @@ elif args.type == 'init_sg':
     ax1.set_ylim([.6, .9])
     clean_initializers_n = [
         d.replace('BiGammaOrthogonal', 'OrthogonalBiGamma').replace('Normal', ' Normal')
-            .replace('Uniform', ' Uniform').replace('BiGamma', ' BiGamma')
+        .replace('Uniform', ' Uniform').replace('BiGamma', ' BiGamma')
         for d in desired_initializers]
 
     ax1.set_xticks(np.arange(len(desired_initializers)))

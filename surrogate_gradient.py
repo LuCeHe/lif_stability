@@ -69,7 +69,7 @@ def config():
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
     # comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m_test_annealing'
-    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjff:.01_v0m_test_annealing'
+    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_conditionIV_optimizetail_ntailpseudod'
     # comments = '8_embproj_nogradreset_dropout:.3_timerepeat:2_readaptsg:3_asgname:movedfastsigmoid'
 
     # optimizer properties

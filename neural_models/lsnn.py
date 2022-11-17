@@ -138,7 +138,8 @@ class baseLSNN(tf.keras.layers.Layer):
             tail = optimize_tail(
                 self.recurrent_weights, self.input_weights, decay_v, self.thr, dampening, sharpness_in, dampening_in
             )
-
+            print('????????????')
+            print(tail)
             self.config = str2val(self.config, 'tailvalue', replace=np.mean(tail))
 
         # self.inh_exc = tf.ones(self.num_neurons)
