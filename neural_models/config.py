@@ -26,7 +26,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
                 raise NotImplementedError
 
         elif setting == 'LSC':
-            if net_name == 'maLSNN':
+            if net_name in ['maLSNN', 'maLSNNb']:
                 lr = 1e-3
             elif net_name == 'LSTM':
 

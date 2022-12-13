@@ -496,3 +496,10 @@ class maLSNN(aLSNN):
         z = self.spike_type(v_sc)
         z.set_shape(v_sc.get_shape())
         return z, v_sc
+
+
+class maLSNNb(maLSNN):
+    def __init__(self, *args, **kwargs):
+        kwargs['config'] = kwargs['config'] + '_gaussbeta'
+        super().__init__(*args, **kwargs)
+
