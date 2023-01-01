@@ -59,14 +59,10 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
         if 'mnist' in task_name or task_name in ['heidelberg', 'lca']:
             stack = 2
         elif task_name in language_tasks:
-            stack = '1700:300' if setting == 'LIF' else '1700:300'
+            stack = '1700:300' if setting == 'LIF' else '1300:300'
             embedding = 'learned:None:None:300'
-            # if not lsc:
-            #     stack = '1700:300'
-            #     embedding = 'learned:None:None:300'
-            # else:
-            #     stack = '1000:300'
-            #     embedding = 'learned:None:None:300'
+            if net_name == 'LSTM':
+                stack = '700:300' if setting == 'LIF' else '500:300'
         else:
             raise NotImplementedError
 
@@ -81,6 +77,5 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
         sLSTM_factor = 1 / 3
 
     n_neurons = n_neurons if not 'LSTM' in net_name else int(n_neurons * sLSTM_factor)
-    stack = '700:300' if ('LSTM' in net_name and task_name == 'wordptb') else stack
 
     return stack, batch_size, embedding, n_neurons, lr
