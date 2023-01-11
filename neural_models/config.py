@@ -50,6 +50,8 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
             batch_size = 32
         elif task_name in ['heidelberg', 'lca']:
             batch_size = 128 if setting == 'LIF' else 100
+            if stack == 7:
+                batch_size = 50
         elif 'mnist' in task_name:
             batch_size = 256
         else:
