@@ -51,21 +51,22 @@ GEXPERIMENTS = [
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
 ]
 EXPERIMENTS = r'D:\work\stochastic_spiking\experiments'
+EXPERIMENTS = r'D:\work\stochastic_spiking\good_experiments\2022-09-17--sparsity-for-figure'
 
 CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 
 metric_sort = 'v_ppl'
-metric_sort = 'val_macc'
+# metric_sort = 'val_macc'
 metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc', 'fr_initial', 'fr_final', 'fr_1_initial', 'fr_1_final']
-metrics_oi = ['val_macc', 'macc_test']
+# metrics_oi = ['val_macc', 'macc_test']
 reduce_samples = False
 group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
 group_cols = ['net_name', 'task_name', 'initializer', 'comments']
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='n_tail', type=str, help='main behavior',
+    '--type', default='sparsity', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -297,25 +298,6 @@ elif args.type == 'n_tail':
 
     value = 1.8984
     axs.axvline(x=value, color='k', linestyle='--')
-
-    # max_means = {k: [] for k in tails}
-    # for index, row in idf.iterrows():
-    #     tail = str2val(row['comments'], 'tailvalue')
-    #     d = row['d_name']
-    #     event_dir = os.path.join(d, 'other_outputs', 'train')
-    #     event_filename = os.path.join(event_dir, [p for p in os.listdir(event_dir) if 'events' in p][0])
-    #
-    #     means, stds = TensorboardToNumpy(event_filename, id_selection='grad')
-    #
-    #     mean_mean = np.array([np.median(np.abs(list(v.values()))) for v in means.values()])[::2]
-    #     mean_std = np.array([np.median(np.abs(list(v.values()))) for v in stds.values()])[::2]
-    #     # axs[1].plot(mean_mean)
-    #     max_means[tail].append(np.mean(mean_mean))
-    #
-    # means = np.array([np.mean(v) for _, v in max_means.items()])
-    # stds = np.array([np.std(v) for _, v in max_means.items()])
-    # axs[1].plot(tails, means)
-    # axs[1].fill_between(tails, means - stds, means + stds, alpha=0.5)
 
     for pos in ['right', 'left', 'bottom', 'top']:
         axs.spines[pos].set_visible(False)
@@ -630,6 +612,7 @@ elif args.type == 'sparsity':
         idf = df
         idf = idf[~idf['comments'].str.contains('adjff')]
 
+        print(idf.columns)
         frs0i = idf[data_split + 'fr_initial'].values
         frs1i = idf[data_split + 'fr_1_initial'].values
         frs0f = idf[data_split + 'fr_final'].values
@@ -726,9 +709,28 @@ elif args.type == 'sparsity':
             for pos in ['right', 'left', 'bottom', 'top']:
                 ax.spines[pos].set_visible(False)
 
+            if task_name == 'sl-MNIST':
+                ax.set_xlim([-0.1, 0.8])
+            else:
+                ax.set_xlim([0.0, 0.8])
+
+            ax.set_xticks([0.25,0.5,0.75])
+
+        for j in range(4):
+            if not j == 0:
+                axs[j].tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+
+        # axs[0].set_xlim([0,0.8])
+        # axs[2].set_xlim([0,0.8])
+        # axs[1].set_xlim([0,0.8])
+        # axs[3].set_xlim([0,0.8])
         fig.text(0.72, .93, 'Sparsity Encouraging\nLoss Term', ha='center', va='center', fontsize=16)
         fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', ha='center', va='center', fontsize=16)
-        plt.suptitle(f'{pseudoname} on {task_name}', y=1.05)
+        plt.suptitle(f'{pseudoname} on {task_name}', y=1.07)
+
+        # line = plt.Line2D([.52, .52], [-.05, .95], transform=fig.transFigure, color="black")
+        line = plt.Line2D([.52, .52], [-.05, .95], transform=fig.transFigure, color="black")
+        fig.add_artist(line)
 
         plt.show()
         plot_filename = f'experiments/{data_split}_sparsity_tsg{change_sg}_t{task_name}.pdf'
