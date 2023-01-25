@@ -219,8 +219,10 @@ def build_model(task_name, net_name, n_neurons, lr, stack,
     # graph
     # input_words = Input([in_len, n_in], name='input_spikes', batch_size=batch_size)
     # output_words = Input([out_len], name='target_words', batch_size=batch_size)
-    input_words = Input([None, n_in], name='input_spikes')
-    output_words = Input([None], name='target_words')
+    batch_size = str2val(comments, 'batchsize', int, 1)
+
+    input_words = tf.keras.layers.Input([None, n_in], name='input_spikes', batch_size=batch_size)
+    output_words = tf.keras.layers.Input([None], name='target_words', batch_size=batch_size)
 
     x = input_words
 
