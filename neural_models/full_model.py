@@ -4,6 +4,7 @@ from tensorflow.keras.losses import sparse_categorical_crossentropy
 
 from GenericTools.keras_tools.esoteric_layers import *
 from GenericTools.keras_tools.esoteric_layers.combine_tensors import CombineTensors
+# from GenericTools.keras_tools.esoteric_models.model import modifiedModel
 from GenericTools.keras_tools.esoteric_optimizers.optimizer_selection import get_optimizer
 from GenericTools.stay_organized.utils import str2val
 from GenericTools.keras_tools.esoteric_losses.loss_redirection import get_loss
