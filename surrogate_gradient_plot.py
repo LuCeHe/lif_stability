@@ -54,7 +54,7 @@ EXPERIMENTS = r'D:\work\stochastic_spiking\experiments'
 CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 
-metric_sort = 'v_ppl'
+# metric_sort = 'v_ppl'
 metric_sort = 'val_macc'
 # metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc', 'fr_initial', 'fr_final', 'fr_1_initial', 'fr_1_final']
 metrics_oi = ['val_macc', 'macc_test']
@@ -64,7 +64,7 @@ group_cols = ['net_name', 'task_name', 'initializer', 'comments']
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='n_tail', type=str, help='main behavior',
+    '--type', default='sharpness_dampening', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -319,8 +319,8 @@ elif args.type == 'n_tail':
 
 elif args.type == 'sharpness_dampening':
     feature = 'sharpness'  # sharpness dampening
-
-    for feature in ['dampening', 'sharpness']:
+    features = ['sharpness']
+    for feature in features:
         feature_oi = 'dampf' if feature == 'dampening' else 'sharpn'
 
         idf = mdf[mdf['comments'].str.contains('2_')]
@@ -336,9 +336,15 @@ elif args.type == 'sharpness_dampening':
         for pn in possible_pseudod:
             iidf = idf[idf['comments'].str.contains(pn)].sort_values(by='comments', ascending=False)
             foi_values = [str2val(d, feature_oi) for d in iidf['comments']]
+            print(foi_values)
             accs = iidf['mean_val_macc'].values
             stds = iidf['std_val_macc'].values
             stds = np.nan_to_num(stds)
+            if feature == 'sharpness':
+                if 0.1 in foi_values:
+                    foi_values = foi_values[:-1]
+                    accs = accs[:-1]
+                    stds = stds[:-1]
             axs.plot(foi_values, accs, color=pseudod_color(pn))
             axs.fill_between(foi_values, accs - stds, accs + stds, alpha=0.5, color=pseudod_color(pn))
 
@@ -568,10 +574,10 @@ elif args.type == 'sparsity':
     metric = 'ppl'  # macc ppl
     ylabel = 'Perplexity' if metric == 'ppl' else 'Accuracy'
     metric = data_split + metric
-    task_name = 'SHD'  # sl-MNIST SHD PTB
+    task_name = 'PTB'  # sl-MNIST SHD PTB
 
     net_name = 'LIF'  # LIF sLSTM
-    change_sg = 'originalpseudod'  # exponentialpseudod originalpseudod fastsigmoidpseudod
+    change_sg = 'fastsigmoidpseudod'  # exponentialpseudod originalpseudod fastsigmoidpseudod
     pseudoname = clean_pseudname(change_sg if len(change_sg) else 'fastsigmoidpseudod')
 
     plot_1, plot_2, plot_3 = True, False, False
@@ -713,20 +719,16 @@ elif args.type == 'sparsity':
             else:
                 ax.set_xlim([0.0, 0.8])
 
-            ax.set_xticks([0.25,0.5,0.75])
+            ax.set_xticks([0.25, 0.5, 0.75])
+            ax.locator_params(nbins=5)
 
         for j in range(4):
             if not j == 0:
                 axs[j].tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
 
-        # axs[0].set_xlim([0,0.8])
-        # axs[2].set_xlim([0,0.8])
-        # axs[1].set_xlim([0,0.8])
-        # axs[3].set_xlim([0,0.8])
         fig.text(0.72, .93, 'Sparsity Encouraging\nLoss Term', ha='center', va='center', fontsize=16)
         fig.text(0.29, .93, 'no Sparsity Encouraging\nLoss Term', ha='center', va='center', fontsize=16)
         plt.suptitle(f'{pseudoname} on {task_name}', y=1.07)
-
         # line = plt.Line2D([.52, .52], [-.05, .95], transform=fig.transFigure, color="black")
         line = plt.Line2D([.52, .52], [-.05, .95], transform=fig.transFigure, color="black")
         fig.add_artist(line)
