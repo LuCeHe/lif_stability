@@ -31,8 +31,6 @@ from GenericTools.stay_organized.utils import timeStructured, str2val
 from GenericTools.stay_organized.mpl_tools import load_plot_settings
 
 from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import Task
-# from stochastic_spiking.language_main import build_model
-# from sg_design_lif.neural_models import clean_pseudo_name, pseudod_color
 from sg_design_lif.visualization_tools.plotting_tools import smart_plot, postprocess_results
 
 mpl, pd = load_plot_settings(mpl=mpl, pd=pd)
@@ -51,22 +49,22 @@ GEXPERIMENTS = [
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
 ]
 EXPERIMENTS = r'D:\work\stochastic_spiking\experiments'
-EXPERIMENTS = r'D:\work\stochastic_spiking\good_experiments\2022-09-17--sparsity-for-figure'
+# EXPERIMENTS = r'D:\work\stochastic_spiking\good_experiments\2022-09-17--sparsity-for-figure'
 
 CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 
 metric_sort = 'v_ppl'
-# metric_sort = 'val_macc'
-metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc', 'fr_initial', 'fr_final', 'fr_1_initial', 'fr_1_final']
-# metrics_oi = ['val_macc', 'macc_test']
+metric_sort = 'val_macc'
+# metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc', 'fr_initial', 'fr_final', 'fr_1_initial', 'fr_1_final']
+metrics_oi = ['val_macc', 'macc_test']
 reduce_samples = False
 group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
 group_cols = ['net_name', 'task_name', 'initializer', 'comments']
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='sparsity', type=str, help='main behavior',
+    '--type', default='n_tail', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
@@ -263,7 +261,7 @@ if args.type == 'excel':
 
 
 elif args.type == 'n_tail':
-
+    metric = 'val_macc'
     idf = df[df['comments'].str.contains('_tailvalue') & df['comments'].str.contains('2_')]
     counts = idf.groupby(['comments', ]).size().reset_index(name='counts')
     left = counts[counts['counts'] < 4]
@@ -277,17 +275,18 @@ elif args.type == 'n_tail':
     print(mdf.to_string(index=False))
     print(idf.to_string(index=False))
     idf = idf.loc[idf['comments'].isin(done)]
-    idf = idf.sort_values(by='mean_val_macc', ascending=False)
+    idf = idf.sort_values(by=f'mean_{metric}', ascending=False)
     print('here!')
     print(idf.to_string(index=False))
 
     idf = idf[idf['comments'].str.contains('tailvalue')]
-    tails = idf['comments'].str.replace('2_noalif_timerepeat:2_multreset2_nogradreset__ntailpseudod_tailvalue:',
-                                        '').values.astype(float)
+    tails = idf['comments'].str.replace(
+        '2_noalif_timerepeat:2_multreset2_nogradreset__ntailpseudod_tailvalue:', ''
+    ).values.astype(float)
 
     sorted_idx = tails.argsort()
-    accs = idf['mean_val_macc'].values[sorted_idx]
-    stds = idf['std_val_macc'].values[sorted_idx]
+    accs = idf[f'mean_{metric}'].values[sorted_idx]
+    stds = idf[f'std_{metric}'].values[sorted_idx]
     tails = tails[sorted_idx]
 
     cm = plt.get_cmap('Oranges')
