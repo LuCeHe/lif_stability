@@ -238,7 +238,11 @@ class ModelBuilder:
 
         self.comments = comments
 
-        n_states = 4 if 'LSNN' in self.net_name else 2
+        rnn_aux = self.expert(0, 0, comments, n=n_neurons, init_s=initial_state)
+        # print(rnn_aux.rnn.cell.state_size)
+        # n_states = 4 if 'LSNN' in self.net_name else 2
+        n_states = 1 if not isinstance(rnn_aux.rnn.cell.state_size, list) else len(rnn_aux.rnn.cell.state_size)
+        # print(n_states)
 
         self.rnns = []
         self.all_input_states = []

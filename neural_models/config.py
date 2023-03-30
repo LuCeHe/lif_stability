@@ -28,7 +28,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
         elif setting == 'LSC':
             if net_name in ['maLSNN', 'maLSNNb']:
                 lr = 1e-3
-            elif net_name == 'LSTM':
+            elif net_name in ['LSTM', 'GRU']:
 
                 if task_name == 'wordptb':
                     lr = 3.16e-4
@@ -63,7 +63,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
         elif task_name in language_tasks:
             stack = '1700:300' if setting == 'LIF' else '1300:300'
             embedding = 'learned:None:None:300'
-            if net_name == 'LSTM':
+            if net_name in ['LSTM', 'GRU']:
                 stack = '700:300' if setting == 'LIF' else '500:300'
         else:
             raise NotImplementedError
