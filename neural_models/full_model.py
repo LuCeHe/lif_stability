@@ -14,6 +14,8 @@ from GenericTools.keras_tools.esoteric_losses.advanced_losses import *
 
 import sg_design_lif.neural_models as models
 from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import language_tasks
+from sg_design_lif.neural_models.ind_rnn_cell import IndRNNCell
+from sg_design_lif.neural_models.lmu import LMUCell
 
 metrics = [
     sparse_categorical_accuracy,
@@ -139,6 +141,22 @@ class Expert:
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))
 
+        elif net_name == 'indrnn':
+            cell = IndRNNCell(num_units=n_neurons)
+            rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
+                                      stateful=stateful)
+            rnn.build((batch_size, maxlen, nin))
+
+        elif net_name == 'LMU':
+            memory_d = n_neurons - 2
+            order = 2
+            theta = 50
+            hidden_cell = None
+            cell = LMUCell(memory_d, order, theta, hidden_cell, trainable_theta=True, discretizer='euler')
+            rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
+                                      stateful=stateful)
+            rnn.build((batch_size, maxlen, nin))
+
         else:
             raise NotImplementedError
 
@@ -159,7 +177,7 @@ class Expert:
             else:
                 output_cell = b
 
-        elif 'LSTM' in self.net_name or 'GRU' in self.net_name:
+        elif any([n in self.net_name for n in ['LSTM', 'GRU', 'indrnn', 'LMU']]):
             all_out = self.rnn(inputs=skipped_connection_input, initial_state=self.initial_state)
             output_cell, states = all_out[0], all_out[1:]
         else:
@@ -340,9 +358,8 @@ class ModelBuilder:
 
     def embedding2output(self):
 
-
         input_embedding = tf.keras.layers.Input([self.timesteps, self.emb.embed_dim], name='input_spikes',
-                                            batch_size=self.batch_size)
+                                                batch_size=self.batch_size)
         output_words = tf.keras.layers.Input([self.timesteps], name='target_words', batch_size=self.batch_size)
 
         x = input_embedding
