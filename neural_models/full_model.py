@@ -147,6 +147,18 @@ class Expert:
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))
 
+        elif net_name == 'rsimplernn':
+            cell = tf.keras.layers.SimpleRNNCell(units=n_neurons, activation='relu')
+            rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
+                                      stateful=stateful)
+            rnn.build((batch_size, maxlen, nin))
+
+        elif net_name == 'ssimplernn':
+            cell = tf.keras.layers.SimpleRNNCell(units=n_neurons, activation='sigmoid')
+            rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
+                                      stateful=stateful)
+            rnn.build((batch_size, maxlen, nin))
+
         elif net_name == 'LMU':
             memory_d = n_neurons - 2
             order = 2
@@ -177,7 +189,7 @@ class Expert:
             else:
                 output_cell = b
 
-        elif any([n in self.net_name for n in ['LSTM', 'GRU', 'indrnn', 'LMU']]):
+        elif any([n in self.net_name for n in ['LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn']]):
             all_out = self.rnn(inputs=skipped_connection_input, initial_state=self.initial_state)
             output_cell, states = all_out[0], all_out[1:]
         else:

@@ -449,6 +449,87 @@ class LMUCell(DropoutRNNCellMixin, BaseRandomLayer):
         return super().from_config(config)
 
 
+
+@tf.keras.utils.register_keras_serializable("keras-lmu")
+class LMUCell2(LMUCell):
+
+    def __init__(
+        self,
+        memory_d,
+        order,
+        theta,
+        hidden_cell,
+        trainable_theta=False,
+        hidden_to_memory=False,
+        memory_to_memory=False,
+        input_to_hidden=False,
+        discretizer="zoh",
+        kernel_initializer="glorot_uniform",
+        recurrent_initializer="orthogonal",
+        kernel_regularizer=None,
+        recurrent_regularizer=None,
+        use_bias=False,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        dropout=0,
+        recurrent_dropout=0,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+
+        self.memory_d = memory_d
+        self.order = order
+        self._init_theta = theta
+        self.hidden_cell = hidden_cell
+        self.trainable_theta = trainable_theta
+        self.hidden_to_memory = hidden_to_memory
+        self.memory_to_memory = memory_to_memory
+        self.input_to_hidden = input_to_hidden
+        self.discretizer = discretizer
+        self.kernel_initializer = kernel_initializer
+        self.recurrent_initializer = recurrent_initializer
+        self.kernel_regularizer = kernel_regularizer
+        self.recurrent_regularizer = recurrent_regularizer
+        self.use_bias = use_bias
+        self.bias_initializer = bias_initializer
+        self.bias_regularizer = bias_regularizer
+        self.dropout = dropout
+        self.recurrent_dropout = recurrent_dropout
+
+        self.kernel = None
+        self.recurrent_kernel = None
+        self.bias = None
+        self.theta_inv = None
+        self.A = None
+        self.B = None
+
+        if self.discretizer not in ("zoh", "euler"):
+            raise ValueError(
+                f"discretizer must be 'zoh' or 'euler' (got '{self.discretizer}')"
+            )
+
+        if self.hidden_cell is None:
+            for conn in ("hidden_to_memory", "input_to_hidden"):
+                if getattr(self, conn):
+                    raise ValueError(f"{conn} must be False if hidden_cell is None")
+
+            self.hidden_output_size = self.memory_d * self.order
+            self.hidden_state_size = []
+        elif hasattr(self.hidden_cell, "state_size"):
+            self.hidden_output_size = self.hidden_cell.output_size
+            self.hidden_state_size = self.hidden_cell.state_size
+        else:
+            # TODO: support layers that don't have the `units` attribute
+            self.hidden_output_size = self.hidden_cell.units
+            self.hidden_state_size = [self.hidden_cell.units]
+
+        self.state_size = tf.nest.flatten(self.hidden_state_size) + [
+            self.memory_d * self.order
+        ]
+        self.output_size = self.hidden_output_size
+        print('hey!', self.state_size, self.output_size)
+
+
 @tf.keras.utils.register_keras_serializable("keras-lmu")
 class LMU(tf.keras.layers.Layer):
     """

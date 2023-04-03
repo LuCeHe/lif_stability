@@ -28,7 +28,10 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
         elif setting == 'LSC':
             if net_name in ['maLSNN', 'maLSNNb']:
                 lr = 1e-3
-            elif net_name in ['LSTM', 'GRU', 'indrnn', 'LMU']:
+            elif net_name in [
+                'LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn'
+            ]:
+
 
                 if task_name == 'wordptb':
                     lr = 3.16e-4
@@ -80,19 +83,23 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
         sLSTM_factor = .37  # 1 / 3
         GRU_factor = .46  # 1 / 3
         indrnn_factor = 1.38  # 1 / 3
+        srnn_factor = 1
 
     elif task_name == 'sl_mnist':
         sLSTM_factor = 1 / 3
         GRU_factor = .42
         indrnn_factor = 1.25  # 1 / 3
+        srnn_factor = 1
 
     else:
         sLSTM_factor = 1 / 3
         GRU_factor = .42
         indrnn_factor = .46  # 1 / 3
+        srnn_factor = 1
 
     n_neurons = n_neurons if not 'LSTM' in net_name else int(n_neurons * sLSTM_factor)
     n_neurons = n_neurons if not 'GRU' in net_name else int(n_neurons * GRU_factor)
     n_neurons = n_neurons if not 'indrnn' in net_name else int(n_neurons * indrnn_factor)
+    n_neurons = n_neurons if not net_name in ['rsimplernn', 'ssimplernn'] else int(srnn_factor * n_neurons)
 
     return stack, batch_size, embedding, n_neurons, lr
