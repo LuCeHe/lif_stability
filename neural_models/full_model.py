@@ -142,19 +142,23 @@ class Expert:
             rnn.build((batch_size, maxlen, nin))
 
         elif net_name == 'indrnn':
-            cell = IndRNNCell(num_units=n_neurons)
+            cell = IndRNNCell(num_units=n_neurons, bias_initializer='glorot_uniform')
             rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))
 
         elif net_name == 'rsimplernn':
-            cell = tf.keras.layers.SimpleRNNCell(units=n_neurons, activation='relu')
+            cell = tf.keras.layers.SimpleRNNCell(
+                units=n_neurons, activation='relu', bias_initializer='glorot_uniform'
+            )
             rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))
 
         elif net_name == 'ssimplernn':
-            cell = tf.keras.layers.SimpleRNNCell(units=n_neurons, activation='sigmoid')
+            cell = tf.keras.layers.SimpleRNNCell(
+                units=n_neurons, activation='sigmoid', bias_initializer='glorot_uniform'
+            )
             rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))

@@ -64,6 +64,7 @@ class IndRNNCell(LayerRNNCell):
                  recurrent_max_abs=None,
                  recurrent_kernel_initializer=None,
                  input_kernel_initializer=None,
+                 bias_initializer='zeros',
                  activation=None,
                  reuse=None,
                  name=None):
@@ -77,6 +78,7 @@ class IndRNNCell(LayerRNNCell):
         self._recurrent_max_abs = recurrent_max_abs
         self._recurrent_initializer = recurrent_kernel_initializer
         self._input_initializer = input_kernel_initializer
+        self.bias_initializer = bias_initializer
         self._activation = activation or nn_ops.relu
 
     @property
@@ -127,7 +129,7 @@ class IndRNNCell(LayerRNNCell):
         self._bias = self.add_variable(
             "bias",
             shape=[self._num_units],
-            initializer=init_ops.zeros_initializer(dtype=self.dtype))
+            initializer=self.bias_initializer)
 
         self.built = True
 
