@@ -210,6 +210,7 @@ class ModelBuilder:
 
         self.task_name, self.net_name, self.n_neurons = task_name, net_name, n_neurons
         self.n_in, self.n_out = n_in, n_out
+        self.ostack = stack
         # task_name, net_name, n_neurons, lr, stack,
         # loss_name, embedding, optimizer_name, lr_schedule, weight_decay, clipnorm,
         self.loss_name, self.embedding, self.optimizer_name = loss_name, embedding, optimizer_name
@@ -352,8 +353,9 @@ class ModelBuilder:
                                   total_steps=self.final_epochs, lr=self.lr, weight_decay=self.weight_decay,
                                   clipnorm=self.clipnorm, exclude_from_weight_decay=exclude_from_weight_decay)
 
-        # train_model.compile(optimizer=optimizer, loss=None, run_eagerly=True)
-        train_model.compile(optimizer=optimizer, loss=None, run_eagerly=False)
+        eagerly = True if not self.ostack in [5, 7] else False
+
+        train_model.compile(optimizer=optimizer, loss=None, run_eagerly=eagerly)
         return train_model
 
     def input2embedding(self):
