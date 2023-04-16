@@ -353,7 +353,8 @@ class ModelBuilder:
                                   total_steps=self.final_epochs, lr=self.lr, weight_decay=self.weight_decay,
                                   clipnorm=self.clipnorm, exclude_from_weight_decay=exclude_from_weight_decay)
 
-        eagerly = True if not self.ostack in [5, 7] else False
+        # eagerly = True if not self.ostack in [5, 7] else False
+        eagerly = True
 
         train_model.compile(optimizer=optimizer, loss=None, run_eagerly=eagerly)
         return train_model
