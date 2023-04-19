@@ -26,7 +26,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
                 raise NotImplementedError
 
         elif setting == 'LSC':
-            if net_name in ['maLSNN', 'maLSNNb']:
+            if net_name in ['maLSNN', 'maLSNNb', 'maLSNNc']:
                 lr = 1e-3
             elif net_name in [
                 'LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn'
@@ -77,6 +77,19 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
 
         else:
             raise NotImplementedError
+
+    elif isinstance(stack, int):
+
+        if task_name in ['wordptb']:
+            base_neurons = 1700 if setting == 'LIF' else 1300
+            embedding = 'learned:None:None:300'
+            if net_name in ['LSTM']:
+                base_neurons = 700 if setting == 'LIF' else 500
+            elif net_name == 'GRU':
+                base_neurons = 625
+
+            stack = ':'.join([str(base_neurons)] * (stack - 1)) + ':300'
+
 
     if embedding == None:
         embedding = False

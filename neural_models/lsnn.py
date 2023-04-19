@@ -503,3 +503,8 @@ class maLSNNb(maLSNN):
         kwargs['config'] = kwargs['config'] + '_gaussbeta'
         super().__init__(*args, **kwargs)
 
+class maLSNNc(maLSNN):
+    def __init__(self, *args, **kwargs):
+        kwargs['config'] = kwargs['config'] + '_mgausspseudod_learnsharp_learndamp'
+        super().__init__(*args, **kwargs)
+
