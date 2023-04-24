@@ -148,8 +148,9 @@ class Expert:
             rnn.build((batch_size, maxlen, nin))
 
         elif net_name == 'rsimplernn':
+            activation = 'swish' if 'ptb' in task_name else 'relu'
             cell = tf.keras.layers.SimpleRNNCell(
-                units=n_neurons, activation='relu', bias_initializer='glorot_uniform'
+                units=n_neurons, activation=activation, bias_initializer='glorot_uniform',
             )
             rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
                                       stateful=stateful)
