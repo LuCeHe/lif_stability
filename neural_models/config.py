@@ -32,7 +32,6 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
                 'LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn'
             ]:
 
-
                 if task_name == 'wordptb':
                     lr = 3.16e-4
                 elif task_name in ['heidelberg', 'lca']:
@@ -86,7 +85,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
             elif net_name == 'GRU':
                 base_neurons = 625
 
-            stack = ':'.join([str(base_neurons)] * (stack - 1)) + ':300'
+            stack = ':'.join([f'{base_neurons}:{base_neurons//5}'] * (stack//2)) + ':300'
 
 
     if embedding == None:
