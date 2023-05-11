@@ -45,7 +45,10 @@ class baseLSNN(tf.keras.layers.Layer):
             internal_current=internal_current, initializer=initializer, config=config)
         self.__dict__.update(self.init_args)
 
-        self.state_size = [num_neurons, num_neurons, num_neurons, num_neurons]
+        if self.ref_period > 0:
+            self.state_size = [num_neurons, num_neurons, num_neurons, num_neurons]
+        else:
+            self.state_size = [num_neurons, num_neurons, num_neurons]
         self.mask = tf.ones((self.num_neurons, self.num_neurons)) - tf.eye(self.num_neurons)
         if 'withrecdiag' in self.config:
             self.mask = tf.ones((self.num_neurons, self.num_neurons))
@@ -276,7 +279,11 @@ class baseLSNN(tf.keras.layers.Layer):
             old_z = states[0]
         else:
             old_z = self.spike_type(old_v - self.thr - old_a * self.beta_transform())
-        last_spike_distance = states[3]
+
+        if self.ref_period > 0:
+            last_spike_distance = states[3]
+        else:
+            last_spike_distance = None
 
         i_in = self.currents_composition(inputs, old_z)
 
@@ -305,7 +312,10 @@ class baseLSNN(tf.keras.layers.Layer):
                         v_sc):
 
         output = [z, new_v, thr, v_sc]
-        new_state = [z, new_v, new_a, new_last_spike_distance]
+        if self.ref_period > 0:
+            new_state = [z, new_v, new_a, new_last_spike_distance]
+        else:
+            new_state = [z, new_v, new_a]
         return output, new_state
 
 
