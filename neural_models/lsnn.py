@@ -324,6 +324,7 @@ class baseLSNN(tf.keras.layers.Layer):
             new_state = [new_v, new_a]
         else:
             new_state = [z, new_v, new_a]
+
         return output, new_state
 
 
