@@ -46,9 +46,13 @@ class baseLSNN(tf.keras.layers.Layer):
         self.__dict__.update(self.init_args)
 
         if self.ref_period > 0:
-            self.state_size = [num_neurons, num_neurons, num_neurons, num_neurons]
-        else:
             self.state_size = [num_neurons, num_neurons, num_neurons]
+        else:
+            self.state_size = [num_neurons, num_neurons]
+
+        if not 'reoldspike' in self.config:
+            self.state_size.append(num_neurons)
+
         self.mask = tf.ones((self.num_neurons, self.num_neurons)) - tf.eye(self.num_neurons)
         if 'withrecdiag' in self.config:
             self.mask = tf.ones((self.num_neurons, self.num_neurons))
@@ -272,12 +276,14 @@ class baseLSNN(tf.keras.layers.Layer):
         if not training is None:
             tf.keras.backend.set_learning_phase(training)
 
-        old_v = states[1]
-        old_a = states[2]
 
         if not 'reoldspike' in self.config:
             old_z = states[0]
+            old_v = states[1]
+            old_a = states[2]
         else:
+            old_v = states[0]
+            old_a = states[1]
             old_z = self.spike_type(old_v - self.thr - old_a * self.beta_transform())
 
         if self.ref_period > 0:
@@ -314,6 +320,8 @@ class baseLSNN(tf.keras.layers.Layer):
         output = [z, new_v, thr, v_sc]
         if self.ref_period > 0:
             new_state = [z, new_v, new_a, new_last_spike_distance]
+        elif 'reoldspike' in self.config:
+            new_state = [new_v, new_a]
         else:
             new_state = [z, new_v, new_a]
         return output, new_state
