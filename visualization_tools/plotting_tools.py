@@ -5,8 +5,8 @@ import numpy as np
 import tensorflow as tf
 from matplotlib.ticker import MaxNLocator
 
-from GenericTools.stay_organized.plot_tricks import large_num_to_reasonable_string
-from GenericTools.keras_tools.esoteric_tasks.ptb_get_statistics import get_probabilities
+from pyaromatics.stay_organized.plot_tricks import large_num_to_reasonable_string
+from pyaromatics.keras_tools.esoteric_tasks.ptb_get_statistics import get_probabilities
 
 logger = logging.getLogger('mylogger')
 

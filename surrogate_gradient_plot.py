@@ -3,8 +3,8 @@ from datetime import timedelta, datetime
 
 from tensorflow import reduce_prod
 
-from GenericTools.keras_tools.esoteric_initializers import glorotcolor, orthogonalcolor, hecolor
-from GenericTools.stay_organized.pandardize import simplify_col_names
+from pyaromatics.keras_tools.esoteric_initializers import glorotcolor, orthogonalcolor, hecolor
+from pyaromatics.stay_organized.pandardize import simplify_col_names
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 FMT = '%Y-%m-%dT%H:%M:%S'
@@ -19,18 +19,18 @@ from matplotlib.lines import Line2D
 import pickle
 import matplotlib.pyplot as plt
 
-from GenericTools.keras_tools.convergence_metric import convergence_estimation
-from GenericTools.keras_tools.esoteric_layers.surrogated_step import possible_pseudod, clean_pseudname, \
+from pyaromatics.keras_tools.convergence_metric import convergence_estimation
+from pyaromatics.keras_tools.esoteric_layers.surrogated_step import possible_pseudod, clean_pseudname, \
     clean_pseudo_name, pseudod_color
-from GenericTools.keras_tools.plot_tools import plot_history, TensorboardToNumpy, history_pick
-# from GenericTools.PlotTools.mpl_tools import load_plot_settings
-from GenericTools.stay_organized.unzip import unzip_good_exps
-from GenericTools.stay_organized.plot_tricks import large_num_to_reasonable_string
-from GenericTools.stay_organized.statistics import significance_to_star
-from GenericTools.stay_organized.utils import timeStructured, str2val
-from GenericTools.stay_organized.mpl_tools import load_plot_settings
+from pyaromatics.keras_tools.plot_tools import plot_history, TensorboardToNumpy, history_pick
+# from pyaromatics.PlotTools.mpl_tools import load_plot_settings
+from pyaromatics.stay_organized.unzip import unzip_good_exps
+from pyaromatics.stay_organized.plot_tricks import large_num_to_reasonable_string
+from pyaromatics.stay_organized.statistics import significance_to_star
+from pyaromatics.stay_organized.utils import timeStructured, str2val
+from pyaromatics.stay_organized.mpl_tools import load_plot_settings
 
-from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import Task
+from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import Task
 from sg_design_lif.visualization_tools.plotting_tools import smart_plot, postprocess_results
 
 mpl, pd = load_plot_settings(mpl=mpl, pd=pd)

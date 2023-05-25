@@ -6,8 +6,8 @@ import numpy as np
 from tensorflow_addons.callbacks import TimeStopping
 from transformers import TFGPT2LMHeadModel
 
-from GenericTools.keras_tools.esoteric_layers.dropword import DropWord
-from GenericTools.keras_tools.esoteric_optimizers.AdaBelief import AdaBelief
+from pyaromatics.keras_tools.esoteric_layers.dropword import DropWord
+from pyaromatics.keras_tools.esoteric_optimizers.AdaBelief import AdaBelief
 
 from sg_design_lif.generate_data.huggingface_generator import HuggingfaceGenerator
 from sg_design_lif.neural_models.configuration_performer_attention_spiking import SpikingPerformerAttentionConfig

@@ -2,9 +2,9 @@ import os, argparse, time
 import numpy as np
 import tensorflow as tf
 
-from GenericTools.keras_tools.esoteric_layers import AddLossLayer
-from GenericTools.keras_tools.expose_latent import expose_latent_model
-from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import checkTaskMeanVariance
+from pyaromatics.keras_tools.esoteric_layers import AddLossLayer
+from pyaromatics.keras_tools.expose_latent import expose_latent_model
+from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import checkTaskMeanVariance
 from sg_design_lif.neural_models.full_model import build_model
 
 

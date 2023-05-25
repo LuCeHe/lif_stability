@@ -14,8 +14,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import tensorflow as tf
 
-from GenericTools.stay_organized.utils import str2val, NumpyEncoder, setReproducible
-from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import Task, checkTaskMeanVariance
+from pyaromatics.stay_organized.utils import str2val, NumpyEncoder, setReproducible
+from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import Task, checkTaskMeanVariance
 from sg_design_lif.neural_models.config import default_config
 from sg_design_lif.neural_models.full_model import build_model
 from sg_design_lif.visualization_tools.training_tests import Tests, get_test_model

@@ -1,4 +1,4 @@
-from GenericTools.keras_tools.esoteric_tasks.time_task_redirection import language_tasks
+from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import language_tasks
 
 
 def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_name, setting='LIF'):

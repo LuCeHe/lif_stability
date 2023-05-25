@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from GenericTools.keras_tools.esoteric_layers.positional_embedding import SymbolAndPositionEmbedding
+from pyaromatics.keras_tools.esoteric_layers.positional_embedding import SymbolAndPositionEmbedding
 from sg_design_lif.neural_models.configuration_performer_attention_spiking import SpikingPerformerAttentionConfig
 from sg_design_lif.neural_models.modeling_tf_performer_attention_spiking import TFSpikingPerformerAttention
 from transformers.modeling_tf_utils import TFConv1D

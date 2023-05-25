@@ -5,7 +5,7 @@ from skopt.utils import use_named_args
 from skopt import gp_minimize
 from skopt.space import Real
 
-from GenericTools.stay_organized.skopt_tools import tqdm_skopt
+from pyaromatics.stay_organized.skopt_tools import tqdm_skopt
 from sg_design_lif.neural_models.full_model import build_model
 
 

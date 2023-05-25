@@ -1,10 +1,10 @@
 import os, itertools, argparse, time, json, datetime, socket
 from tqdm import tqdm
 
-from GenericTools.keras_tools.esoteric_layers.surrogated_step import possible_pseudod
-from GenericTools.stay_organized.VeryCustomSacred import summarize
-from GenericTools.stay_organized.submit_jobs import run_experiments
-from GenericTools.stay_organized.utils import summarize_logs
+from pyaromatics.keras_tools.esoteric_layers.surrogated_step import possible_pseudod
+from pyaromatics.stay_organized.VeryCustomSacred import summarize
+from pyaromatics.stay_organized.submit_jobs import run_experiments
+from pyaromatics.stay_organized.utils import summarize_logs
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)

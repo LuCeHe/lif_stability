@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Dense, Activation
-from GenericTools.keras_tools.esoteric_layers import SurrogatedStep
+from pyaromatics.keras_tools.esoteric_layers import SurrogatedStep
 
 
 class customLSTM(tf.keras.layers.Layer):

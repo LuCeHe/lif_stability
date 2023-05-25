@@ -10,7 +10,7 @@ import tensorflow as tf
 import numpy as np
 import tensorflow.keras.backend as K
 
-from GenericTools.keras_tools.esoteric_layers.surrogated_step import SpikeFunction
+from pyaromatics.keras_tools.esoteric_layers.surrogated_step import SpikeFunction
 
 
 class WTA(tf.keras.layers.Layer):
