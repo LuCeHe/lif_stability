@@ -115,7 +115,7 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
     ChooseGPU(GPU)
     setReproducible(seed)
 
-    shutil.copytree(os.path.join(CDIR, 'neural_models'), other_dir + '/neural_models')
+    shutil.copytree(os.path.join(CDIR, 'neural_models'), other_dir + '/neural_models_tf')
     # shutil.copyfile(os.path.join(CDIR, 'run_tf2.sh'), other_dir + '/run_tf2.sh')
     shutil.copyfile(FILENAME, other_dir + '/' + os.path.split(FILENAME)[-1])
 

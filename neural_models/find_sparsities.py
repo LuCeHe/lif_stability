@@ -8,7 +8,7 @@ from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import checkTa
 from sg_design_lif.neural_models.full_model import build_model
 
 
-# from sg_design_lif.neural_models.sparsity_gp import sparsity_gp
+# from sg_design_lif.neural_models_tf.sparsity_gp import sparsity_gp
 
 
 def reduce_model_firing_activity(
