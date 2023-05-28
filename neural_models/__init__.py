@@ -10,9 +10,6 @@ from sg_design_lif.neural_models.izhikevich import Izhikevich
 from sg_design_lif.neural_models.spiking_attention import SpikingAttention
 from sg_design_lif.neural_models.readout import Readout
 
-# from sg_design_lif.neural_models_tf.spiking_performer import spikingPerformer
-# from sg_design_lif.neural_models_tf.modeling_tf_gpt2 import smallGPT2
-
 thismodule = sys.modules[__name__]
 
 def net(net_name='LSNN'):
