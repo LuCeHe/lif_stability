@@ -374,6 +374,7 @@ class aLSNN(baseLSNN):
             stacki = str2val(self.config, 'stacki', int, default=0)
             v0m = str2val(self.config, f'v0m{stacki}', float, default=0)
             initializer = tf.keras.initializers.RandomNormal(mean=v0m)
+            # initializer = tf.keras.initializers.Constant(value=-1.)
             # initializer = tf.keras.initializers.RandomUniform(minval=v0m - 0.05, maxval=v0m + 0.05, seed=None)
             self.internal_current = self.add_weight(shape=(self.num_neurons,), initializer=initializer,
                                                     name='internal_current', trainable=True)
@@ -388,45 +389,6 @@ class aLSNN(baseLSNN):
 
         self._beta = self.beta
 
-
-class beta_learned_LSNN(baseLSNN):
-    """
-    LSNN where all parameters can be learned
-    """
-
-    def recurrent_transform(self):
-        return self.mask * self.recurrent_weights
-
-    def beta_transform(self):
-        return self.beta_mask * self.beta
-
-    def build(self, input_shape):
-        n_input = input_shape[-1]
-        self.input_weights = self.add_weight(
-            shape=(n_input, self.num_neurons),
-            initializer=self.initializer,
-            name='input_weights')
-
-        self.recurrent_weights = self.add_weight(
-            shape=(self.num_neurons, self.num_neurons),
-            initializer=self.initializer,
-            name='recurrent_weights')
-
-        self.beta_mask = tf.concat([tf.zeros(self.n_regular), tf.ones(self.num_neurons - self.n_regular)])
-
-        parameter2trainable = {k: v for k, v in self.__dict__.items()
-                               if k in ['beta']}
-        for k, p in parameter2trainable.items():
-            if k in ['tau', 'tau_adaptation', 'thr', 'dampening_factor', 'beta']:
-                initializer = tf.keras.initializers.TruncatedNormal(mean=p, stddev=3 * p / 7)
-            else:
-                initializer = tf.keras.initializers.RandomNormal(stddev=1. / tf.sqrt(n_input))
-
-            p = self.add_weight(shape=(self.num_neurons,), initializer=initializer, name=k)
-
-            self.__dict__.update({k: p})
-
-        self.built = True
 
 
 class maLSNN(aLSNN):
