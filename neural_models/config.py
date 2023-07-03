@@ -1,5 +1,5 @@
-from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import language_tasks
 
+language_tasks = ['ptb', 'wiki103', 'wmt14', 'time_ae_merge', 'monkey', 'wordptb', 'wordptb1']
 
 def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_name, setting='LIF'):
     assert setting in ['LIF', 'LSC']
