@@ -13,7 +13,7 @@ import tensorflow as tf
 
 from pyaromatics.stay_organized.utils import str2val, NumpyEncoder, setReproducible
 from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import Task, checkTaskMeanVariance
-from sg_design_lif.neural_models.config import default_config
+from sg_design_lif.config.config import default_config
 from sg_design_lif.neural_models.full_model import build_model
 from sg_design_lif.visualization_tools.training_tests import Tests
 

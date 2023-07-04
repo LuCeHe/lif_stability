@@ -1,6 +1,5 @@
-import os, shutil, logging, json, sys, copy
+import os, shutil, logging, json, copy
 
-import numpy as np
 import pandas as pd
 
 from pyaromatics.keras_tools.silence_tensorflow import silence_tf
@@ -14,7 +13,7 @@ from sg_design_lif.neural_models.find_sparsities import reduce_model_firing_acti
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from pyaromatics.keras_tools.esoteric_callbacks.several_validations import MultipleValidationSets
-from sg_design_lif.neural_models.config import default_config
+from sg_design_lif.config.config import default_config
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 os.environ["TF_GPU_ALLOCATOR"] = "cuda_malloc_async"
@@ -25,16 +24,15 @@ tf.compat.v1.enable_eager_execution()
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 
 from pyaromatics.keras_tools.convergence_metric import convergence_estimation
-from pyaromatics.keras_tools.esoteric_callbacks.annealing_callback import *
 from pyaromatics.keras_tools.esoteric_callbacks.gradient_tensorboard import ExtendedTensorBoard
 from pyaromatics.keras_tools.esoteric_initializers import esoteric_initializers_list, get_initializer
 from pyaromatics.keras_tools.esoteric_callbacks import *
 from pyaromatics.keras_tools.plot_tools import plot_history
 from pyaromatics.stay_organized.VeryCustomSacred import CustomExperiment, ChooseGPU
-from pyaromatics.stay_organized.utils import timeStructured, setReproducible, str2val, NumpyEncoder
+from pyaromatics.stay_organized.utils import setReproducible, str2val, NumpyEncoder
 
 from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import Task, checkTaskMeanVariance, language_tasks
-from sg_design_lif.visualization_tools.training_tests import Tests, check_assumptions
+from sg_design_lif.visualization_tools.training_tests import Tests
 from sg_design_lif.neural_models.full_model import build_model
 
 FILENAME = os.path.realpath(__file__)
