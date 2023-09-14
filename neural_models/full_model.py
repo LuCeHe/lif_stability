@@ -6,6 +6,7 @@ from tensorflow.keras.losses import sparse_categorical_crossentropy
 
 from pyaromatics.keras_tools.esoteric_layers import *
 from pyaromatics.keras_tools.esoteric_layers.combine_tensors import CombineTensors
+from pyaromatics.keras_tools.esoteric_layers.linear_recurrent_unit import ResLRUCell
 # from pyaromatics.keras_tools.esoteric_models.model import modifiedModel
 from pyaromatics.keras_tools.esoteric_optimizers.optimizer_selection import get_optimizer
 from pyaromatics.stay_organized.utils import str2val
@@ -164,6 +165,13 @@ class Expert:
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))
 
+
+        elif net_name == 'reslru':
+            cell = ResLRUCell(num_neurons=n_neurons)
+            rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
+                                      stateful=stateful)
+            rnn.build((batch_size, maxlen, nin))
+
         elif net_name == 'LMU':
             memory_d = n_neurons - 2
             order = 2
@@ -194,7 +202,8 @@ class Expert:
             else:
                 output_cell = b
 
-        elif any([n in self.net_name for n in ['LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn']]):
+        elif any([n in self.net_name for n in ['LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn', 'reslru']]):
+            print('self.initial_state', self.initial_state)
             all_out = self.rnn(inputs=skipped_connection_input, initial_state=self.initial_state)
             output_cell, states = all_out[0], all_out[1:]
         else:
