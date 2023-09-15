@@ -165,12 +165,13 @@ class Expert:
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))
 
-
         elif net_name == 'reslru':
             cell = ResLRUCell(num_neurons=n_neurons)
             rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))
+            if self.initial_state is None:
+                self.initial_state = tf.zeros((batch_size, n_neurons), dtype=tf.complex64)
 
         elif net_name == 'LMU':
             memory_d = n_neurons - 2
@@ -203,7 +204,6 @@ class Expert:
                 output_cell = b
 
         elif any([n in self.net_name for n in ['LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn', 'reslru']]):
-            print('self.initial_state', self.initial_state)
             all_out = self.rnn(inputs=skipped_connection_input, initial_state=self.initial_state)
             output_cell, states = all_out[0], all_out[1:]
         else:
@@ -302,8 +302,10 @@ class ModelBuilder:
                 nin = self.stack[i - 1]
 
             if not initial_state is None:
+                states_dtype = tf.float32 if not 'reslru' in net_name else tf.complex64
+
                 initial_state = tuple([
-                    tf.keras.layers.Input([layer_width, ], name=f'state_{i}_{si}')
+                    tf.keras.layers.Input([layer_width, ], name=f'state_{i}_{si}', dtype=states_dtype)
                     for si in range(n_states)
                 ])
                 self.all_input_states.extend(initial_state)
