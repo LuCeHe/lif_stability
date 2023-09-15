@@ -24,6 +24,7 @@ metrics = [
     perplexity,
     # tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
     sparse_mode_accuracy,
+    sparse_last_time_accuracy,
     sparse_categorical_crossentropy,
 ]
 
