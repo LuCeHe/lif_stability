@@ -216,7 +216,7 @@ class Expert:
 class ModelBuilder:
     def __init__(self, task_name, net_name, n_neurons, lr, stack,
                  loss_name, embedding, optimizer_name, lr_schedule, weight_decay, clipnorm,
-                 initializer, comments, in_len, n_in, out_len, n_out, final_epochs,
+                 initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size,
                  initial_state=None, seed=None, get_embedding=False, timesteps=None):
 
         self.task_name, self.net_name, self.n_neurons = task_name, net_name, n_neurons
@@ -260,7 +260,7 @@ class ModelBuilder:
         self.emb = []
         if not self.embedding is False:
             self.emb = SymbolAndPositionEmbedding(
-                maxlen=in_len, vocab_size=n_out, embed_dim=n_neurons, embeddings_initializer=initializer,
+                maxlen=in_len, vocab_size=vocab_size, embed_dim=n_neurons, embeddings_initializer=initializer,
                 from_string=embedding, name=embedding.replace(':', '_')
             )
 
@@ -430,11 +430,11 @@ class ModelBuilder:
 
 def build_model(task_name, net_name, n_neurons, lr, stack,
                 loss_name, embedding, optimizer_name, lr_schedule, weight_decay, clipnorm,
-                initializer, comments, in_len, n_in, out_len, n_out, final_epochs,
+                initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size,
                 initial_state=None, seed=None, get_embedding=False, timesteps=None):
     model_builder = ModelBuilder(task_name, net_name, n_neurons, lr, stack,
                                  loss_name, embedding, optimizer_name, lr_schedule, weight_decay, clipnorm,
-                                 initializer, comments, in_len, n_in, out_len, n_out, final_epochs,
+                                 initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size,
                                  initial_state, seed, get_embedding, timesteps)
 
     if not get_embedding:
