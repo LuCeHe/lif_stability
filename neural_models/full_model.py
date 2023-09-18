@@ -1,12 +1,14 @@
-import tensorflow as tf
+# import tensorflow as tf
+# from keras.backend import sparse_categorical_crossentropy
+from tensorflow.python.keras.metrics import sparse_categorical_accuracy, sparse_categorical_crossentropy
 
-from tensorflow.keras.layers import *
-from tensorflow.keras.metrics import sparse_categorical_accuracy
-from tensorflow.keras.losses import sparse_categorical_crossentropy
+# from tensorflow.keras.layers import *
+# from tensorflow.keras.metrics import sparse_categorical_accuracy
+# from tensorflow.keras.losses import sparse_categorical_crossentropy
 
 from pyaromatics.keras_tools.esoteric_layers import *
 from pyaromatics.keras_tools.esoteric_layers.combine_tensors import CombineTensors
-from pyaromatics.keras_tools.esoteric_layers.linear_recurrent_unit import ResLRUCell
+from pyaromatics.keras_tools.esoteric_layers.linear_recurrent_unit import ResLRUCell, LinearRecurrentUnitCell
 # from pyaromatics.keras_tools.esoteric_models.model import modifiedModel
 from pyaromatics.keras_tools.esoteric_optimizers.optimizer_selection import get_optimizer
 from pyaromatics.stay_organized.utils import str2val
@@ -108,13 +110,6 @@ class Expert:
         self.initial_state = initial_state
         thr = str2val(comments, 'thr', float, .01)
 
-        if 'convWin' in comments:
-            kernel_size = str2val(comments, 'ksize', int, 4)
-            self.win = tf.keras.layers.Conv1D(filters=int(n_neurons), kernel_size=kernel_size, dilation_rate=1,
-                                              padding='causal')
-        else:
-            self.win = lambda x: x
-
         batch_size = str2val(comments, 'batchsize', int, 1)
         maxlen = str2val(comments, 'maxlen', int, 100)
         nin = str2val(comments, 'nin', int, 1) if not 'convWin' in comments else n_neurons
@@ -127,9 +122,6 @@ class Expert:
             rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))
-
-        elif 'Performer' in net_name or 'GPT' in net_name:
-            rnn = models.net(net_name)(num_neurons=n_neurons, comments=comments)
 
         elif net_name == 'LSTM':
             cell = tf.keras.layers.LSTMCell(units=n_neurons)
@@ -171,8 +163,12 @@ class Expert:
             rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))
-            if self.initial_state is None:
-                self.initial_state = tf.zeros((batch_size, n_neurons), dtype=tf.complex64)
+
+        elif net_name == 'lru':
+            cell = LinearRecurrentUnitCell(num_neurons=n_neurons)
+            rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
+                                      stateful=stateful)
+            rnn.build((batch_size, maxlen, nin))
 
         elif net_name == 'LMU':
             memory_d = n_neurons - 2
@@ -189,13 +185,10 @@ class Expert:
 
         self.rnn = rnn
 
-        # reg = models.RateVoltageRegularization(1., config=comments + task_name + stack_info, name='reg' + ij)
-
     def __call__(self, inputs):
-        # skipped_connection_input = inputs
-        skipped_connection_input = self.win(inputs)
+
         if 'LSNN' in self.net_name:
-            all_out = self.rnn(inputs=skipped_connection_input, initial_state=self.initial_state)
+            all_out = self.rnn(inputs=inputs, initial_state=self.initial_state)
             outputs, states = all_out[:4], all_out[4:]
             b, v, thr, v_sc = outputs
 
@@ -204,8 +197,8 @@ class Expert:
             else:
                 output_cell = b
 
-        elif any([n in self.net_name for n in ['LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn', 'reslru']]):
-            all_out = self.rnn(inputs=skipped_connection_input, initial_state=self.initial_state)
+        elif any([n in self.net_name for n in ['LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn', 'reslru', 'lru']]):
+            all_out = self.rnn(inputs=inputs, initial_state=self.initial_state)
             output_cell, states = all_out[0], all_out[1:]
         else:
             raise NotImplementedError
@@ -228,8 +221,6 @@ class ModelBuilder:
         self.lr_schedule, self.weight_decay, self.clipnorm = lr_schedule, weight_decay, clipnorm
 
         # initializer, comments, in_len, n_in, out_len, n_out, final_epochs,
-        # initializer, comments, in_len, n_in, out_len, n_out, final_epochs,
-        # initializer, comments, in_len, n_in, out_len, n_out, final_epochs,
         self.final_epochs, self.lr = final_epochs, lr
         self.initial_state, self.get_embedding, self.timesteps = initial_state, get_embedding, timesteps
 
@@ -247,7 +238,7 @@ class ModelBuilder:
 
         self.loss = get_loss(loss_name)
 
-        if 'shared' in comments:
+        if 'sharedexpert' in comments:
             extper = Expert(0, 0, stateful, task_name, net_name, n_neurons, tau=tau, initializer=initializer,
                             tau_adaptation=tau_adaptation, n_out=n_out, comments=comments, init_states=initial_state)
             self.expert = lambda i, j, c, n, init_s: extper
@@ -264,8 +255,8 @@ class ModelBuilder:
                 from_string=embedding, name=embedding.replace(':', '_')
             )
 
-            self.emb.build((1, n_out))
-            self.emb.sym_emb.build((1, n_out))
+            self.emb.build(None)
+            self.emb.sym_emb.build(None)
             mean = np.mean(np.mean(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
             var = np.mean(np.var(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
             comments = str2val(comments, 'taskmean', replace=mean)
@@ -285,10 +276,10 @@ class ModelBuilder:
         self.comments = comments
 
         rnn_aux = self.expert(0, 0, comments, n=n_neurons, init_s=initial_state)
-        # print(rnn_aux.rnn.cell.state_size)
-        # n_states = 4 if 'LSNN' in self.net_name else 2
-        n_states = 1 if not isinstance(rnn_aux.rnn.cell.state_size, list) else len(rnn_aux.rnn.cell.state_size)
-        # print(n_states)
+        n_states = 1 if not isinstance(rnn_aux.rnn.cell.state_size, list) \
+                        and not isinstance(rnn_aux.rnn.cell.state_size, tuple) \
+            else len(rnn_aux.rnn.cell.state_size)
+        del rnn_aux
 
         self.rnns = []
         self.all_input_states = []
@@ -303,10 +294,8 @@ class ModelBuilder:
                 nin = self.stack[i - 1]
 
             if not initial_state is None:
-                states_dtype = tf.float32 if not 'reslru' in net_name else tf.complex64
-
-                initial_state = tuple([
-                    tf.keras.layers.Input([layer_width, ], name=f'state_{i}_{si}', dtype=states_dtype)
+                initial_state = list([
+                    tf.keras.layers.Input([layer_width, ], name=f'state_{i}_{si}', dtype=tf.float32)
                     for si in range(n_states)
                 ])
                 self.all_input_states.extend(initial_state)

@@ -31,7 +31,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
             if net_name in ['maLSNN', 'maLSNNb', 'maLSNNc']:
                 lr = 1e-3
             elif net_name in [
-                'LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn', 'reslru'
+                'LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn', 'reslru', 'lru'
             ]:
 
                 if task_name in language_tasks:
