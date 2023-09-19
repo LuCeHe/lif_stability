@@ -279,8 +279,6 @@ class ModelBuilder:
         n_states = 1 if not isinstance(rnn_aux.rnn.cell.state_size, list) \
                         and not isinstance(rnn_aux.rnn.cell.state_size, tuple) \
             else len(rnn_aux.rnn.cell.state_size)
-        print('n_states', n_states)
-        print(rnn_aux.rnn.cell.state_size)
 
         self.state_sizes = []
         for nn in self.stack:

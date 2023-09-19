@@ -4,9 +4,10 @@ from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import languag
 def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_name, setting='LIF'):
     assert setting in ['LIF', 'LSC']
 
-    if 'lra_' in task_name and 'lru' in net_name:
+    if task_name.startswith('lra_') and 'lru' in net_name:
         if n_neurons is None:
             n_neurons = 128
+            embedding = 'learned:None:None:{}'.format(n_neurons)
         if batch_size is None:
             batch_size = 32
         if lr is None:
