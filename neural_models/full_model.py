@@ -279,7 +279,13 @@ class ModelBuilder:
         n_states = 1 if not isinstance(rnn_aux.rnn.cell.state_size, list) \
                         and not isinstance(rnn_aux.rnn.cell.state_size, tuple) \
             else len(rnn_aux.rnn.cell.state_size)
-        del rnn_aux
+        print('n_states', n_states)
+        print(rnn_aux.rnn.cell.state_size)
+
+        self.state_sizes = []
+        for nn in self.stack:
+            rnn_aux = self.expert(0, 0, comments, n=nn, init_s=initial_state)
+            self.state_sizes.append(rnn_aux.rnn.cell.state_size)
 
         self.rnns = []
         self.all_input_states = []
@@ -292,11 +298,11 @@ class ModelBuilder:
                     nin = n_in
             else:
                 nin = self.stack[i - 1]
-
+            state_widths = self.state_sizes[i]
             if not initial_state is None:
                 initial_state = list([
-                    tf.keras.layers.Input([layer_width, ], name=f'state_{i}_{si}', dtype=tf.float32)
-                    for si in range(n_states)
+                    tf.keras.layers.Input((state_width, ), name=f'state_{i}_{si}', dtype=tf.float32)
+                    for si, state_width in zip(range(n_states), state_widths)
                 ])
                 self.all_input_states.extend(initial_state)
 
