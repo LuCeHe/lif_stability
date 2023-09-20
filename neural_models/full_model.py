@@ -8,7 +8,7 @@ from tensorflow.python.keras.metrics import sparse_categorical_accuracy, sparse_
 
 from pyaromatics.keras_tools.esoteric_layers import *
 from pyaromatics.keras_tools.esoteric_layers.combine_tensors import CombineTensors
-from pyaromatics.keras_tools.esoteric_layers.linear_recurrent_unit import ResLRUCell, LinearRecurrentUnitCell
+from pyaromatics.keras_tools.esoteric_layers.linear_recurrent_unit import ResLRUCell, LinearRecurrentUnitCell, ResLRUFFN
 # from pyaromatics.keras_tools.esoteric_models.model import modifiedModel
 from pyaromatics.keras_tools.esoteric_optimizers.optimizer_selection import get_optimizer
 from pyaromatics.stay_organized.utils import str2val
@@ -29,6 +29,8 @@ metrics = [
     sparse_last_time_accuracy,
     sparse_categorical_crossentropy,
 ]
+
+non_recurrent_models = ['reslruffn']
 
 
 def layers_combination(output_cell, all_outputs, in_expert, comments, i, n_neurons, tff, drate):
@@ -170,6 +172,9 @@ class Expert:
                                       stateful=stateful)
             rnn.build((batch_size, maxlen, nin))
 
+        elif net_name == 'reslruffn':
+            rnn = ResLRUFFN(num_neurons=n_neurons)
+
         elif net_name == 'LMU':
             memory_d = n_neurons - 2
             order = 2
@@ -196,6 +201,10 @@ class Expert:
                 output_cell = v
             else:
                 output_cell = b
+
+        elif self.net_name in non_recurrent_models:
+            output_cell = self.rnn(inputs=inputs)
+            states = []
 
         elif any([n in self.net_name for n in ['LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn', 'reslru', 'lru']]):
             all_out = self.rnn(inputs=inputs, initial_state=self.initial_state)
@@ -275,15 +284,11 @@ class ModelBuilder:
 
         self.comments = comments
 
-        rnn_aux = self.expert(0, 0, comments, n=n_neurons, init_s=initial_state)
-        n_states = 1 if not isinstance(rnn_aux.rnn.cell.state_size, list) \
-                        and not isinstance(rnn_aux.rnn.cell.state_size, tuple) \
-            else len(rnn_aux.rnn.cell.state_size)
-
-        self.state_sizes = []
-        for nn in self.stack:
-            rnn_aux = self.expert(0, 0, comments, n=nn, init_s=initial_state)
-            self.state_sizes.append(rnn_aux.rnn.cell.state_size)
+        if not initial_state is None:
+            state_sizes = []
+            for nn in self.stack:
+                rnn_aux = self.expert(0, 0, comments, n=nn, init_s=initial_state)
+                state_sizes.append(rnn_aux.rnn.cell.state_size)
 
         self.rnns = []
         self.all_input_states = []
@@ -296,11 +301,12 @@ class ModelBuilder:
                     nin = n_in
             else:
                 nin = self.stack[i - 1]
-            state_widths = self.state_sizes[i]
+
             if not initial_state is None:
+                state_widths = state_sizes[i]
                 initial_state = list([
                     tf.keras.layers.Input((state_width, ), name=f'state_{i}_{si}', dtype=tf.float32)
-                    for si, state_width in zip(range(n_states), state_widths)
+                    for si, state_width in enumerate(state_widths)
                 ])
                 self.all_input_states.extend(initial_state)
 
@@ -326,7 +332,9 @@ class ModelBuilder:
 
         all_states = []
         for i, rnn in enumerate(self.rnns):
+            print(i, x.shape)
             x = tf.keras.layers.Dropout(self.drate, name=f'dropout_{i}')(x)
+
             x, states = rnn(x)
 
             if not self.initial_state is None:
