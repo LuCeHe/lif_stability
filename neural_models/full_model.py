@@ -332,7 +332,6 @@ class ModelBuilder:
 
         all_states = []
         for i, rnn in enumerate(self.rnns):
-            print(i, x.shape)
             x = tf.keras.layers.Dropout(self.drate, name=f'dropout_{i}')(x)
 
             x, states = rnn(x)
