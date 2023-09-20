@@ -8,7 +8,8 @@ from tensorflow.python.keras.metrics import sparse_categorical_accuracy, sparse_
 
 from pyaromatics.keras_tools.esoteric_layers import *
 from pyaromatics.keras_tools.esoteric_layers.combine_tensors import CombineTensors
-from pyaromatics.keras_tools.esoteric_layers.linear_recurrent_unit import ResLRUCell, LinearRecurrentUnitCell, ResLRUFFN
+from pyaromatics.keras_tools.esoteric_layers.linear_recurrent_unit import ResLRUCell, LinearRecurrentUnitCell, \
+    ResLRUFFN, LinearRecurrentUnitFFN
 # from pyaromatics.keras_tools.esoteric_models.model import modifiedModel
 from pyaromatics.keras_tools.esoteric_optimizers.optimizer_selection import get_optimizer
 from pyaromatics.stay_organized.utils import str2val
@@ -30,7 +31,7 @@ metrics = [
     sparse_categorical_crossentropy,
 ]
 
-non_recurrent_models = ['reslruffn']
+non_recurrent_models = ['reslruffn', 'lruffn']
 
 
 def layers_combination(output_cell, all_outputs, in_expert, comments, i, n_neurons, tff, drate):
@@ -174,6 +175,9 @@ class Expert:
 
         elif net_name == 'reslruffn':
             rnn = ResLRUFFN(num_neurons=n_neurons)
+
+        elif net_name == 'lruffn':
+            rnn = LinearRecurrentUnitFFN(num_neurons=n_neurons)
 
         elif net_name == 'LMU':
             memory_d = n_neurons - 2
