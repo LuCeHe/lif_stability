@@ -210,7 +210,8 @@ class Expert:
             output_cell = self.rnn(inputs=inputs)
             states = []
 
-        elif any([n in self.net_name for n in ['LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn', 'reslru', 'lru']]):
+        elif any([n in self.net_name for n in
+                  ['LSTM', 'GRU', 'indrnn', 'LMU', 'rsimplernn', 'ssimplernn', 'reslru', 'lru']]):
             all_out = self.rnn(inputs=inputs, initial_state=self.initial_state)
             output_cell, states = all_out[0], all_out[1:]
         else:
@@ -263,13 +264,16 @@ class ModelBuilder:
 
         self.emb = []
         if not self.embedding is False:
-            self.emb = SymbolAndPositionEmbedding(
-                maxlen=in_len, vocab_size=vocab_size, embed_dim=n_neurons, embeddings_initializer=initializer,
-                from_string=embedding, name=embedding.replace(':', '_')
-            )
+            if not 'lru' in net_name:
+                self.emb = SymbolAndPositionEmbedding(
+                    maxlen=in_len, vocab_size=vocab_size, embed_dim=n_neurons, embeddings_initializer=initializer,
+                    from_string=embedding, name=embedding.replace(':', '_')
+                )
+                self.emb.sym_emb.build(None)
+            else:
+                self.emb = tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=n_neurons)
 
             self.emb.build(None)
-            self.emb.sym_emb.build(None)
             mean = np.mean(np.mean(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
             var = np.mean(np.var(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
             comments = str2val(comments, 'taskmean', replace=mean)
@@ -309,7 +313,7 @@ class ModelBuilder:
             if not initial_state is None:
                 state_widths = state_sizes[i]
                 initial_state = list([
-                    tf.keras.layers.Input((state_width, ), name=f'state_{i}_{si}', dtype=tf.float32)
+                    tf.keras.layers.Input((state_width,), name=f'state_{i}_{si}', dtype=tf.float32)
                     for si, state_width in enumerate(state_widths)
                 ])
                 self.all_input_states.extend(initial_state)
