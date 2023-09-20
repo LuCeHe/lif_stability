@@ -270,14 +270,16 @@ class ModelBuilder:
                     from_string=embedding, name=embedding.replace(':', '_')
                 )
                 self.emb.sym_emb.build(None)
+
+                mean = np.mean(np.mean(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
+                var = np.mean(np.var(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
+                comments = str2val(comments, 'taskmean', replace=mean)
+                comments = str2val(comments, 'taskvar', replace=var)
             else:
                 self.emb = tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=n_neurons)
+                self.emb.embed_dim = n_neurons
 
             self.emb.build(None)
-            mean = np.mean(np.mean(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
-            var = np.mean(np.var(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
-            comments = str2val(comments, 'taskmean', replace=mean)
-            comments = str2val(comments, 'taskvar', replace=var)
             comments = str2val(comments, 'embdim', replace=self.emb.embed_dim)
 
         self.readout = tf.keras.layers.Dense(n_out, name='decoder', kernel_initializer=initializer)
