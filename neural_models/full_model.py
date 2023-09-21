@@ -12,12 +12,12 @@ from pyaromatics.keras_tools.esoteric_layers.linear_recurrent_unit import ResLRU
     ResLRUFFN, LinearRecurrentUnitFFN
 # from pyaromatics.keras_tools.esoteric_models.model import modifiedModel
 from pyaromatics.keras_tools.esoteric_optimizers.optimizer_selection import get_optimizer
+from pyaromatics.keras_tools.esoteric_tasks import language_tasks
 from pyaromatics.stay_organized.utils import str2val
 from pyaromatics.keras_tools.esoteric_losses.loss_redirection import get_loss
 from pyaromatics.keras_tools.esoteric_losses.advanced_losses import *
 
 import sg_design_lif.neural_models as models
-from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import language_tasks
 from sg_design_lif.neural_models.ind_rnn_cell import IndRNNCell
 from sg_design_lif.neural_models.lmu import LMUCell
 
