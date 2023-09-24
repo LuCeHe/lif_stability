@@ -9,7 +9,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
             n_neurons = 128
             embedding = 'learned:None:None:{}'.format(n_neurons)
         if batch_size is None:
-            batch_size = 4
+            batch_size = 8
         if lr is None:
             lr = 4e-3
 
