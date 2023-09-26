@@ -4,7 +4,7 @@ from pyaromatics.keras_tools.esoteric_tasks import language_tasks
 def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_name, setting='LIF'):
     assert setting in ['LIF', 'LSC']
 
-    if task_name.startswith('lra_') and 'lru' in net_name:
+    if 'lru' in net_name:
         if n_neurons is None:
             n_neurons = 128
             embedding = 'learned:None:None:{}'.format(n_neurons)
@@ -85,7 +85,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
         else:
             raise NotImplementedError
 
-    elif isinstance(stack, int):
+    elif isinstance(stack, int) and not 'lru' in net_name:
 
         if task_name in ['wordptb']:
             base_neurons = 1700 if setting == 'LIF' else 1300

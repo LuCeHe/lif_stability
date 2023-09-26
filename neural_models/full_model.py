@@ -264,20 +264,16 @@ class ModelBuilder:
 
         self.emb = []
         if not self.embedding is False:
-            if not 'lru' in net_name:
-                self.emb = SymbolAndPositionEmbedding(
-                    maxlen=in_len, vocab_size=vocab_size, embed_dim=n_neurons, embeddings_initializer=initializer,
-                    from_string=embedding, name=embedding.replace(':', '_')
-                )
-                self.emb.sym_emb.build(None)
+            self.emb = SymbolAndPositionEmbedding(
+                maxlen=in_len, vocab_size=vocab_size, embed_dim=n_neurons, embeddings_initializer=initializer,
+                from_string=embedding, name=embedding.replace(':', '_')
+            )
+            self.emb.sym_emb.build(None)
 
-                mean = np.mean(np.mean(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
-                var = np.mean(np.var(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
-                comments = str2val(comments, 'taskmean', replace=mean)
-                comments = str2val(comments, 'taskvar', replace=var)
-            else:
-                self.emb = tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=n_neurons)
-                self.emb.embed_dim = n_neurons
+            mean = np.mean(np.mean(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
+            var = np.mean(np.var(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
+            comments = str2val(comments, 'taskmean', replace=mean)
+            comments = str2val(comments, 'taskvar', replace=var)
 
             self.emb.build(None)
             comments = str2val(comments, 'embdim', replace=self.emb.embed_dim)
