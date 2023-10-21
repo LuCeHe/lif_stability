@@ -2,6 +2,7 @@
 # from keras.backend import sparse_categorical_crossentropy
 from tensorflow.python.keras.metrics import sparse_categorical_accuracy, sparse_categorical_crossentropy
 
+from anthe_official.neural_models_tf import HSoftPOS
 # from tensorflow.keras.layers import *
 # from tensorflow.keras.metrics import sparse_categorical_accuracy
 # from tensorflow.keras.losses import sparse_categorical_crossentropy
@@ -264,16 +265,21 @@ class ModelBuilder:
 
         self.emb = []
         if not self.embedding is False:
-            self.emb = SymbolAndPositionEmbedding(
-                maxlen=in_len, vocab_size=vocab_size, embed_dim=n_neurons, embeddings_initializer=initializer,
-                from_string=embedding, name=embedding.replace(':', '_')
-            )
-            self.emb.sym_emb.build(None)
+            if 'hsoftpos' in comments:
+                print('hsoftpos!!')
+                self.emb = HSoftPOS(vocab_size, n_neurons)
 
-            mean = np.mean(np.mean(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
-            var = np.mean(np.var(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
-            comments = str2val(comments, 'taskmean', replace=mean)
-            comments = str2val(comments, 'taskvar', replace=var)
+            else:
+                self.emb = SymbolAndPositionEmbedding(
+                    maxlen=in_len, vocab_size=vocab_size, embed_dim=n_neurons, embeddings_initializer=initializer,
+                    from_string=embedding, name=embedding.replace(':', '_')
+                )
+                self.emb.sym_emb.build(None)
+
+                mean = np.mean(np.mean(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
+                var = np.mean(np.var(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
+                comments = str2val(comments, 'taskmean', replace=mean)
+                comments = str2val(comments, 'taskvar', replace=var)
 
             self.emb.build(None)
             comments = str2val(comments, 'embdim', replace=self.emb.embed_dim)
