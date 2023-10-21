@@ -1,11 +1,6 @@
-# import tensorflow as tf
-# from keras.backend import sparse_categorical_crossentropy
 from tensorflow.python.keras.metrics import sparse_categorical_accuracy, sparse_categorical_crossentropy
 
 from anthe_official.neural_models_tf import HSoftPOS
-# from tensorflow.keras.layers import *
-# from tensorflow.keras.metrics import sparse_categorical_accuracy
-# from tensorflow.keras.losses import sparse_categorical_crossentropy
 
 from pyaromatics.keras_tools.esoteric_layers import *
 from pyaromatics.keras_tools.esoteric_layers.combine_tensors import CombineTensors
@@ -266,7 +261,6 @@ class ModelBuilder:
         self.emb = []
         if not self.embedding is False:
             if 'hsoftpos' in comments:
-                print('hsoftpos!!')
                 self.emb = HSoftPOS(vocab_size, n_neurons)
 
             else:
