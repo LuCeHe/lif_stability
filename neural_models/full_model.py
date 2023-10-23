@@ -219,7 +219,7 @@ class Expert:
 class ModelBuilder:
     def __init__(self, task_name, net_name, n_neurons, lr, stack,
                  loss_name, embedding, optimizer_name, lr_schedule, weight_decay, clipnorm,
-                 initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size,
+                 initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size, final_steps_per_epoch=1,
                  initial_state=None, seed=None, get_embedding=False, timesteps=None):
 
         self.task_name, self.net_name, self.n_neurons = task_name, net_name, n_neurons
@@ -232,6 +232,7 @@ class ModelBuilder:
 
         # initializer, comments, in_len, n_in, out_len, n_out, final_epochs,
         self.final_epochs, self.lr = final_epochs, lr
+        self.final_steps_per_epoch = final_steps_per_epoch
         self.initial_state, self.get_embedding, self.timesteps = initial_state, get_embedding, timesteps
 
         comments = comments if task_name in language_tasks else comments.replace('embproj', 'simplereadout')
@@ -369,7 +370,7 @@ class ModelBuilder:
         optimizer_name = str2val(self.comments, 'optimizer', output_type=str, default=self.optimizer_name)
         lr_schedule = str2val(self.comments, 'lrs', output_type=str, default=self.lr_schedule)
         optimizer = get_optimizer(optimizer_name=optimizer_name, lr_schedule=lr_schedule,
-                                  total_steps=self.final_epochs, lr=self.lr, weight_decay=self.weight_decay,
+                                  total_steps=self.final_epochs*self.final_steps_per_epoch, lr=self.lr, weight_decay=self.weight_decay,
                                   clipnorm=self.clipnorm, exclude_from_weight_decay=exclude_from_weight_decay)
 
         # eagerly = True if not self.ostack in [5, 7] else False
@@ -436,12 +437,14 @@ class ModelBuilder:
 
 def build_model(task_name, net_name, n_neurons, lr, stack,
                 loss_name, embedding, optimizer_name, lr_schedule, weight_decay, clipnorm,
-                initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size,
+                initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size,final_steps_per_epoch=1,
                 initial_state=None, seed=None, get_embedding=False, timesteps=None):
+
     model_builder = ModelBuilder(task_name, net_name, n_neurons, lr, stack,
                                  loss_name, embedding, optimizer_name, lr_schedule, weight_decay, clipnorm,
                                  initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size,
-                                 initial_state, seed, get_embedding, timesteps)
+                                 initial_state=initial_state, seed=seed, get_embedding=get_embedding,
+                                 timesteps=timesteps, final_steps_per_epoch=final_steps_per_epoch)
 
     if not get_embedding:
         model = model_builder.input2output()
