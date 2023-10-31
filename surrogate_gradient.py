@@ -2,6 +2,7 @@ import os, shutil, logging, json, copy
 
 import pandas as pd
 
+from pyaromatics.keras_tools.esoteric_tasks import language_tasks
 from pyaromatics.keras_tools.silence_tensorflow import silence_tf
 silence_tf()
 
@@ -31,7 +32,7 @@ from pyaromatics.keras_tools.plot_tools import plot_history
 from pyaromatics.stay_organized.VeryCustomSacred import CustomExperiment, ChooseGPU
 from pyaromatics.stay_organized.utils import setReproducible, str2val, NumpyEncoder
 
-from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import Task, checkTaskMeanVariance, language_tasks
+from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import Task, checkTaskMeanVariance
 from sg_design_lif.visualization_tools.training_tests import Tests
 from sg_design_lif.neural_models.full_model import build_model
 
@@ -51,14 +52,14 @@ def config():
     # task and net
     # ptb time_ae simplest_random time_ae_merge ps_mnist wiki103 wmt14 s_mnist xor small_s_mnist
     # wordptb sl_mnist heidelberg
-    task_name = 'sl_mnist'
+    task_name = 'wordptb'
 
     # test configuration
     epochs = 2
     steps_per_epoch = 1
     batch_size = 2
-    stack = None
-    n_neurons = None
+    stack = 3
+    n_neurons = 10
 
     # net
     # LSNN maLSNN spikingLSTM
@@ -67,7 +68,7 @@ def config():
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
     # comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m_test_annealing'
-    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_conditionIV_optimizetail_ntailpseudod'
+    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_mlminputs'
     # comments = '8_embproj_nogradreset_dropout:.3_timerepeat:2_readaptsg:3_asgname:movedfastsigmoid'
 
     # optimizer properties
@@ -143,7 +144,8 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
                       loss_name=loss_name, embedding=embedding, optimizer_name=optimizer_name, lr_schedule=lr_schedule,
                       weight_decay=weight_decay, clipnorm=clipnorm, initializer=initializer, comments=comments,
                       in_len=gen_train.in_len, n_in=gen_train.in_dim, out_len=gen_train.out_len,
-                      n_out=gen_train.out_dim, final_epochs=gen_train.epochs)
+                      n_out=gen_train.out_dim, vocab_size=gen_train.vocab_size,
+                      final_epochs=gen_train.epochs)
     train_model = build_model(**model_args)
 
     results = {}

@@ -85,7 +85,7 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
         else:
             raise NotImplementedError
 
-    elif isinstance(stack, int) and not 'lru' in net_name:
+    elif isinstance(stack, int) and not 'lru' in net_name and n_neurons is None:
 
         if task_name in ['wordptb']:
             base_neurons = 1700 if setting == 'LIF' else 1300
@@ -96,6 +96,11 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
                 base_neurons = 625
 
             stack = ':'.join([f'{base_neurons}:{base_neurons//5}'] * (stack//2)) + ':300'
+
+
+    elif isinstance(stack, int) and not 'lru' in net_name and not n_neurons is None:
+        embedding = f'learned:None:None:{n_neurons}'
+        stack = ':'.join([f'{n_neurons}'] * stack)
 
 
     if embedding == None:
