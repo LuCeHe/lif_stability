@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from pyaromatics.keras_tools.convergence_metric import convergence_estimation
 from pyaromatics.keras_tools.esoteric_layers.surrogated_step import possible_pseudod, clean_pseudname, \
     clean_pseudo_name, pseudod_color
-from pyaromatics.keras_tools.plot_tools import plot_history, TensorboardToNumpy, history_pick
+from pyaromatics.keras_tools.plot_tools import plot_history, history_pick
 # from pyaromatics.PlotTools.mpl_tools import load_plot_settings
 from pyaromatics.stay_organized.unzip import unzip_good_exps
 from pyaromatics.stay_organized.plot_tricks import large_num_to_reasonable_string
@@ -43,10 +43,11 @@ GEXPERIMENTS = [
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-21--adaptsg',
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
-    r'D:\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
+    # r'D:\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
     # r'D:\work\stochastic_spiking\good_experiments\2022-01-12--decent-SHD-conditions',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
+    r'D:\work\sg_design_lif\good_experiments\2023-11-01--ptblif',
 ]
 EXPERIMENTS = r'D:\work\stochastic_spiking\experiments'
 # EXPERIMENTS = r'D:\work\stochastic_spiking\good_experiments\2022-09-17--sparsity-for-figure'
@@ -64,7 +65,7 @@ group_cols = ['net_name', 'task_name', 'initializer', 'comments']
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='sharpness_dampening', type=str, help='main behavior',
+    '--type', default='nothing', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
