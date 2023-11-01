@@ -180,6 +180,7 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
         ),
         MultipleValidationSets({'v': gen_val2, 't': gen_test}, verbose=0),
         CSVLogger(history_path),
+        tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)
     ]
 
     if 'annealing' in comments:
