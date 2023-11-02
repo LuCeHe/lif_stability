@@ -9,6 +9,7 @@
 # Copyright : (c) UC Regents, Emre Neftci
 # Licence : GPLv2
 # -----------------------------------------------------------------------------
+from sg_design_lif.decolle_code import torchneuromorphic
 from sg_design_lif.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss, LIFLayerVariableTau, \
     LIFLayer
 from sg_design_lif.decolle_code.decolle.utils import parse_args, train, test, accuracy, save_checkpoint, \
@@ -41,7 +42,7 @@ checkpoint_dir = dirs['checkpoint_dir']
 
 print(json.dumps(params, indent=2))
 
-dataset = importlib.import_module(params['dataset'])
+dataset = torchneuromorphic.nmnist.nmnist_dataloaders
 try:
     create_data = dataset.create_data
 except AttributeError:
