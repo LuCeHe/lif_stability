@@ -15,7 +15,10 @@ def default_config(stack, batch_size, embedding, n_neurons, lr, task_name, net_n
 
 
     if n_neurons is None:
-        if task_name in language_tasks:
+        if isinstance(stack, str) and ':' in stack:
+            n_neurons = int(stack.split(':')[-1])
+
+        elif task_name in language_tasks:
             n_neurons = 1300
         elif task_name in ['heidelberg', 'lca']:
             n_neurons = 256

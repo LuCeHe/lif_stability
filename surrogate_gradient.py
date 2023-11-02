@@ -58,8 +58,8 @@ def config():
     epochs = 2
     steps_per_epoch = 1
     batch_size = 2
-    stack = 3
-    n_neurons = 10
+    stack = '3:3:3'
+    n_neurons = None
 
     # net
     # LSNN maLSNN spikingLSTM
