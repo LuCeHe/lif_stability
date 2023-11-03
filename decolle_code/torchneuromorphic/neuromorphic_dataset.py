@@ -101,7 +101,7 @@ class NeuromorphicDataset(data.Dataset):
         if isinstance(root, torch._six.string_classes):
             root = os.path.expanduser(root)
         self.root = root
- 
+
         if root is not None:
             if not os.path.isfile(root):
                 if self.download_and_create:
