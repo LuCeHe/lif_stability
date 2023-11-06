@@ -10,6 +10,8 @@
 # Licence : GPLv2
 # -----------------------------------------------------------------------------
 import json
+
+from sg_design_lif.decolle_code.decolle.base_model import LIFLayerPlus
 from sg_design_lif.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
 from sg_design_lif.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss, LIFLayerVariableTau, \
     LIFLayer
@@ -66,6 +68,11 @@ def main(args):
     if 'dropout' not in params.keys():
         params['dropout'] = [.5]
 
+    if 'condIV' in args.comments:
+        lif_layer_type = LIFLayerPlus
+    else:
+        lif_layer_type = LIFLayer
+
     ## Create Model, Optimizer and Loss
     net = LenetDECOLLE(out_channels=params['out_channels'],
                        Nhid=params['Nhid'],
@@ -80,7 +87,7 @@ def main(args):
                        num_conv_layers=params['num_conv_layers'],
                        num_mlp_layers=params['num_mlp_layers'],
                        lc_ampl=params['lc_ampl'],
-                       lif_layer_type=LIFLayer,
+                       lif_layer_type=lif_layer_type,
                        method=params['learning_method'],
                        with_output_layer=params['with_output_layer']).to(device)
 

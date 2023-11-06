@@ -35,14 +35,14 @@ class FastSigmoid(torch.autograd.Function):
         (input_,) = ctx.saved_tensors
         grad_input = grad_output.clone()
         grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
-        print('grad var', torch.var(grad))
         return grad
 
 
+sg_normalizer = None
+
+
 class FastSigmoidReset(torch.autograd.Function):
-    def __init__(self):
-        self.normalizer = None
-    # normalizer: 0
+    print('newcall')
     @staticmethod
     def forward(ctx, input_):
         ctx.save_for_backward(input_)
@@ -53,12 +53,12 @@ class FastSigmoidReset(torch.autograd.Function):
         (input_,) = ctx.saved_tensors
         grad_input = grad_output.clone()
         grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
-        if ctx.normalizer is None:
-            ctx.normalizer = torch.std(grad)
 
-        grad /= ctx.normalizer
-        print('grad var', torch.var(grad))
-        print('ctx.normalizer', ctx.normalizer)
+        global sg_normalizer
+        if sg_normalizer is None:
+            sg_normalizer = torch.std(grad)
+
+        grad /= sg_normalizer
         return grad
 
 
@@ -99,7 +99,7 @@ relu = nn.ReLU()
 smooth_step = SmoothStep().apply
 smooth_sigmoid = SigmoidStep().apply
 fast_sigmoid = FastSigmoid.apply
-fast_sigmoid = FastSigmoidReset.apply
+# fast_sigmoid = FastSigmoidReset.apply
 
 
 class BaseLIFLayer(nn.Module):
@@ -268,6 +268,10 @@ class LIFLayer(BaseLIFLayer):
                 layer.bias.data[:] = layer.bias.data[:] * ((1 - self.alpha) * (1 - self.beta))
         else:
             warnings.warn('Unhandled data type, not resetting parameters')
+
+
+class LIFLayerPlus(LIFLayer):
+    sg_function = FastSigmoidReset.apply
 
 
 class LIFLayerRefractory(LIFLayer):

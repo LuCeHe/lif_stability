@@ -61,6 +61,7 @@ February 2016.
                 else:
                     done = True
                 alldone *= done
+
             if alldone:
                 print("Initialization finalized:")
                 print("Layer: {0}, Variance: {1:.3}, Mean U: {2:.3}, Mean S: {3:.3}".format(i, v, m, mus))
