@@ -1,4 +1,3 @@
-import argparse
 import torch
 import numpy as np
 import tqdm
@@ -6,7 +5,6 @@ import datetime
 import os
 import socket
 import argparse
-import math
 from collections import Counter, defaultdict
 
 relu = torch.relu
@@ -88,6 +86,7 @@ def parse_args(default_params_file='parameters/params.yml'):
     parser.add_argument('--verbose', type=bool, default=False, help='print verbose outputs')
     parser.add_argument('--seed', type=int, default=-1, help='CPU and GPU seed')
     parser.add_argument('--no_train', dest='no_train', action='store_true', help='Train model (useful for resume)')
+    parser.add_argument('--comments', type=str, default='', help='String to activate extra behaviors')
 
     parsed, unknown = parser.parse_known_args()
 

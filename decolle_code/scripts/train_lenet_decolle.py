@@ -24,13 +24,9 @@ import os
 CDIR = os.path.dirname(os.path.realpath(__file__))
 DATADIR = os.path.abspath(os.path.join(CDIR, '..', '..', '..', 'data'))
 np.set_printoptions(precision=4)
-args = parse_args('parameters/params.yml')
-device = args.device
 
-
-def main():
+def main(args):
     # print args with json
-
     print(json.dumps(args.__dict__, indent=2))
 
     starting_epoch = 0
@@ -45,11 +41,6 @@ def main():
     print(json.dumps(params, indent=2))
 
     dataset = nmnist_dataloaders
-    # try:
-    #     create_data = dataset.create_data
-    # except AttributeError:
-    #     create_data = dataset.create_dataloader
-
     create_data = dataset.create_dataloader
     verbose = args.verbose
 
@@ -124,7 +115,8 @@ def main():
 
     from sg_design_lif.decolle_code.decolle.init_functions import init_LSUV
 
-    init_LSUV(net, data_batch[:32])
+    # init_LSUV(net, data_batch[:32])
+
     ##Resume if necessary
     if args.resume_from is not None:
         print("Checkpoint directory " + checkpoint_dir)
@@ -176,4 +168,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_args('parameters/params.yml')
+
+    if torch.cuda.is_available():
+        device = args.device
+    else:
+        device = 'cpu'
+
+    main(args)
