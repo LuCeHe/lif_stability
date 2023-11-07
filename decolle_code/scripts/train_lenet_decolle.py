@@ -128,7 +128,7 @@ def main(args):
 
     from sg_design_lif.decolle_code.decolle.init_functions import init_LSUV
 
-    # init_LSUV(net, data_batch[:32])
+    init_LSUV(net, data_batch[:32])
 
     ##Resume if necessary
     if args.resume_from is not None:
