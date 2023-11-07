@@ -1,10 +1,6 @@
+import os, time, datetime, tqdm, socket, argparse
 import torch
 import numpy as np
-import tqdm
-import datetime
-import os
-import socket
-import argparse
 from collections import Counter, defaultdict
 
 relu = torch.relu
@@ -107,11 +103,12 @@ def prepare_experiment(name, args):
     from tensorboardX import SummaryWriter
     if args.resume_from is None:
         params_file = args.params_file
+        log_dir = 'nosave'
         if not args.no_save:
-            current_time = datetime.datetime.now().strftime('%b%d_%H-%M-%S')
-            log_dir = os.path.join(EXPSDIR, 'logs/{0}/'.format(name),
-                                   args.save_dir,
-                                   current_time + '_' + socket.gethostname())
+
+            named_tuple = time.localtime()  # get struct_time
+            time_string = time.strftime("%Y-%m-%d--%H-%M-%S--", named_tuple)
+            log_dir = os.path.join(EXPSDIR, time_string + 'decolle')
             checkpoint_dir = os.path.join(log_dir, 'checkpoints')
             if not os.path.exists(log_dir):
                 os.makedirs(log_dir)
@@ -157,6 +154,7 @@ def prepare_experiment(name, args):
         torch.manual_seed(args.seed)
         np.random.seed(args.seed)
     params = defaultdict(lambda: None, params)
+
     return params, writer, directories
 
 

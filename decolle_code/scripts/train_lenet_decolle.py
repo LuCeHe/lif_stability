@@ -9,8 +9,9 @@
 # Copyright : (c) UC Regents, Emre Neftci
 # Licence : GPLv2
 # -----------------------------------------------------------------------------
-import json
+import json, shutil, time
 
+from pyaromatics.stay_organized.utils import NumpyEncoder
 from sg_design_lif.decolle_code.decolle.base_model import LIFLayerPlus
 from sg_design_lif.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
 from sg_design_lif.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss, LIFLayerVariableTau, \
@@ -27,19 +28,22 @@ CDIR = os.path.dirname(os.path.realpath(__file__))
 DATADIR = os.path.abspath(os.path.join(CDIR, '..', '..', '..', 'data'))
 np.set_printoptions(precision=4)
 
-def main(args):
-    # print args with json
-    print(json.dumps(args.__dict__, indent=2))
 
+def main(args):
     starting_epoch = 0
 
     # get name of this file with code that is windows and linux compatible
     name = os.path.split(__file__)[1].split('.')[0]
+    args.file_name = name
+    results = {}
 
     params, writer, dirs = prepare_experiment(name=name, args=args)
     log_dir = dirs['log_dir']
     checkpoint_dir = dirs['checkpoint_dir']
 
+    # print args with json
+    args.__dict__.update(dirs)
+    print(json.dumps(args.__dict__, indent=2))
     print(json.dumps(params, indent=2))
 
     dataset = nmnist_dataloaders
@@ -69,6 +73,7 @@ def main(args):
         params['dropout'] = [.5]
 
     if 'condIV' in args.comments:
+        print('Using condition IV')
         lif_layer_type = LIFLayerPlus
     else:
         lif_layer_type = LIFLayer
@@ -97,7 +102,8 @@ def main(args):
         opts = []
         for i in range(len(params['learning_rate'])):
             opts.append(
-                torch.optim.Adamax(net.get_trainable_parameters(i), lr=params['learning_rate'][i], betas=params['betas']))
+                torch.optim.Adamax(net.get_trainable_parameters(i), lr=params['learning_rate'][i],
+                                   betas=params['betas']))
         opt = MultiOpt(*opts)
     else:
         opt = torch.optim.Adamax(net.get_trainable_parameters(), lr=params['learning_rate'], betas=params['betas'])
@@ -173,6 +179,8 @@ def main(args):
                 for i in range(len(net)):
                     writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)
 
+    return args, results
+
 
 if __name__ == '__main__':
     args = parse_args('parameters/params.yml')
@@ -182,4 +190,25 @@ if __name__ == '__main__':
     else:
         device = 'cpu'
 
-    main(args)
+    args.no_train = True
+    time_start = time.perf_counter()
+
+    args, results = main(args)
+
+    time_elapsed = (time.perf_counter() - time_start)
+    results.update(time_elapsed=time_elapsed)
+    results.update(hostname=socket.gethostname())
+
+    print('All done, in ' + str(time_elapsed) + 's')
+
+    args = args.__dict__
+    for d in [args, results]:
+        string_result = json.dumps(d, indent=4, cls=NumpyEncoder)
+        var_name = [k for k, v in locals().items() if v is d if not k == 'd'][0]
+        print(var_name)
+
+        path = os.path.join(args['log_dir'], var_name + '.txt')
+        with open(path, "w") as f:
+            f.write(string_result)
+
+    shutil.make_archive(args['log_dir'], 'zip', args['log_dir'])
