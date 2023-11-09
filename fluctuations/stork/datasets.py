@@ -17,7 +17,6 @@ lock = threading.Lock()
 
 
 def synchronized_open_file(*args, **kwargs):
-    print('hum')
     with lock:
         return h5py.File(*args, **kwargs)
 

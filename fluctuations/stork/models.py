@@ -178,7 +178,7 @@ class RecurrentSpikingModel(nn.Module):
         self.reset_states(cur_batch_size)
         self.input_group.feed_data(x_batch)
         for t in range(self.nb_time_steps):
-            stork.nodes.base.CellGroup.clk = t
+            sg_design_lif.fluctuations.stork.nodes.base.CellGroup.clk = t
             self.evolve_all()
             self.propagate_all()
             self.execute_all()
