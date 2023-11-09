@@ -1,4 +1,4 @@
-import os, time, datetime, tqdm, socket, argparse
+import os, time, datetime, tqdm, socket, argparse, string, random
 import torch
 import numpy as np
 from collections import Counter, defaultdict
@@ -108,7 +108,10 @@ def prepare_experiment(name, args):
 
             named_tuple = time.localtime()  # get struct_time
             time_string = time.strftime("%Y-%m-%d--%H-%M-%S--", named_tuple)
-            log_dir = os.path.join(EXPSDIR, time_string + 'decolle')
+            characters = string.ascii_letters + string.digits
+            random_string = ''.join(random.choice(characters) for _ in range(5))
+
+            log_dir = os.path.join(EXPSDIR, time_string + random_string + '_decolle')
             checkpoint_dir = os.path.join(log_dir, 'checkpoints')
             if not os.path.exists(log_dir):
                 os.makedirs(log_dir)

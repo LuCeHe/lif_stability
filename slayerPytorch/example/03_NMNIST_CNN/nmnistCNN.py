@@ -1,6 +1,5 @@
 import sys, os
 
-from sg_design_lif.slayerPytorch.src.learningStats import learningStats
 
 CURRENT_TEST_DIR = os.getcwd()
 sys.path.append(CURRENT_TEST_DIR + "/../../src")
@@ -10,11 +9,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import Dataset, DataLoader
-import slayerSNN as snn
-# from learningStats import learningStats
+import sg_design_lif.slayerPytorch.src.slayerSNN as snn
+from sg_design_lif.slayerPytorch.src.learningStats import learningStats
+
 import zipfile
 
-learningStats
 
 netParams = snn.params('network.yaml')
 

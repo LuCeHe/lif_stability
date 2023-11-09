@@ -183,23 +183,19 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = parse_args('parameters/params.yml')
+    args = parse_args(os.path.join(CDIR, 'parameters', 'params.yml'))
 
     if torch.cuda.is_available():
         device = args.device
     else:
         device = 'cpu'
 
-    args.no_train = True
     time_start = time.perf_counter()
-
     args, results = main(args)
-
     time_elapsed = (time.perf_counter() - time_start)
+
     results.update(time_elapsed=time_elapsed)
     results.update(hostname=socket.gethostname())
-
-    print('All done, in ' + str(time_elapsed) + 's')
 
     args = args.__dict__
     for d in [args, results]:
@@ -212,3 +208,4 @@ if __name__ == '__main__':
             f.write(string_result)
 
     shutil.make_archive(args['log_dir'], 'zip', args['log_dir'])
+    print('All done, in ' + str(time_elapsed) + 's')
