@@ -185,10 +185,7 @@ def main(args):
 if __name__ == '__main__':
     args = parse_args(os.path.join(CDIR, 'parameters', 'params.yml'))
 
-    if torch.cuda.is_available():
-        device = args.device
-    else:
-        device = 'cpu'
+    device = args.device if torch.cuda.is_available() else 'cpu'
 
     time_start = time.perf_counter()
     args, results = main(args)
