@@ -30,6 +30,7 @@ np.set_printoptions(precision=4)
 
 
 def main(args):
+    stop_time = time.perf_counter() + args.stop_time - 30*60
     starting_epoch = 0
 
     # get name of this file with code that is windows and linux compatible
@@ -45,6 +46,7 @@ def main(args):
     args.__dict__.update(dirs)
     print(json.dumps(args.__dict__, indent=2))
     print(json.dumps(params, indent=2))
+    results.update(params)
 
     dataset = nmnist_dataloaders
     create_data = dataset.create_dataloader
@@ -149,8 +151,16 @@ def main(args):
 
     # --------TRAINING LOOP----------
     if not args.no_train:
+        train_losses = []
+        test_losses = []
+        train_accs = []
+        test_accs = []
         test_acc_hist = []
         for e in range(starting_epoch, params['num_epochs']):
+            results.update(train_losses=train_losses, test_losses=test_losses, test_accs=test_accs,)
+            if time.perf_counter() > stop_time:
+                break
+
             interval = e // params['lr_drop_interval']
             lr = opt.param_groups[-1]['lr']
             if interval > 0:
@@ -168,6 +178,10 @@ def main(args):
 
                 test_loss, test_acc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True)
                 test_acc_hist.append(test_acc)
+                test_losses.append(test_loss)
+                test_accs.append(test_acc)
+
+
 
                 if not args.no_save:
                     write_stats(e, test_acc, test_loss, writer)
@@ -175,6 +189,8 @@ def main(args):
 
             total_loss, act_rate = train(gen_train, decolle_loss, net, opt, e, params['burnin_steps'],
                                          online_update=params['online_update'])
+            train_losses.append(total_loss)
+
             if not args.no_save:
                 for i in range(len(net)):
                     writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)

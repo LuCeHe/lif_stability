@@ -83,6 +83,7 @@ def parse_args(default_params_file='parameters/params.yml'):
     parser.add_argument('--seed', type=int, default=-1, help='CPU and GPU seed')
     parser.add_argument('--no_train', dest='no_train', action='store_true', help='Train model (useful for resume)')
     parser.add_argument('--comments', type=str, default='', help='String to activate extra behaviors')
+    parser.add_argument("--stop_time", default=600, type=int, help="Stop time (seconds)")
 
     parsed, unknown = parser.parse_known_args()
 
