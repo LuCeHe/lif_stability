@@ -30,8 +30,9 @@ np.set_printoptions(precision=4)
 
 
 def main(args):
-    stop_time = time.perf_counter() + args.stop_time - 30*60
+    stop_time = time.perf_counter() + args.stop_time - 30 * 60
     starting_epoch = 0
+    device = args.device if torch.cuda.is_available() else 'cpu'
 
     # get name of this file with code that is windows and linux compatible
     name = os.path.split(__file__)[1].split('.')[0]
@@ -157,7 +158,7 @@ def main(args):
         test_accs = []
         test_acc_hist = []
         for e in range(starting_epoch, params['num_epochs']):
-            results.update(train_losses=train_losses, test_losses=test_losses, test_accs=test_accs,)
+            results.update(train_losses=train_losses, test_losses=test_losses, test_accs=test_accs, )
             if time.perf_counter() > stop_time:
                 break
 
@@ -181,8 +182,6 @@ def main(args):
                 test_losses.append(test_loss)
                 test_accs.append(test_acc)
 
-
-
                 if not args.no_save:
                     write_stats(e, test_acc, test_loss, writer)
                     np.save(log_dir + '/test_acc.npy', np.array(test_acc_hist), )
@@ -200,8 +199,6 @@ def main(args):
 
 if __name__ == '__main__':
     args = parse_args(os.path.join(CDIR, 'parameters', 'params.yml'))
-
-    device = args.device if torch.cuda.is_available() else 'cpu'
 
     time_start = time.perf_counter()
     args, results = main(args)

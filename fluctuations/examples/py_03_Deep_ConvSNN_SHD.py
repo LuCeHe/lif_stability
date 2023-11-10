@@ -10,7 +10,7 @@
 
 # %%
 # First, imports
-import os, socket
+import os, socket, json, shutil, time, argparse, string, random
 
 import numpy as np
 import torch
@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import sg_design_lif.fluctuations.stork.datasets
+from pyaromatics.stay_organized.utils import NumpyEncoder
 from sg_design_lif.fluctuations.stork.datasets import HDF5Dataset, DatasetView
 
 from sg_design_lif.fluctuations.stork.models import RecurrentSpikingModel
@@ -30,17 +31,21 @@ from sg_design_lif.fluctuations.stork.layers import ConvLayer
 
 import sg_design_lif.fluctuations.stork as stork
 
+FILENAME = os.path.realpath(__file__)
+CDIR = os.path.dirname(FILENAME)
+DATA = os.path.abspath(os.path.join(CDIR, "..", "..", "..", "data"))
+datadir = os.path.join(DATA, "zenke_datasets", "hdspikes")
+os.makedirs(datadir, exist_ok=True)
 
-def main():
+
+def main(args):
     # ## Load Dataset
     # ***To locally run this notebook on your system, download the SHD dataset from: [https://zenkelab.org/datasets/](https://zenkelab.org/datasets/).***
     # *We need 'shd_train.h5' and 'shd_test.h5'. Move the downloaded files into a folder `data/datasets/hdspikes` in this repo, or change the `datadir` variable below.
+    stop_time = time.perf_counter() + args.stop_time - 30 * 60
 
-    FILENAME = os.path.realpath(__file__)
-    CDIR = os.path.dirname(FILENAME)
-    DATA = os.path.abspath(os.path.join(CDIR, "..", "..", "..", "data"))
-    datadir = os.path.join(DATA, "zenke_datasets", "hdspikes")
-    os.makedirs(datadir, exist_ok=True)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
 
     # #### Specifying dataset parameters
     nb_inputs = 700
@@ -104,7 +109,7 @@ def main():
     device = torch.device("cuda") if torch.cuda.is_available() else 'cpu'
     dtype = torch.float
     lr = 5e-3
-    nb_epochs = 200
+    nb_epochs = 200 if args.epochs < 0 else args.epochs
 
     # #### SuperSpike and loss function setup
     act_fn = stork.activations.SuperSpike
@@ -239,9 +244,7 @@ def main():
     #     nb_samples=5,
     #     point_alpha=0.3)
 
-    # %% [markdown]
     # ## Training
-    #
     # takes around 85 minutes using a powerful GPU
 
     results = {}
@@ -250,7 +253,9 @@ def main():
         train_dataset,
         valid_dataset,
         nb_epochs=nb_epochs,
-        verbose=False)
+        verbose=False,
+        stop_time=stop_time,
+    )
 
     results["train_loss"] = history["loss"].tolist()
     results["train_acc"] = history["acc"].tolist()
@@ -283,6 +288,9 @@ def main():
     sns.despine()
     plt.tight_layout()
 
+    plotpath = os.path.join(args.log_dir, 'training.png')
+    plt.savefig(plotpath, dpi=300)
+
     print("Test loss: ", results["test_loss"])
     print("Test acc.: ", results["test_acc"])
 
@@ -297,8 +305,50 @@ def main():
     #     nb_samples=5,
     #     point_alpha=0.3)
 
-    # %%
+    return results
+
+
+def parse_args():
+    EXPSDIR = os.path.abspath(os.path.join(CDIR, '..', '..', 'experiments'))
+    os.makedirs(EXPSDIR, exist_ok=True)
+
+    named_tuple = time.localtime()  # get struct_time
+    time_string = time.strftime("%Y-%m-%d--%H-%M-%S--", named_tuple)
+    characters = string.ascii_letters + string.digits
+    random_string = ''.join(random.choice(characters) for _ in range(5))
+
+    log_dir = os.path.join(EXPSDIR, time_string + random_string + '_fluctuations')
+
+    parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
+    parser.add_argument('--seed', type=int, default=-1, help='CPU and GPU seed')
+    parser.add_argument('--epochs', type=int, default=1, help='Epochs')
+
+    parser.add_argument('--comments', type=str, default='', help='String to activate extra behaviors')
+    parser.add_argument("--stop_time", default=600, type=int, help="Stop time (seconds)")
+    parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
+    args = parser.parse_args()
+    return args
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+
+    time_start = time.perf_counter()
+    results = main(args)
+    time_elapsed = (time.perf_counter() - time_start)
+
+    results.update(time_elapsed=time_elapsed)
+    results.update(hostname=socket.gethostname())
+
+    args = args.__dict__
+    for d in [args, results]:
+        string_result = json.dumps(d, indent=4, cls=NumpyEncoder)
+        var_name = [k for k, v in locals().items() if v is d if not k == 'd'][0]
+        print(var_name)
+
+        path = os.path.join(args['log_dir'], var_name + '.txt')
+        with open(path, "w") as f:
+            f.write(string_result)
+
+    shutil.make_archive(args['log_dir'], 'zip', args['log_dir'])
+    print('All done, in ' + str(time_elapsed) + 's')

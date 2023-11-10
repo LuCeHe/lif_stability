@@ -331,11 +331,13 @@ class RecurrentSpikingModel(nn.Module):
         history = self.get_metrics_history_dict(np.array(self.hist))
         return history
 
-    def fit_validate(self, dataset, valid_dataset, nb_epochs=10, verbose=True, wandb=None):
+    def fit_validate(self, dataset, valid_dataset, nb_epochs=10, verbose=True, wandb=None, stop_time=None):
         self.hist_train = []
         self.hist_valid = []
         self.wall_clock_time = []
         for ep in tqdm(range(nb_epochs)):
+            if not stop_time is None and time.perf_counter() > stop_time:
+                break
             t_start = time.time()
             self.train()
             ret_train = self.train_epoch(dataset)
