@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 import time
 
 import torch
@@ -48,10 +49,8 @@ class RecurrentSpikingModel(nn.Module):
 
         if generator is None:
             self.data_generator_ = generators.StandardGenerator()
-            print('here')
         else:
             self.data_generator_ = generator
-            print('or here')
 
         # configure data generator
         self.data_generator_.configure(self.batch_size, self.nb_time_steps,
@@ -336,7 +335,7 @@ class RecurrentSpikingModel(nn.Module):
         self.hist_train = []
         self.hist_valid = []
         self.wall_clock_time = []
-        for ep in range(nb_epochs):
+        for ep in tqdm(range(nb_epochs)):
             t_start = time.time()
             self.train()
             ret_train = self.train_epoch(dataset)

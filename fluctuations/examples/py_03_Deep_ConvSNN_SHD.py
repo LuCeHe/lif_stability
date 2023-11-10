@@ -10,7 +10,7 @@
 
 # %%
 # First, imports
-import os
+import os, socket
 
 import numpy as np
 import torch
@@ -32,24 +32,17 @@ import sg_design_lif.fluctuations.stork as stork
 
 
 def main():
-    # %% [markdown]
     # ## Load Dataset
-    #
     # ***To locally run this notebook on your system, download the SHD dataset from: [https://zenkelab.org/datasets/](https://zenkelab.org/datasets/).***
     # *We need 'shd_train.h5' and 'shd_test.h5'. Move the downloaded files into a folder `data/datasets/hdspikes` in this repo, or change the `datadir` variable below.
 
-    # %%
     FILENAME = os.path.realpath(__file__)
     CDIR = os.path.dirname(FILENAME)
     DATA = os.path.abspath(os.path.join(CDIR, "..", "..", "..", "data"))
     datadir = os.path.join(DATA, "zenke_datasets", "hdspikes")
     os.makedirs(datadir, exist_ok=True)
-    # datadir = "../data/datasets/hdspikes"
 
-    # %% [markdown]
     # #### Specifying dataset parameters
-
-    # %%
     nb_inputs = 700
     duration = 0.7
     time_step = dt = 2e-3
@@ -68,10 +61,7 @@ def main():
         unit_permutation=None
     )
 
-    # %% [markdown]
     # #### Load and split dataset into train / validation / test
-
-    # %%
     train_dataset = HDF5Dataset(os.path.join(datadir, "shd_train.h5"), **gen_kwargs)
 
     # Split into train and validation set
@@ -84,10 +74,7 @@ def main():
 
     test_dataset = HDF5Dataset(os.path.join(datadir, "shd_test.h5"), **gen_kwargs)
 
-    # %% [markdown]
     # ## Set up the model
-
-    # %%
     # Model Parameters
     # # # # # # # # # # #
 
@@ -100,9 +87,7 @@ def main():
     stride = [10, 3, 3]
     padding = [0, 0, 0]
 
-    recurrent_kwargs = {'kernel_size': 5,
-                        'stride': 1,
-                        'padding': 2}
+    recurrent_kwargs = {'kernel_size': 5, 'stride': 1, 'padding': 2}
 
     # Neuron Parameters
     # # # # # # # # # # #
@@ -115,33 +100,25 @@ def main():
     # Training parameters
     # # # # # # # # # # #
 
-    batch_size = 400 if torch.cuda.is_available() else 8
+    batch_size = 400 if torch.cuda.is_available() else 2
     device = torch.device("cuda") if torch.cuda.is_available() else 'cpu'
     dtype = torch.float
     lr = 5e-3
     nb_epochs = 200
 
-    # %% [markdown]
     # #### SuperSpike and loss function setup
-
-    # %%
-
     act_fn = stork.activations.SuperSpike
     act_fn.beta = beta
 
     loss_stack = stork.loss_stacks.MaxOverTimeCrossEntropy()
 
-    # %% [markdown]
     # #### Optimizer setup
-
-    # %%
     opt = stork.optimizers.SMORMS3
-    generator = StandardGenerator(nb_workers=4)
+    nb_workers = 4 if not 'DESKTOP' in socket.gethostname() else 0
+    persistent_workers = not 'DESKTOP' in socket.gethostname()
+    generator = StandardGenerator(nb_workers=nb_workers, persistent_workers=persistent_workers)
 
-    # %% [markdown]
     # #### Regularizer setup
-
-    # %%
     # Define regularizer parameters (set regularizer strenght to 0 if you don't want to use them)
     upperBoundL2Strength = 0.01
     upperBoundL2Threshold = 7  # Regularizes spikecount: 7 spikes ~ 10 Hz in 700ms simulation time
@@ -154,11 +131,8 @@ def main():
                                             dims=[-2, -1])
     regs.append(regUB)
 
-    # %% [markdown]
     # #### Initializer setup
     # We initialize in the fluctuation-driven regime with a target membrane potential standard deviation $\sigma_U=1.0$. Additionally, we set the proportion of membrane potential fluctuations driven by feed-forward inputs to $\alpha=0.9$.
-
-    # %%
     sigma_u = 1.0
     nu = 15.8
 
@@ -176,8 +150,8 @@ def main():
 
     # %% [markdown]
     # #### Assemble the model
+    print('Assemble the model...')
 
-    # %%
     model = RecurrentSpikingModel(
         batch_size,
         nb_time_steps,
@@ -238,20 +212,14 @@ def main():
     # Initialize readout connection
     readout_initializer.initialize(readout_connection)
 
-    # %% [markdown]
     # #### Add monitors for spikes and membrane potential
-
-    # %%
     for i in range(nb_hidden_layers):
         model.add_monitor(stork.monitors.SpikeCountMonitor(model.groups[1 + i]))
 
     for i in range(nb_hidden_layers):
         model.add_monitor(stork.monitors.StateMonitor(model.groups[1 + i], "out"))
 
-    # %% [markdown]
     # #### Configure model for training
-
-    # %%
     model.configure(input=input_group,
                     output=readout_group,
                     loss_stack=loss_stack,
@@ -276,9 +244,8 @@ def main():
     #
     # takes around 85 minutes using a powerful GPU
 
-    # %%
     results = {}
-
+    print('Start training...')
     history = model.fit_validate(
         train_dataset,
         valid_dataset,
@@ -290,17 +257,13 @@ def main():
     results["valid_loss"] = history["val_loss"].tolist()
     results["valid_acc"] = history["val_acc"].tolist()
 
-    # %% [markdown]
     # ## Test
 
-    # %%
+    print('Start testing...')
     scores = model.evaluate(test_dataset).tolist()
     results["test_loss"], _, results["test_acc"] = scores
 
-    # %% [markdown]
     # #### Visualize performance
-
-    # %%
     fig, ax = plt.subplots(2, 2, figsize=(5, 3), dpi=150)
 
     for i, n in enumerate(["train_loss", "train_acc", "valid_loss", "valid_acc"]):
@@ -326,10 +289,7 @@ def main():
     print("\nValidation loss: ", results["valid_loss"][-1])
     print("Validation acc.: ", results["valid_acc"][-1])
 
-    # %% [markdown]
     # #### Snapshot after training
-
-    # %%
     # plt.figure(dpi=150)
     # stork.plotting.plot_activity_snapshot(
     #     model,
