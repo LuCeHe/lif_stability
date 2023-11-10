@@ -320,11 +320,11 @@ def parse_args():
     log_dir = os.path.join(EXPSDIR, time_string + random_string + '_fluctuations')
 
     parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
-    parser.add_argument('--seed', type=int, default=-1, help='CPU and GPU seed')
-    parser.add_argument('--epochs', type=int, default=1, help='Epochs')
+    parser.add_argument('--seed', type=int, default=0, help='CPU and GPU seed')
+    parser.add_argument('--epochs', type=int, default=2 , help='Epochs')
 
     parser.add_argument('--comments', type=str, default='', help='String to activate extra behaviors')
-    parser.add_argument("--stop_time", default=600, type=int, help="Stop time (seconds)")
+    parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
     args = parser.parse_args()
     return args
