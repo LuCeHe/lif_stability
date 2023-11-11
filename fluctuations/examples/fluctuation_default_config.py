@@ -20,8 +20,11 @@ def default_shd():
 
 
 def default_cifar10():
-    pass
-
+    return {
+        'maxpool_kernel_size': 2,
+        'recurrent_kwargs': {},
+        'dropout_p': 0.0,
+    }
 
 def default_dvs():
     return {

@@ -154,7 +154,6 @@ def main(args):
                      'activation': act_fn}
 
     for bi in range(nb_conv_blocks):
-        # FIXME: make it compatible with SHD and DVS
         for li in range(nb_hidden_layers):
             # Generate Layer name and config
             name = f'Block {bi} Conv {li}'
@@ -186,7 +185,7 @@ def main(args):
             # Set output as input to next layer
             upstream_group = layer.output_group
 
-        if args.dataset == 'dvs':
+        if args.dataset in ['dvs', 'cifar10']:
             # Make maxpool layer
             maxpool = model.add_group(
                 MaxPool2d(upstream_group,

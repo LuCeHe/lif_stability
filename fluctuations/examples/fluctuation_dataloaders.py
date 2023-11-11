@@ -160,6 +160,7 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
         'nb_time_steps': nb_time_steps,
         'target_size': target_size,
         'input_shape': input_shape,
+        'nb_inputs': input_shape
     }
 
     return {"train": ds_train, "valid": ds_valid, "test": ds_test, "data_config": data_config}
@@ -207,6 +208,7 @@ def _get_shd_dataset(train=True, valid=True, test=True):
         'dt': dt,
         'nb_time_steps': nb_time_steps,
         'input_shape': input_shape,
+        'nb_inputs': nb_inputs,
     }
 
     return {"train": train_dataset, "valid": valid_dataset, "test": test_dataset, "data_config": data_config}
