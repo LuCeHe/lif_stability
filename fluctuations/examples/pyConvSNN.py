@@ -338,7 +338,7 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=0, help='CPU and GPU seed')
     parser.add_argument('--epochs', type=int, default=2, help='Epochs')
 
-    parser.add_argument('--dataset', type=str, default='shd', help='Name of dataset to use', choices=datasets_available)
+    parser.add_argument('--dataset', type=str, default='dvs', help='Name of dataset to use', choices=datasets_available)
     parser.add_argument('--comments', type=str, default='', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
