@@ -10,7 +10,7 @@
 
 # %%
 # First, imports
-import os, socket, json, shutil, time, argparse, string, random
+import os, socket, json, shutil, time, argparse, string, random, gc
 
 import numpy as np
 import torch
@@ -18,13 +18,13 @@ import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import sg_design_lif.fluctuations.stork.datasets
 from pyaromatics.stay_organized.utils import NumpyEncoder
-from sg_design_lif.fluctuations.stork.datasets import HDF5Dataset, DatasetView
+from sg_design_lif.fluctuations.examples.fluctuation_dataloaders import datasets_available, load_dataset
+from sg_design_lif.fluctuations.examples.fluctuation_default_config import default_config
 
 from sg_design_lif.fluctuations.stork.models import RecurrentSpikingModel
-from sg_design_lif.fluctuations.stork.nodes import InputGroup, ReadoutGroup, LIFGroup
-from sg_design_lif.fluctuations.stork.connections import Connection
+from sg_design_lif.fluctuations.stork.nodes import InputGroup, ReadoutGroup, LIFGroup, MaxPool2d
+from sg_design_lif.fluctuations.stork.connections import Connection, Conv2dConnection, ConvConnection
 from sg_design_lif.fluctuations.stork.generators import StandardGenerator
 from sg_design_lif.fluctuations.stork.initializers import FluctuationDrivenCenteredNormalInitializer, DistInitializer
 from sg_design_lif.fluctuations.stork.layers import ConvLayer
@@ -33,9 +33,6 @@ import sg_design_lif.fluctuations.stork as stork
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)
-DATA = os.path.abspath(os.path.join(CDIR, "..", "..", "..", "data"))
-datadir = os.path.join(DATA, "zenke_datasets", "hdspikes")
-os.makedirs(datadir, exist_ok=True)
 
 
 def main(args):
@@ -47,69 +44,47 @@ def main(args):
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    # #### Specifying dataset parameters
-    nb_inputs = 700
-    duration = 0.7
-    time_step = dt = 2e-3
-    nb_time_steps = int(duration / time_step)
-    time_scale = 1
-    unit_scale = 1
-    validation_split = 0.9
-
-    gen_kwargs = dict(
-        nb_steps=nb_time_steps,
-        time_scale=time_scale / time_step,
-        unit_scale=unit_scale,
-        nb_units=nb_inputs,
-        preload=True,
-        precompute_dense=False,
-        unit_permutation=None
-    )
-
-    # #### Load and split dataset into train / validation / test
-    train_dataset = HDF5Dataset(os.path.join(datadir, "shd_train.h5"), **gen_kwargs)
-
-    # Split into train and validation set
-    mother_dataset = train_dataset
-    elements = np.arange(len(mother_dataset))
-    np.random.shuffle(elements)
-    split = int(validation_split * len(mother_dataset))
-    valid_dataset = DatasetView(mother_dataset, elements[split:])
-    train_dataset = DatasetView(mother_dataset, elements[:split])
-
-    test_dataset = HDF5Dataset(os.path.join(datadir, "shd_test.h5"), **gen_kwargs)
+    ## Load Dataset
+    dataset = load_dataset(args.dataset)
+    train_dataset, valid_dataset, test_dataset = dataset['train'], dataset['valid'], dataset['test']
+    dconfig = dataset['data_config']
+    dt = dconfig['dt']
+    duration = dconfig['duration']
+    nb_time_steps = dconfig['nb_time_steps']
+    nb_inputs = dconfig['nb_inputs']
+    input_shape = dconfig['input_shape']
 
     # ## Set up the model
     # Model Parameters
     # # # # # # # # # # #
 
-    beta = 20
-    nb_hidden_layers = 3
-    nb_classes = 20
-    nb_filters = [16, 32, 64]  # Number of features per layer
-
-    kernel_size = [21, 7, 7]  # Convolutional operation parameters
-    stride = [10, 3, 3]
-    padding = [0, 0, 0]
-
-    recurrent_kwargs = {'kernel_size': 5, 'stride': 1, 'padding': 2}
+    config = default_config(args.dataset)
+    beta = config['beta']
+    nb_conv_blocks = config['nb_conv_blocks']
+    nb_hidden_layers = config['nb_hidden_layers']
+    nb_classes = config['nb_classes']
+    nb_filters = config['nb_filters']
+    kernel_size = config['kernel_size']
+    stride = config['stride']
+    padding = config['padding']
+    recurrent_kwargs = config['recurrent_kwargs']
+    lr = config['lr']
+    maxpool_kernel_size = config['maxpool_kernel_size']
+    dropout_p = config['dropout_p']
 
     # Neuron Parameters
     # # # # # # # # # # #
 
     neuron_group = LIFGroup
-    tau_mem = 20e-3
-    tau_syn = 10e-3
     tau_readout = duration
 
     # Training parameters
     # # # # # # # # # # #
 
-    batch_size = 400 if torch.cuda.is_available() else 2
+    batch_size = config['batch_size'] if torch.cuda.is_available() else 2
     device = torch.device("cuda") if torch.cuda.is_available() else 'cpu'
     dtype = torch.float
-    lr = 5e-3
-    nb_epochs = 200 if args.epochs < 0 else args.epochs
+    nb_epochs = config['epochs'] if args.epochs < 0 else args.epochs
 
     # #### SuperSpike and loss function setup
     act_fn = stork.activations.SuperSpike
@@ -126,7 +101,8 @@ def main(args):
     # #### Regularizer setup
     # Define regularizer parameters (set regularizer strenght to 0 if you don't want to use them)
     upperBoundL2Strength = 0.01
-    upperBoundL2Threshold = 7  # Regularizes spikecount: 7 spikes ~ 10 Hz in 700ms simulation time
+    upperBoundL2Threshold = config[
+        'upperBoundL2Threshold']  # Regularizes spikecount: 7 spikes ~ 10 Hz in 700ms simulation time
 
     # Define regularizer list
     regs = []
@@ -139,7 +115,7 @@ def main(args):
     # #### Initializer setup
     # We initialize in the fluctuation-driven regime with a target membrane potential standard deviation $\sigma_U=1.0$. Additionally, we set the proportion of membrane potential fluctuations driven by feed-forward inputs to $\alpha=0.9$.
     sigma_u = 1.0
-    nu = 15.8
+    nu = config['nu']
 
     initializer = FluctuationDrivenCenteredNormalInitializer(
         sigma_u=sigma_u,
@@ -163,9 +139,9 @@ def main(args):
         nb_inputs,
         device,
         dtype)
+
     # INPUT LAYER
     # # # # # # # # # # # # # # #
-    input_shape = (1, nb_inputs)
     input_group = model.add_group(InputGroup(input_shape))
 
     # Set input group as upstream of first hidden layer
@@ -177,30 +153,48 @@ def main(args):
                      'tau_syn': 10e-3,
                      'activation': act_fn}
 
-    for layer_idx in range(nb_hidden_layers):
-        # Generate Layer name and config
-        layer_name = str('ConvLayer') + ' ' + str(layer_idx)
+    for bi in range(nb_conv_blocks):
+        # FIXME: make it compatible with SHD and DVS
+        for li in range(nb_hidden_layers):
+            # Generate Layer name and config
+            name = f'Block {bi} Conv {li}'
+            ksi = kernel_size[li] if isinstance(kernel_size, list) else kernel_size
+            si = stride[li] if isinstance(stride, list) else stride
+            pi = padding[li] if isinstance(padding, list) else padding
+            recurrent = True if args.dataset == 'shd' else False
+            connection_class = ConvConnection if args.dataset == 'shd' else Conv2dConnection
 
-        # Make layer
-        layer = ConvLayer(name=layer_name,
-                          model=model,
-                          input_group=upstream_group,
-                          kernel_size=kernel_size[layer_idx],
-                          stride=stride[layer_idx],
-                          padding=padding[layer_idx],
-                          nb_filters=nb_filters[layer_idx],
-                          recurrent=True,
-                          neuron_class=neuron_group,
-                          neuron_kwargs=neuron_kwargs,
-                          recurrent_connection_kwargs=recurrent_kwargs,
-                          regs=regs,
-                          )
+            # Make layer
+            layer = ConvLayer(name=name,
+                              model=model,
+                              input_group=upstream_group,
+                              kernel_size=ksi,
+                              stride=si,
+                              padding=pi,
+                              nb_filters=nb_filters[li],
+                              recurrent=recurrent,
+                              neuron_class=neuron_group,
+                              neuron_kwargs=neuron_kwargs,
+                              recurrent_connection_kwargs=recurrent_kwargs,
+                              regs=regs,
+                              connection_class=connection_class
+                              )
 
-        # Initialize Parameters
-        initializer.initialize(layer)
+            # Initialize Parameters
+            initializer.initialize(layer)
 
-        # Set output as input to next layer
-        upstream_group = layer.output_group
+            # Set output as input to next layer
+            upstream_group = layer.output_group
+
+        if args.dataset == 'dvs':
+            # Make maxpool layer
+            maxpool = model.add_group(
+                MaxPool2d(upstream_group,
+                          kernel_size=maxpool_kernel_size,
+                          dropout_p=dropout_p)
+            )
+
+            upstream_group = maxpool
 
     # READOUT LAYER
     # # # # # # # # # # # # # # #
@@ -237,18 +231,22 @@ def main(args):
     # ## Monitoring activity before training
 
     # %%
-    # plt.figure(dpi=150)
-    # stork.plotting.plot_activity_snapshot(
-    #     model,
-    #     data=test_dataset,
-    #     nb_samples=5,
-    #     point_alpha=0.3)
+    fig = plt.figure(dpi=150)
+    stork.plotting.plot_activity_snapshot(
+        model,
+        data=test_dataset,
+        nb_samples=5,
+        point_alpha=0.3)
+
+    plotpath = os.path.join(args.log_dir, 'pre_activity.png')
+    fig.savefig(plotpath, dpi=300)
 
     # ## Training
     # takes around 85 minutes using a powerful GPU
 
     results = {}
     print('Start training...')
+
     history = model.fit_validate(
         train_dataset,
         valid_dataset,
@@ -257,10 +255,23 @@ def main(args):
         stop_time=stop_time,
     )
 
+    # DVS had no validation:
+    # history = model.fit(
+    #     train_dataset,
+    #     nb_epochs=20,
+    #     verbose=True
+    # )
+
     results["train_loss"] = history["loss"].tolist()
     results["train_acc"] = history["acc"].tolist()
     results["valid_loss"] = history["val_loss"].tolist()
     results["valid_acc"] = history["val_acc"].tolist()
+
+    # Free up some GPU space and clear cache
+    # This might not be necessary for you if your GPU has enough memory
+    del history
+    gc.collect()
+    torch.cuda.empty_cache()
 
     # ## Test
 
@@ -298,12 +309,14 @@ def main(args):
     print("Validation acc.: ", results["valid_acc"][-1])
 
     # #### Snapshot after training
-    # plt.figure(dpi=150)
-    # stork.plotting.plot_activity_snapshot(
-    #     model,
-    #     data=test_dataset,
-    #     nb_samples=5,
-    #     point_alpha=0.3)
+    fig = plt.figure(dpi=150)
+    stork.plotting.plot_activity_snapshot(
+        model,
+        data=test_dataset,
+        nb_samples=5,
+        point_alpha=0.3)
+    plotpath = os.path.join(args.log_dir, 'post_activity.png')
+    fig.savefig(plotpath, dpi=300)
 
     return results
 
@@ -321,8 +334,9 @@ def parse_args():
 
     parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
     parser.add_argument('--seed', type=int, default=0, help='CPU and GPU seed')
-    parser.add_argument('--epochs', type=int, default=2 , help='Epochs')
+    parser.add_argument('--epochs', type=int, default=2, help='Epochs')
 
+    parser.add_argument('--dataset', type=str, default='shd', help='Name of dataset to use', choices=datasets_available)
     parser.add_argument('--comments', type=str, default='', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
