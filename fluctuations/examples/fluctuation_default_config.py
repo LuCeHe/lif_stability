@@ -21,15 +21,28 @@ def default_shd():
 
 def default_cifar10():
     return {
+        'beta': 20,
+        'nb_conv_blocks': 1,
+        'nb_hidden_layers': 2,
+        'nb_classes': 11,
+        'nb_filters': [16, 32],
+        'kernel_size': 3,
+        'stride': 1,
+        'padding': 2,
         'maxpool_kernel_size': 2,
         'recurrent_kwargs': {},
         'dropout_p': 0.0,
+        'batch_size': 16,
+        'lr': 5e-3,
+        'epochs': 200,
+        'upperBoundL2Threshold': 10,
+        'nu': 9.2,
     }
 
 def default_dvs():
     return {
         'beta': 20,
-        'nb_conv_blocks': 2,
+        'nb_conv_blocks': 3,
         'nb_hidden_layers': 2,
         'nb_classes': 11,
         'nb_filters': [16, 32],
@@ -47,12 +60,21 @@ def default_dvs():
     }
 
 
-def default_config(name):
+def default_config(name, deep=False):
     if name == "cifar10":
-        return default_cifar10()
+        config = default_cifar10()
+        if deep:
+            config['nb_conv_blocks'] = 2
+        return config
     elif name == "dvs":
-        return default_dvs()
+        config = default_dvs()
+        if deep:
+            config['nb_conv_blocks'] = 4
+        return config
     elif name == "shd":
-        return default_shd()
+        config = default_shd()
+        if deep:
+            config['nb_hidden_layers'] = 7
+        return config
     else:
         raise ValueError("Unknown dataset name: {}".format(name))

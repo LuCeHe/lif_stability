@@ -36,6 +36,8 @@ CDIR = os.path.dirname(FILENAME)
 
 
 def main(args):
+    print(json.dumps(args.__dict__, indent=4, cls=NumpyEncoder))
+
     # ## Load Dataset
     # ***To locally run this notebook on your system, download the SHD dataset from: [https://zenkelab.org/datasets/](https://zenkelab.org/datasets/).***
     # *We need 'shd_train.h5' and 'shd_test.h5'. Move the downloaded files into a folder `data/datasets/hdspikes` in this repo, or change the `datadir` variable below.
@@ -58,7 +60,8 @@ def main(args):
     # Model Parameters
     # # # # # # # # # # #
 
-    config = default_config(args.dataset)
+    deep = 'deep' in args.comments
+    config = default_config(args.dataset, deep=deep)
     beta = config['beta']
     nb_conv_blocks = config['nb_conv_blocks']
     nb_hidden_layers = config['nb_hidden_layers']
