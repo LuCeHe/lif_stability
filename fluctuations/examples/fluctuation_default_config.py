@@ -52,7 +52,7 @@ def default_dvs():
         'maxpool_kernel_size': 2,
         'recurrent_kwargs': {},
         'dropout_p': 0.0,
-        'batch_size': 16,
+        'batch_size': 8, # 16
         'lr': 5e-3,
         'epochs': 200,
         'upperBoundL2Threshold': 10,

@@ -69,7 +69,7 @@ def print_params(params):
         print('{}{} : {}'.format(k, ' ' * (m - len(k)), v))
 
 
-def parse_args(default_params_file='parameters/params.yml'):
+def parse_args(default_params_file='parameters/params_dvsgestures_torchneuromorphic.yml'):
     parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
     parser.add_argument('--device', type=str, default='cuda', help='Device to use (cpu or cuda)')
     parser.add_argument('--resume_from', type=str, default=None, metavar='path_to_logdir',

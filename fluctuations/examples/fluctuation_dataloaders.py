@@ -20,6 +20,12 @@ def _get_cifar10_dataset(train=True, valid=True, test=True):
     datadir = os.path.join(DATA, "cifar10")
     os.makedirs(datadir, exist_ok=True)
 
+    target_size = 32  # downscale to 32x32
+    input_shape = [3, target_size, target_size]
+    duration = 1.0  # 1 second
+    time_step = dt = 2e-3
+    nb_time_steps = int(duration / time_step)
+
     valid_split = 0.1
     logger.info("Loading CIFAR10")
 
@@ -169,6 +175,8 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
 
 
 def _get_shd_dataset(train=True, valid=True, test=True):
+    # ***To locally run this notebook on your system, download the SHD dataset from: [https://zenkelab.org/datasets/](https://zenkelab.org/datasets/).***
+    # *We need 'shd_train.h5' and 'shd_test.h5'. Move the downloaded files into a folder `data/datasets/hdspikes` in this repo, or change the `datadir` variable below.
     datadir = os.path.join(DATA, "hdspikes")
     os.makedirs(datadir, exist_ok=True)
 

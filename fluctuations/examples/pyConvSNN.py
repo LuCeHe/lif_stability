@@ -1,14 +1,12 @@
-# %% [markdown]
 # # Train a deep, recurrent convolutional SNN on the SHD dataset
 #
-# In this notebook, we demonstrate the training of a 3-layer convolutional SNN with recurrent connections in each hidden layer on the [SHD dataset](https://zenkelab.org/resources/spiking-heidelberg-datasets-shd/).
+# In this notebook, we demonstrate the training of a 3-layer convolutional SNN
+# with recurrent connections in each hidden layer on the
+# [SHD dataset](https://zenkelab.org/resources/spiking-heidelberg-datasets-shd/).
 #
-# We will introduce the use of the `layer` module to initialize feed-forward and recurrent connections at the same time, from the same target parameter $\sigma_U$.
+# We will introduce the use of the `layer` module to initialize feed-forward
+# and recurrent connections at the same time, from the same target parameter $\sigma_U$.
 
-# %%
-
-
-# %%
 # First, imports
 import os, socket, json, shutil, time, argparse, string, random, gc
 
@@ -39,8 +37,6 @@ def main(args):
     print(json.dumps(args.__dict__, indent=4, cls=NumpyEncoder))
 
     # ## Load Dataset
-    # ***To locally run this notebook on your system, download the SHD dataset from: [https://zenkelab.org/datasets/](https://zenkelab.org/datasets/).***
-    # *We need 'shd_train.h5' and 'shd_test.h5'. Move the downloaded files into a folder `data/datasets/hdspikes` in this repo, or change the `datadir` variable below.
     stop_time = time.perf_counter() + args.stop_time - 30 * 60
 
     torch.manual_seed(args.seed)
@@ -338,7 +334,7 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=0, help='CPU and GPU seed')
     parser.add_argument('--epochs', type=int, default=2, help='Epochs')
 
-    parser.add_argument('--dataset', type=str, default='dvs', help='Name of dataset to use', choices=datasets_available)
+    parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use', choices=datasets_available)
     parser.add_argument('--comments', type=str, default='', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')

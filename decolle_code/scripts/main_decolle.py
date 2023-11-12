@@ -14,6 +14,7 @@ import json, shutil, time
 from pyaromatics.stay_organized.utils import NumpyEncoder
 from sg_design_lif.decolle_code.decolle.base_model import LIFLayerPlus
 from sg_design_lif.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
+from sg_design_lif.decolle_code.torchneuromorphic.dvs_gestures import dvsgestures_dataloaders
 from sg_design_lif.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss, LIFLayerVariableTau, \
     LIFLayer
 from sg_design_lif.decolle_code.decolle.utils import parse_args, train, test, accuracy, save_checkpoint, \
@@ -49,12 +50,16 @@ def main(args):
     print(json.dumps(params, indent=2))
     results.update(params)
 
-    dataset = nmnist_dataloaders
-    create_data = dataset.create_dataloader
-    verbose = args.verbose
+    if 'nmnist' in params.dataset:
+        dataset = nmnist_dataloaders
+        create_data = dataset.create_dataloader
+        root = os.path.join(DATADIR, 'nmnist', 'n_mnist.hdf5')
+    else:
+        dataset = dvsgestures_dataloaders
+        create_data = dataset.create_dataloader
+        root = os.path.join(DATADIR, 'dvs', 'dvsgestures.hdf5')
 
     ## Load Data
-    root = os.path.join(DATADIR, 'nmnist', 'n_mnist.hdf5')
     gen_train, gen_test = create_data(
         root=root,
         chunk_size_train=params['chunk_size_train'],
