@@ -32,8 +32,8 @@ def _get_cifar10_dataset(train=True, valid=True, test=True):
     all_transforms = torchvision.transforms.Compose([
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        # torchvision.transforms.Lambda(lambda tensor: tensor.reshape((1, 3, 32, 32))),
-        # torchvision.transforms.Lambda(lambda tensor: tensor.expand((nb_time_steps, -1, -1, -1))),
+        torchvision.transforms.Lambda(lambda tensor: tensor.reshape((1, 3, 32, 32))),
+        torchvision.transforms.Lambda(lambda tensor: tensor.expand((nb_time_steps, -1, -1, -1))),
     ])
 
     test_transforms = all_transforms
