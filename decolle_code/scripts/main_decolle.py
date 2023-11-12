@@ -50,7 +50,7 @@ def main(args):
     print(json.dumps(params, indent=2))
     results.update(params)
 
-    if 'nmnist' in params.dataset:
+    if 'nmnist' in params['dataset']:
         dataset = nmnist_dataloaders
         create_data = dataset.create_dataloader
         root = os.path.join(DATADIR, 'nmnist', 'n_mnist.hdf5')
