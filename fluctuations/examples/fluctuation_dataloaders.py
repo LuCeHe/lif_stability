@@ -147,6 +147,7 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
                                              transform=all_transforms)
 
         logger.info("Generated {} training data".format(len(ds_train)))
+        print("Generated {} training data".format(len(ds_train)))
 
     else:
         ds_train = False
