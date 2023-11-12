@@ -225,6 +225,12 @@ def main(args):
                     optimizer_kwargs=dict(lr=lr),
                     time_step=dt)
 
+    # count number of trainable parameters
+    results = {}
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f'Trainable parameters: {trainable_params}')
+    results['n_params'] = trainable_params
+
     # %% [markdown]
     # ## Monitoring activity before training
 
@@ -242,7 +248,6 @@ def main(args):
     # ## Training
     # takes around 85 minutes using a powerful GPU
 
-    results = {}
     print('Start training...')
 
     history = model.fit_validate(
