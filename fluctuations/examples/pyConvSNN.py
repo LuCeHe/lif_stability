@@ -153,15 +153,15 @@ def main(args):
                      'tau_syn': 10e-3,
                      'activation': act_fn}
 
-    i = 0
+    li = -1
     for bi in range(nb_conv_blocks):
-        for li in range(nb_hidden_layers):
-            i += 1
+        for ci in range(nb_hidden_layers):
+            li += 1
             # Generate Layer name and config
-            name = f'Block {bi} Conv {li}'
-            ksi = kernel_size[i] if isinstance(kernel_size, list) else kernel_size
-            si = stride[i] if isinstance(stride, list) else stride
-            pi = padding[i] if isinstance(padding, list) else padding
+            name = f'Block {bi} Conv {ci}'
+            ksi = kernel_size[li] if isinstance(kernel_size, list) else kernel_size
+            si = stride[li] if isinstance(stride, list) else stride
+            pi = padding[li] if isinstance(padding, list) else padding
             recurrent = True if args.dataset == 'shd' else False
             connection_class = ConvConnection if args.dataset == 'shd' else Conv2dConnection
 
