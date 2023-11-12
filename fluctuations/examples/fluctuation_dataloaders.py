@@ -131,6 +131,7 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
 
         def __call__(self, x):
             start = np.random.randint(0, high=x.shape[0] - self.timesteps)
+            print(x[start:start + self.timesteps, :, :, :].shape)
             return x[start:start + self.timesteps, :, :, :]
 
     tf_timecrop = TimeCropTransform(nb_time_steps)
@@ -157,7 +158,6 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
         new_train_length = int(len(ds_train) * (1 - valid_split))
         val_length = len(ds_train) - new_train_length
         split_lengths = [new_train_length, val_length]
-        print(split_lengths)
         ds_train, ds_valid = torch.utils.data.dataset.random_split(ds_train, split_lengths)
         logger.info("Generated {} validation data".format(len(ds_valid)))
 
