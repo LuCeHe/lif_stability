@@ -87,7 +87,7 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
     input_shape = [2, target_size, target_size]
     nb_classes = 11
     valid_split = 0.1
-    duration = 1.0  # 1 second
+    duration = .3  # 1 second
     time_step = dt = 2e-3
     nb_time_steps = int(duration / time_step)
     dropevent_p = 0.5
