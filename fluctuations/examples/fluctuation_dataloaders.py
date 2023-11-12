@@ -154,6 +154,7 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
 
     if valid:
         split_lengths = [int(len(ds_train) * (1 - valid_split)), int(len(ds_train) * valid_split)]
+        print(split_lengths)
         ds_train, ds_valid = torch.utils.data.dataset.random_split(ds_train, split_lengths)
         logger.info("Generated {} validation data".format(len(ds_valid)))
 
