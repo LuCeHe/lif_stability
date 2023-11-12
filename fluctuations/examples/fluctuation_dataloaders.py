@@ -131,7 +131,7 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
 
         def __call__(self, x):
             start = np.random.randint(0, high=x.shape[0] - self.timesteps)
-            print(x[start:start + self.timesteps, :, :, :].shape)
+            # print(x[start:start + self.timesteps, :, :, :].shape) torch.Size([500, 2, 32, 32])
             return x[start:start + self.timesteps, :, :, :]
 
     tf_timecrop = TimeCropTransform(nb_time_steps)
