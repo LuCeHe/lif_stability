@@ -81,6 +81,7 @@ def main(args):
     # # # # # # # # # # #
 
     batch_size = config['batch_size'] if torch.cuda.is_available() else 2
+    batch_size = batch_size if not 'test' in args.comments else 2
     device = torch.device("cuda") if torch.cuda.is_available() else 'cpu'
     dtype = torch.float
     nb_epochs = config['epochs'] if args.epochs < 0 else args.epochs
@@ -152,13 +153,15 @@ def main(args):
                      'tau_syn': 10e-3,
                      'activation': act_fn}
 
+    i = 0
     for bi in range(nb_conv_blocks):
         for li in range(nb_hidden_layers):
+            i += 1
             # Generate Layer name and config
             name = f'Block {bi} Conv {li}'
-            ksi = kernel_size[li] if isinstance(kernel_size, list) else kernel_size
-            si = stride[li] if isinstance(stride, list) else stride
-            pi = padding[li] if isinstance(padding, list) else padding
+            ksi = kernel_size[i] if isinstance(kernel_size, list) else kernel_size
+            si = stride[i] if isinstance(stride, list) else stride
+            pi = padding[i] if isinstance(padding, list) else padding
             recurrent = True if args.dataset == 'shd' else False
             connection_class = ConvConnection if args.dataset == 'shd' else Conv2dConnection
 
@@ -258,13 +261,6 @@ def main(args):
         stop_time=stop_time,
     )
 
-    # DVS had no validation:
-    # history = model.fit(
-    #     train_dataset,
-    #     nb_epochs=20,
-    #     verbose=True
-    # )
-
     results["train_loss"] = history["loss"].tolist()
     results["train_acc"] = history["acc"].tolist()
     results["valid_loss"] = history["val_loss"].tolist()
@@ -339,8 +335,9 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=0, help='CPU and GPU seed')
     parser.add_argument('--epochs', type=int, default=2, help='Epochs')
 
-    parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use', choices=datasets_available)
-    parser.add_argument('--comments', type=str, default='', help='String to activate extra behaviors')
+    parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use',
+                        choices=datasets_available)
+    parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
     args = parser.parse_args()

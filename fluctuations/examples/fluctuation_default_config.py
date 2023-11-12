@@ -1,5 +1,5 @@
-def default_shd():
-    return {
+def default_shd(deep=False):
+    config = {
         'beta': 20,
         'nb_conv_blocks': 1,
         'nb_hidden_layers': 3,
@@ -17,15 +17,23 @@ def default_shd():
         'upperBoundL2Threshold': 7,
         'nu': 15.8,
     }
+    if deep:
+        config['nb_hidden_layers'] = 7
+        config['nb_filters'] = [16, 32, 64, 64, 64, 64, 64]
+        config['kernel_size'] = [7, 5, 5, 5, 5, 5, 5]
+        config['stride'] = [3, 2, 2, 2, 2, 2, 2]
+        config['padding'] = [0, 0, 0, 0, 0, 0, 0]
+
+    return config
 
 
-def default_cifar10():
-    return {
+def default_cifar10(deep=False):
+    config =  {
         'beta': 20,
         'nb_conv_blocks': 1,
         'nb_hidden_layers': 2,
         'nb_classes': 11,
-        'nb_filters': [16, 32],
+        'nb_filters': [32, 32],
         'kernel_size': 3,
         'stride': 1,
         'padding': 2,
@@ -38,15 +46,20 @@ def default_cifar10():
         'upperBoundL2Threshold': 10,
         'nu': 9.2,
     }
+    if deep:
+        config['nb_conv_blocks'] = 2
+        config['nb_filters'] = [32, 32, 64, 64]
+
+    return config
 
 
-def default_dvs():
-    return {
+def default_dvs(deep=False):
+    config =  {
         'beta': 20,
         'nb_conv_blocks': 3,
         'nb_hidden_layers': 2,
         'nb_classes': 11,
-        'nb_filters': [16, 32],
+        'nb_filters': [32, 32, 64, 64, 128, 128],
         'kernel_size': 3,
         'stride': 1,
         'padding': 2,
@@ -60,22 +73,23 @@ def default_dvs():
         'nu': 9.2,
     }
 
+    if deep:
+        config['nb_conv_blocks'] = 4
+        config['nb_filters'] = [32, 32, 64, 64, 128, 128, 128, 128]
+
+
+    return config
+
 
 def default_config(name, deep=False):
     if name == "cifar10":
-        config = default_cifar10()
-        if deep:
-            config['nb_conv_blocks'] = 2
+        config = default_cifar10(deep)
         return config
     elif name == "dvs":
-        config = default_dvs()
-        if deep:
-            config['nb_conv_blocks'] = 4
+        config = default_dvs(deep)
         return config
     elif name == "shd":
-        config = default_shd()
-        if deep:
-            config['nb_hidden_layers'] = 7
+        config = default_shd(deep)
         return config
     else:
         raise ValueError("Unknown dataset name: {}".format(name))
