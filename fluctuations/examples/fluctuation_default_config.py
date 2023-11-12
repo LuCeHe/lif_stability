@@ -32,12 +32,13 @@ def default_cifar10():
         'maxpool_kernel_size': 2,
         'recurrent_kwargs': {},
         'dropout_p': 0.0,
-        'batch_size': 16,
+        'batch_size': 8,  # 16
         'lr': 5e-3,
         'epochs': 200,
         'upperBoundL2Threshold': 10,
         'nu': 9.2,
     }
+
 
 def default_dvs():
     return {
@@ -52,7 +53,7 @@ def default_dvs():
         'maxpool_kernel_size': 2,
         'recurrent_kwargs': {},
         'dropout_p': 0.0,
-        'batch_size': 8, # 16
+        'batch_size': 8,  # 16
         'lr': 5e-3,
         'epochs': 200,
         'upperBoundL2Threshold': 10,

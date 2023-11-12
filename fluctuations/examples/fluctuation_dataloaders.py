@@ -32,8 +32,8 @@ def _get_cifar10_dataset(train=True, valid=True, test=True):
     all_transforms = torchvision.transforms.Compose([
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        torchvision.transforms.Lambda(lambda tensor: tensor.reshape((1, 3, 32, 32))),
-        torchvision.transforms.Lambda(lambda tensor: tensor.expand((nb_time_steps, -1, -1, -1))),
+        # torchvision.transforms.Lambda(lambda tensor: tensor.reshape((1, 3, 32, 32))),
+        # torchvision.transforms.Lambda(lambda tensor: tensor.expand((nb_time_steps, -1, -1, -1))),
     ])
 
     test_transforms = all_transforms
@@ -86,6 +86,7 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
     target_size = 32  # downscale to 32x32
     input_shape = [2, target_size, target_size]
     nb_classes = 11
+    valid_split = 0.1
     duration = 1.0  # 1 second
     time_step = dt = 2e-3
     nb_time_steps = int(duration / time_step)
@@ -150,7 +151,14 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
     else:
         ds_train = False
 
-    ds_valid = False
+
+    if valid:
+        split_lengths = [int(len(ds_train) * (1 - valid_split)), int(len(ds_train) * valid_split)]
+        ds_train, ds_valid = torch.utils.data.dataset.random_split(ds_train, split_lengths)
+        logger.info("Generated {} validation data".format(len(ds_valid)))
+
+    else:
+        ds_valid = False
 
     if test:
         ds_test = tonic.datasets.DVSGesture(datadir,
