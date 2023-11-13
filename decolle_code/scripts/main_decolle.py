@@ -57,8 +57,8 @@ def main(args):
     else:
         dataset = dvsgestures_dataloaders
         create_data = dataset.create_dataloader
-        root = os.path.join(DATADIR, 'dvs', 'dvsgestures.hdf5')
-        root = os.path.join(DATADIR, 'dvs', 'dvsgestures')
+        root = os.path.join(DATADIR, 'dvsgesture', 'dvsgestures.hdf5')
+        # root = os.path.join(DATADIR, 'dvs', 'dvsgestures')
 
     ## Load Data
     gen_train, gen_test = create_data(

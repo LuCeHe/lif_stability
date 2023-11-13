@@ -14,10 +14,12 @@ import numpy as np
 import scipy.misc
 import h5py
 import torch.utils.data
-from .create_hdf5 import create_events_hdf5
-from ..neuromorphic_dataset import NeuromorphicDataset
-from ..events_timeslices import *
-from ..transforms import *
+
+
+from sg_design_lif.decolle_code.torchneuromorphic.dvs_gestures.create_hdf5 import create_events_hdf5
+from sg_design_lif.decolle_code.torchneuromorphic.neuromorphic_dataset import NeuromorphicDataset
+from sg_design_lif.decolle_code.torchneuromorphic.events_timeslices import *
+from sg_design_lif.decolle_code.torchneuromorphic.transforms import *
 import os
 
 mapping = {0: 'Hand Clapping',
@@ -34,11 +36,7 @@ mapping = {0: 'Hand Clapping',
 
 
 class DVSGestureDataset(NeuromorphicDataset):
-    directory = 'data/dvsgesture/'
-    resources_url = [[
-                         'Manually Download dataset here: https://ibm.ent.box.com/s/3hiq58ww1pbbjrinh367ykfdf60xsfm8/file/211521748942?sb=/details and place under {0}'.format(
-                             directory), None, 'DvsGesture.tar.gz']]
-    resources_local = [directory + 'raw']
+    # directory = 'data/dvsgesture/'
 
     def __init__(
             self,
@@ -50,6 +48,12 @@ class DVSGestureDataset(NeuromorphicDataset):
             chunk_size=500,
             return_meta=False,
             time_shuffle=False):
+
+        self.directory = os.path.dirname(root)
+        self.resources_url = [[
+            'Manually Download dataset here: https://ibm.ent.box.com/s/3hiq58ww1pbbjrinh367ykfdf60xsfm8/file/211521748942?sb=/details and place under {0}'.format(
+                self.directory), None, 'DvsGesture.tar.gz']]
+        self.resources_local = [os.path.join(self.directory, 'DvsGesture')]
 
         self.n = 0
         self.download_and_create = download_and_create
