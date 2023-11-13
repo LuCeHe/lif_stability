@@ -80,6 +80,12 @@ def download_and_extract_archive(url, download_root, extract_root=None, filename
     if not filename:
         filename = os.path.basename(url)
 
+    print('------------------')
+    print('Downloading from: ', url)
+    print('Downloading to:   ', download_root)
+    print(filename)
+    print(md5)
+    print('------------------')
     download_url(url, download_root, filename, md5)
 
     archive = os.path.join(download_root, filename)

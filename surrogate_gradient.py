@@ -255,7 +255,11 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
 
     actual_epochs = 0
     if final_epochs > 0:
-        train_model.load_weights(checkpoint_filepath)
+        try:
+            train_model.load_weights(checkpoint_filepath)
+        except Exception as e:
+            print(e)
+            print('No checkpoint found!')
         history_df = pd.read_csv(history_path)
 
         actual_epochs = history_df['epoch'].iloc[-1] + 1

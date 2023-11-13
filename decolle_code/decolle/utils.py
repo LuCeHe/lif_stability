@@ -114,8 +114,8 @@ def prepare_experiment(name, args):
 
             log_dir = os.path.join(EXPSDIR, time_string + random_string + '_decolle')
             checkpoint_dir = os.path.join(log_dir, 'checkpoints')
-            if not os.path.exists(log_dir):
-                os.makedirs(log_dir)
+            os.makedirs(log_dir, exist_ok=True)
+
             from shutil import copy2
             copy2(params_file, os.path.join(log_dir, 'params.yml'))
             writer = SummaryWriter(log_dir=log_dir)
@@ -128,7 +128,6 @@ def prepare_experiment(name, args):
             writer = SummaryWriter(log_dir=log_dir)
         print('Resuming model from {}'.format(log_dir))
 
-    print('params_file', params_file)
     with open(params_file, 'r') as f:
         import yaml
         params = yaml.safe_load(f)

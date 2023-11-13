@@ -49,6 +49,7 @@ def default_cifar10(deep=False):
     if deep:
         config['nb_conv_blocks'] = 2
         config['nb_filters'] = [32, 32, 64, 64]
+        config['batch_size'] = 6
 
     return config
 

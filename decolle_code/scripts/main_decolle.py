@@ -58,6 +58,7 @@ def main(args):
         dataset = dvsgestures_dataloaders
         create_data = dataset.create_dataloader
         root = os.path.join(DATADIR, 'dvs', 'dvsgestures.hdf5')
+        root = os.path.join(DATADIR, 'dvs', 'dvsgestures')
 
     ## Load Data
     gen_train, gen_test = create_data(
@@ -203,7 +204,9 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = parse_args(os.path.join(CDIR, 'parameters', 'params.yml'))
+    # os.path.join(CDIR, 'parameters', 'params.yml')
+    params_file = os.path.join(CDIR, 'parameters', 'params_dvsgestures_torchneuromorphic.yml')
+    args = parse_args()
 
     time_start = time.perf_counter()
     args, results = main(args)

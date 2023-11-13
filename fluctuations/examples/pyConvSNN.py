@@ -238,15 +238,16 @@ def main(args):
     # ## Monitoring activity before training
 
     # %%
-    fig = plt.figure(dpi=150)
-    stork.plotting.plot_activity_snapshot(
-        model,
-        data=test_dataset,
-        nb_samples=5,
-        point_alpha=0.3)
+    if args.plot_activity:
+        fig = plt.figure(dpi=150)
+        stork.plotting.plot_activity_snapshot(
+            model,
+            data=test_dataset,
+            nb_samples=5,
+            point_alpha=0.3)
 
-    plotpath = os.path.join(args.log_dir, 'pre_activity.png')
-    fig.savefig(plotpath, dpi=300)
+        plotpath = os.path.join(args.log_dir, 'pre_activity.png')
+        fig.savefig(plotpath, dpi=300)
 
     # ## Training
     # takes around 85 minutes using a powerful GPU
@@ -307,15 +308,16 @@ def main(args):
     print("\nValidation loss: ", results["valid_loss"][-1])
     print("Validation acc.: ", results["valid_acc"][-1])
 
-    # #### Snapshot after training
-    fig = plt.figure(dpi=150)
-    stork.plotting.plot_activity_snapshot(
-        model,
-        data=test_dataset,
-        nb_samples=5,
-        point_alpha=0.3)
-    plotpath = os.path.join(args.log_dir, 'post_activity.png')
-    fig.savefig(plotpath, dpi=300)
+    if args.plot_activity:
+        # #### Snapshot after training
+        fig = plt.figure(dpi=150)
+        stork.plotting.plot_activity_snapshot(
+            model,
+            data=test_dataset,
+            nb_samples=5,
+            point_alpha=0.3)
+        plotpath = os.path.join(args.log_dir, 'post_activity.png')
+        fig.savefig(plotpath, dpi=300)
 
     return results
 
@@ -334,6 +336,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
     parser.add_argument('--seed', type=int, default=0, help='CPU and GPU seed')
     parser.add_argument('--epochs', type=int, default=2, help='Epochs')
+    parser.add_argument('--plot_activity', type=int, default=0, help='Plot activity before and after training')
 
     parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use',
                         choices=datasets_available)
