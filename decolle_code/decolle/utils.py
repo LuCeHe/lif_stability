@@ -69,12 +69,15 @@ def print_params(params):
         print('{}{} : {}'.format(k, ' ' * (m - len(k)), v))
 
 
-def parse_args(default_params_file='parameters/params_dvsgestures_torchneuromorphic.yml'):
+def parse_args():
+    params_dvs = os.path.join(CDIR, 'parameters', 'params_dvsgestures_torchneuromorphic.yml')
+    params_nmnist = os.path.join(CDIR, 'parameters', 'params_nmnist_torchneuromorphic.yml')
+
     parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
     parser.add_argument('--device', type=str, default='cuda', help='Device to use (cpu or cuda)')
     parser.add_argument('--resume_from', type=str, default=None, metavar='path_to_logdir',
                         help='Path to a previously saved checkpoint')
-    parser.add_argument('--params_file', type=str, default=default_params_file,
+    parser.add_argument('--params_file', type=str, default='',
                         help='Path to parameters file to load. Ignored if resuming from checkpoint')
     parser.add_argument('--no_save', dest='no_save', action='store_true',
                         help='Set this flag if you don\'t want to save results')
@@ -84,8 +87,10 @@ def parse_args(default_params_file='parameters/params_dvsgestures_torchneuromorp
     parser.add_argument('--no_train', dest='no_train', action='store_true', help='Train model (useful for resume)')
     parser.add_argument('--comments', type=str, default='', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=600, type=int, help="Stop time (seconds)")
+    parser.add_argument('--datasetname', type=str, default='dvs', help='Dataset to use', choices=['dvs', 'nmnist'])
 
     parsed, unknown = parser.parse_known_args()
+
 
     for arg in unknown:
         if arg.startswith(("-", "--")):
@@ -96,6 +101,11 @@ def parse_args(default_params_file='parameters/params_dvsgestures_torchneuromorp
 
     if args.no_save:
         print('!!!!WARNING!!!!\n\nRESULTS OF THIS TRAINING WILL NOT BE SAVED\n\n!!!!WARNING!!!!\n\n')
+
+    if args.datasetname == 'dvs':
+        args.params_file = params_dvs
+    else:
+        args.params_file = params_nmnist
 
     return args
 

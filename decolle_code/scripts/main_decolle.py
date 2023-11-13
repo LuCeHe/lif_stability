@@ -164,9 +164,6 @@ def main(args):
         test_accs = []
         test_acc_hist = []
         for e in range(starting_epoch, params['num_epochs']):
-            results.update(train_losses=train_losses, test_losses=test_losses, test_accs=test_accs, )
-            if time.perf_counter() > stop_time:
-                break
 
             interval = e // params['lr_drop_interval']
             lr = opt.param_groups[-1]['lr']
@@ -200,12 +197,14 @@ def main(args):
                 for i in range(len(net)):
                     writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)
 
+            results.update(train_losses=train_losses, test_losses=test_losses, test_accs=test_accs)
+            if time.perf_counter() > stop_time:
+                break
+
     return args, results
 
 
 if __name__ == '__main__':
-    # os.path.join(CDIR, 'parameters', 'params.yml')
-    params_file = os.path.join(CDIR, 'parameters', 'params_dvsgestures_torchneuromorphic.yml')
     args = parse_args()
 
     time_start = time.perf_counter()
