@@ -1,3 +1,5 @@
+import random, string
+
 import torch
 import torch.nn as nn
 
@@ -34,7 +36,7 @@ class SuperSpike(torch.autograd.Function):
         """
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
-        grad = grad_input/(SuperSpike.beta*torch.abs(input)+1.0)**2
+        grad = grad_input / (SuperSpike.beta * torch.abs(input) + 1.0) ** 2
         return grad
 
 
@@ -67,8 +69,8 @@ class SuperSpike_MemClamp(torch.autograd.Function):
         """
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
-        grad = grad_input/(SuperSpike_MemClamp.beta *
-                           torch.abs(torch.relu(-input))+1.0)**2
+        grad = grad_input / (SuperSpike_MemClamp.beta *
+                             torch.abs(torch.relu(-input)) + 1.0) ** 2
         return grad
 
 
@@ -102,9 +104,9 @@ class SuperSpike_rescaled(torch.autograd.Function):
         """
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
-        rescale_val = 1 / ((SuperSpike_rescaled.beta+1)**2)
-        grad = grad_input/(SuperSpike_rescaled.beta *
-                           torch.abs(input)+1.0)**2 / rescale_val
+        rescale_val = 1 / ((SuperSpike_rescaled.beta + 1) ** 2)
+        grad = grad_input / (SuperSpike_rescaled.beta *
+                             torch.abs(input) + 1.0) ** 2 / rescale_val
         return grad
 
 
@@ -127,7 +129,7 @@ class MultiSpike(torch.autograd.Function):
         """
         ctx.save_for_backward(input)
         out = nn.functional.hardtanh(
-            torch.round(input+0.5), 0.0, MultiSpike.maxspk)
+            torch.round(input + 0.5), 0.0, MultiSpike.maxspk)
         return out
 
     @staticmethod
@@ -141,8 +143,8 @@ class MultiSpike(torch.autograd.Function):
         """
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
-        grad = grad_input/(MultiSpike.beta*torch.abs(input -
-                           torch.relu(torch.round(input)))+1.0)**2
+        grad = grad_input / (MultiSpike.beta * torch.abs(input -
+                                                         torch.relu(torch.round(input))) + 1.0) ** 2
         return grad
 
 
@@ -178,8 +180,8 @@ class SuperSpike_asymptote(torch.autograd.Function):
         """
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
-        grad = SuperSpike_asymptote.beta*grad_input / \
-            (SuperSpike_asymptote.beta*torch.abs(input)+1.0)**2
+        grad = SuperSpike_asymptote.beta * grad_input / \
+               (SuperSpike_asymptote.beta * torch.abs(input) + 1.0) ** 2
         return grad
 
 
@@ -216,7 +218,7 @@ class TanhSpike(torch.autograd.Function):
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
         beta = TanhSpike.beta
-        grad = grad_input*(1.0+(1.0-torch.tanh(input*beta)**2))
+        grad = grad_input * (1.0 + (1.0 - torch.tanh(input * beta) ** 2))
         return grad
 
 
@@ -251,9 +253,9 @@ class SigmoidSpike(torch.autograd.Function):
         """
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
-        sig = torch.sigmoid(SigmoidSpike.beta*input)
-        dsig = sig*(1.0-sig)
-        grad = grad_input*dsig
+        sig = torch.sigmoid(SigmoidSpike.beta * input)
+        dsig = sig * (1.0 - sig)
+        grad = grad_input * dsig
         return grad
 
 
@@ -295,8 +297,8 @@ class EsserSpike(torch.autograd.Function):
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
         grad = grad_input * \
-            torch.max(torch.zeros_like(input), 1.0 -
-                      torch.abs(EsserSpike.beta*input))
+               torch.max(torch.zeros_like(input), 1.0 -
+                         torch.abs(EsserSpike.beta * input))
         return grad
 
 
@@ -333,7 +335,7 @@ class HardTanhSpike(torch.autograd.Function):
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
         beta = HardTanhSpike.beta
-        grad = grad_input*(1.0+torch.nn.functional.hardtanh(input*beta))
+        grad = grad_input * (1.0 + torch.nn.functional.hardtanh(input * beta))
         return grad
 
 
@@ -370,8 +372,190 @@ class SuperSpike_norm(torch.autograd.Function):
         """
         input, = ctx.saved_tensors
         grad_input = grad_output.clone()
-        grad = grad_input/(SuperSpike_norm.beta*torch.abs(input)+1.0)**2
+        grad = grad_input / (SuperSpike_norm.beta * torch.abs(input) + 1.0) ** 2
         # standardize gradient
-        standard_grad = grad/(SuperSpike_norm.xi +
-                              torch.norm(torch.mean(grad, dim=0)))
+        standard_grad = grad / (SuperSpike_norm.xi +
+                                torch.norm(torch.mean(grad, dim=0)))
         return standard_grad
+
+
+# conditions
+
+center = None
+dampening = None
+
+
+class SuperSpikeIV(torch.autograd.Function):
+    """
+    Autograd SuperSpike nonlinearity implementation.
+
+    The steepness parameter beta can be accessed via the static member
+    self.beta.
+    """
+    beta = 20.0
+
+    @staticmethod
+    def forward(ctx, input):
+        """
+        In the forward pass we receive a Tensor containing the input and return
+        a Tensor containing the step function output. ctx is the context object
+        that is used to stash information for backward pass computations.
+        """
+        ctx.save_for_backward(input)
+        out = torch.zeros_like(input)
+        out[input > 0] = 1.0
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """
+        In the backward pass we receive a Tensor containing the gradient of the
+        loss with respect to the output, and we compute the surrogate gradient
+        of the loss with respect to the input. Here we assume the standardized
+        negative part of a fast sigmoid as this was done in Zenke & Ganguli
+        (2018).
+        """
+        input, = ctx.saved_tensors
+        grad_input = grad_output.clone()
+        grad = grad_input / (SuperSpikeIV.beta * torch.abs(input) + 1.0) ** 2
+
+        global dampening
+        if dampening is None:
+            dampening = 1 / torch.std(grad)
+        grad = grad * dampening
+        return grad
+
+
+class SuperSpikeIII(torch.autograd.Function):
+    """
+    Autograd SuperSpike nonlinearity implementation.
+
+    The steepness parameter beta can be accessed via the static member
+    self.beta.
+    """
+    beta = 20.0
+
+    # dampening = 1.0
+    @staticmethod
+    def forward(ctx, input):
+        """
+        In the forward pass we receive a Tensor containing the input and return
+        a Tensor containing the step function output. ctx is the context object
+        that is used to stash information for backward pass computations.
+        """
+        ctx.save_for_backward(input)
+        out = torch.zeros_like(input)
+        out[input > 0] = 1.0
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """
+        In the backward pass we receive a Tensor containing the gradient of the
+        loss with respect to the output, and we compute the surrogate gradient
+        of the loss with respect to the input. Here we assume the standardized
+        negative part of a fast sigmoid as this was done in Zenke & Ganguli
+        (2018).
+        """
+        input, = ctx.saved_tensors
+        grad_input = grad_output.clone()
+        grad = grad_input / (SuperSpike.beta * torch.abs(input) + 1.0) ** 2
+
+        global dampening
+        if dampening is None:
+            dampening = 1 / torch.max(grad)
+        grad = grad * dampening
+        return grad
+
+
+class SuperSpikeI_III_IV(torch.autograd.Function):
+    """
+    Autograd SuperSpike nonlinearity implementation.
+
+    The steepness parameter beta can be accessed via the static member
+    self.beta.
+    """
+    beta = 20.0
+
+    # dampening = 1.0
+    @staticmethod
+    def forward(ctx, input):
+        """
+        In the forward pass we receive a Tensor containing the input and return
+        a Tensor containing the step function output. ctx is the context object
+        that is used to stash information for backward pass computations.
+        """
+        ctx.save_for_backward(input)
+        out = torch.zeros_like(input)
+        out[input > 0] = 1.0
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """
+        In the backward pass we receive a Tensor containing the gradient of the
+        loss with respect to the output, and we compute the surrogate gradient
+        of the loss with respect to the input. Here we assume the standardized
+        negative part of a fast sigmoid as this was done in Zenke & Ganguli
+        (2018).
+        """
+        input, = ctx.saved_tensors
+        grad_input = grad_output.clone()
+
+        global center, dampening
+        if center is None:
+            center = torch.mean(input)
+        if dampening is None:
+            dampening = 1 / torch.max(grad_input)
+            dampening = dampening / torch.std(grad_input)
+
+        input = input - center
+        grad = grad_input / (SuperSpike.beta * torch.abs(input) + 1.0) ** 2
+
+        grad = dampening * grad
+        return grad
+
+
+
+
+class SuperSpikeI(torch.autograd.Function):
+    """
+    Autograd SuperSpike nonlinearity implementation.
+
+    The steepness parameter beta can be accessed via the static member
+    self.beta.
+    """
+    beta = 20.0
+
+    @staticmethod
+    def forward(ctx, input):
+        """
+        In the forward pass we receive a Tensor containing the input and return
+        a Tensor containing the step function output. ctx is the context object
+        that is used to stash information for backward pass computations.
+        """
+        ctx.save_for_backward(input)
+        out = torch.zeros_like(input)
+        out[input > 0] = 1.0
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """
+        In the backward pass we receive a Tensor containing the gradient of the
+        loss with respect to the output, and we compute the surrogate gradient
+        of the loss with respect to the input. Here we assume the standardized
+        negative part of a fast sigmoid as this was done in Zenke & Ganguli
+        (2018).
+        """
+        input, = ctx.saved_tensors
+        grad_input = grad_output.clone()
+
+        global center, dampening
+        if center is None:
+            center = torch.mean(input)
+
+        input = input - center
+        grad = grad_input / (SuperSpike.beta * torch.abs(input) + 1.0) ** 2
+
+        return grad

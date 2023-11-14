@@ -41,7 +41,7 @@ class FastSigmoid(torch.autograd.Function):
 sg_normalizer = None
 
 
-class FastSigmoidReset(torch.autograd.Function):
+class FastSigmoidIV(torch.autograd.Function):
     print('newcall')
     @staticmethod
     def forward(ctx, input_):
@@ -271,7 +271,7 @@ class LIFLayer(BaseLIFLayer):
 
 
 class LIFLayerPlus(LIFLayer):
-    sg_function = FastSigmoidReset.apply
+    sg_function = FastSigmoidIV.apply
 
 
 class LIFLayerRefractory(LIFLayer):

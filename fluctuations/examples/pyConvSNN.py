@@ -71,6 +71,15 @@ def main(args):
     maxpool_kernel_size = config['maxpool_kernel_size']
     dropout_p = config['dropout_p']
 
+    if 'test' in args.comments:
+        nb_conv_blocks = 2
+        nb_hidden_layers = 2
+        nb_filters = [3, 4, 5, 6]
+        kernel_size = 2
+        stride = 1
+        padding = 0
+        recurrent_kwargs = dict()
+
     # Neuron Parameters
     # # # # # # # # # # #
 
@@ -89,6 +98,20 @@ def main(args):
     # #### SuperSpike and loss function setup
     act_fn = stork.activations.SuperSpike
     act_fn.beta = beta
+
+    if 'condIV' in args.comments:
+        act_fn = stork.activations.SuperSpikeIV
+
+    if 'condI' in args.comments:
+        act_fn = stork.activations.SuperSpikeI
+
+    if 'condIII' in args.comments:
+        act_fn = stork.activations.SuperSpikeIII
+
+    if 'condIIIIIV' in args.comments:
+        act_fn = stork.activations.SuperSpikeI_III_IV
+
+
 
     loss_stack = stork.loss_stacks.MaxOverTimeCrossEntropy()
 
@@ -145,16 +168,20 @@ def main(args):
     # Set input group as upstream of first hidden layer
     upstream_group = input_group
 
-    # HIDDEN LAYERS
-    # # # # # # # # # # # # # # #
-    neuron_kwargs = {'tau_mem': 20e-3,
-                     'tau_syn': 10e-3,
-                     'activation': act_fn}
-
     li = -1
     for bi in range(nb_conv_blocks):
         for ci in range(nb_hidden_layers):
+            # HIDDEN LAYERS
+            # # # # # # # # # # # # # # #
+
             li += 1
+
+            neuron_kwargs = {
+                'tau_mem': 20e-3,
+                'tau_syn': 10e-3,
+                'activation': act_fn,
+            }
+
             # Generate Layer name and config
             name = f'Block {bi} Conv {ci}'
             ksi = kernel_size[li] if isinstance(kernel_size, list) else kernel_size
@@ -335,7 +362,7 @@ def parse_args():
 
     parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use',
                         choices=datasets_available)
-    parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
+    parser.add_argument('--comments', type=str, default='test_condIV', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
     args = parser.parse_args()
