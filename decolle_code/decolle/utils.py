@@ -70,8 +70,9 @@ def print_params(params):
 
 
 def parse_args():
-    params_dvs = os.path.join(CDIR, 'parameters', 'params_dvsgestures_torchneuromorphic.yml')
-    params_nmnist = os.path.join(CDIR, 'parameters', 'params_nmnist_torchneuromorphic.yml')
+    PPATH = os.path.abspath(os.path.join(CDIR, '..', 'scripts', 'parameters'))
+    params_dvs = os.path.join(PPATH, 'params_dvsgestures_torchneuromorphic.yml')
+    params_nmnist = os.path.join(PPATH, 'params_nmnist_torchneuromorphic.yml')
 
     parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
     parser.add_argument('--device', type=str, default='cuda', help='Device to use (cpu or cuda)')
@@ -90,7 +91,6 @@ def parse_args():
     parser.add_argument('--datasetname', type=str, default='dvs', help='Dataset to use', choices=['dvs', 'nmnist'])
 
     parsed, unknown = parser.parse_known_args()
-
 
     for arg in unknown:
         if arg.startswith(("-", "--")):
@@ -116,7 +116,6 @@ def prepare_experiment(name, args):
         params_file = args.params_file
         log_dir = 'nosave'
         if not args.no_save:
-
             named_tuple = time.localtime()  # get struct_time
             time_string = time.strftime("%Y-%m-%d--%H-%M-%S--", named_tuple)
             characters = string.ascii_letters + string.digits

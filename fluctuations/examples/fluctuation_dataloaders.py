@@ -21,7 +21,7 @@ def _get_cifar10_dataset(train=True, valid=True, test=True):
     os.makedirs(datadir, exist_ok=True)
 
     target_size = 32  # downscale to 32x32
-    input_shape = [3, target_size, target_size]
+    input_shape = [3, target_size, target_size] # in the article it seems 32x32
     duration = 1.0  # 1 second
     time_step = dt = 2e-3
     nb_time_steps = int(duration / time_step)
