@@ -4,7 +4,7 @@ from anthe_official.neural_models_tf import HSoftPOS
 
 from pyaromatics.keras_tools.esoteric_layers import *
 from pyaromatics.keras_tools.esoteric_layers.combine_tensors import CombineTensors
-from pyaromatics.keras_tools.esoteric_layers.linear_recurrent_unit import ResLRUCell, LinearRecurrentUnitCell, \
+from lru_unofficial.src.linear_recurrent_unit import ResLRUCell, LinearRecurrentUnitCell, \
     ResLRUFFN, LinearRecurrentUnitFFN
 # from pyaromatics.keras_tools.esoteric_models.model import modifiedModel
 from pyaromatics.keras_tools.esoteric_optimizers.optimizer_selection import get_optimizer
