@@ -101,8 +101,8 @@ def main(args):
     # #### Regularizer setup
     # Define regularizer parameters (set regularizer strenght to 0 if you don't want to use them)
     upperBoundL2Strength = 0.01
-    upperBoundL2Threshold = config[
-        'upperBoundL2Threshold']  # Regularizes spikecount: 7 spikes ~ 10 Hz in 700ms simulation time
+    # Regularizes spikecount: 7 spikes ~ 10 Hz in 700ms simulation time
+    upperBoundL2Threshold = config['upperBoundL2Threshold']
 
     # Define regularizer list
     regs = []
@@ -129,8 +129,6 @@ def main(args):
         scaling='1/sqrt(k)'
     )
 
-    # %% [markdown]
-    # #### Assemble the model
     print('Assemble the model...')
 
     model = RecurrentSpikingModel(
@@ -234,11 +232,8 @@ def main(args):
     print(f'Trainable parameters: {trainable_params}')
     results['n_params'] = trainable_params
 
-    # %% [markdown]
-    # ## Monitoring activity before training
-
-    # %%
     if args.plot_activity:
+        # ## Monitoring activity before training
         fig = plt.figure(dpi=150)
         stork.plotting.plot_activity_snapshot(
             model,
