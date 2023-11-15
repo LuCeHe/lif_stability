@@ -41,7 +41,7 @@ def default_cifar10(deep=False):
         'maxpool_kernel_size': 2,
         'recurrent_kwargs': {},
         'dropout_p': 0.0,
-        'batch_size': 128,  # 16
+        'batch_size': 32,  # 128
         'lr': 5e-3,
         'epochs': 50,
         'upperBoundL2Threshold': 10,
