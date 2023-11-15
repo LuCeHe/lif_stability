@@ -64,6 +64,7 @@ def config():
     # net
     # LSNN maLSNN spikingLSTM
     net_name = 'maLSNN'
+
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
@@ -115,7 +116,6 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
     setReproducible(seed)
 
     shutil.copytree(os.path.join(CDIR, 'neural_models'), other_dir + '/neural_models')
-    # shutil.copyfile(os.path.join(CDIR, 'run_tf2.sh'), other_dir + '/run_tf2.sh')
     shutil.copyfile(FILENAME, other_dir + '/' + os.path.split(FILENAME)[-1])
 
     timerepeat = str2val(comments, 'timerepeat', int, default=1)
