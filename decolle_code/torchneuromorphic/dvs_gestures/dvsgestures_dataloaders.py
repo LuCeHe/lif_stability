@@ -140,6 +140,7 @@ def create_dataloader(
         return_meta=False,
         sample_shuffle=True,
         time_shuffle=True,
+        validation_split=0.1,
         **dl_kwargs):
     if ds is None:
         ds = 4
@@ -182,6 +183,13 @@ def create_dataloader(
                                 return_meta=return_meta,
                                 time_shuffle=time_shuffle)
 
+    val_dl = None
+    if validation_split>0:
+        n_train_samples = int((1-validation_split)*len(train_d))
+        n_val_samples = len(train_d) - n_train_samples
+        train_d, val_d = torch.utils.data.random_split(train_d, [n_train_samples, n_val_samples])
+        val_dl = torch.utils.data.DataLoader(val_d, batch_size=batch_size, shuffle=sample_shuffle, **dl_kwargs)
+
     train_dl = torch.utils.data.DataLoader(train_d, batch_size=batch_size, shuffle=sample_shuffle, **dl_kwargs)
 
     test_d = DVSGestureDataset(root,
@@ -194,4 +202,4 @@ def create_dataloader(
 
     test_dl = torch.utils.data.DataLoader(test_d, batch_size=batch_size, **dl_kwargs)
 
-    return train_dl, test_dl
+    return train_dl, val_dl, test_dl

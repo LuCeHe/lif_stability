@@ -62,6 +62,36 @@ class FastSigmoidIV(torch.autograd.Function):
         return grad
 
 
+
+class FastSigmoidIVTest(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input_, li):
+        ctx.save_for_backward(input_)
+        print('inside', li)
+        return (input_ > 0).type(input_.dtype)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        (input_,) = ctx.saved_tensors
+        grad_input = grad_output.clone()
+        grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
+
+        global sg_normalizer
+        if sg_normalizer is None:
+            sg_normalizer = torch.std(grad)
+
+        grad /= sg_normalizer
+        return grad
+
+class FastSigmoidIVModule(nn.Module):
+    def __init__(self, lambd=1):
+        super().__init__()
+        print('layer', self.name)
+        self.lambd = lambd
+        self.act = FastSigmoidIVTest.apply
+    def forward(self,x):
+        return self.act(x, self.lambd)
+
 class SmoothStep(torch.autograd.Function):
     '''
     Modified from: https://pytorch.org/tutorials/beginner/examples_autograd/two_layer_net_custom_function.html
@@ -271,7 +301,11 @@ class LIFLayer(BaseLIFLayer):
 
 
 class LIFLayerPlus(LIFLayer):
-    sg_function = FastSigmoidIV.apply
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        print('here? LLP')
+        self.sg_function = FastSigmoidIVModule()
+        # sg_function = lambda: self.sg
 
 
 class LIFLayerRefractory(LIFLayer):

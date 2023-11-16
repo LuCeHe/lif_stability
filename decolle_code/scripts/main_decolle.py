@@ -61,7 +61,7 @@ def main(args):
         # root = os.path.join(DATADIR, 'dvs', 'dvsgestures')
 
     ## Load Data
-    gen_train, gen_test = create_data(
+    gen_train, gen_val, gen_test = create_data(
         root=root,
         chunk_size_train=params['chunk_size_train'],
         chunk_size_test=params['chunk_size_test'],
@@ -159,10 +159,9 @@ def main(args):
     # --------TRAINING LOOP----------
     if not args.no_train:
         train_losses = []
-        test_losses = []
-        train_accs = []
-        test_accs = []
-        test_acc_hist = []
+        val_losses = []
+        val_accs = []
+        val_acc_hist = []
         for e in range(starting_epoch, params['num_epochs']):
 
             interval = e // params['lr_drop_interval']
@@ -180,14 +179,14 @@ def main(args):
                     print('---------Saving checkpoint---------')
                     save_checkpoint(e, checkpoint_dir, net, opt)
 
-                test_loss, test_acc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True)
-                test_acc_hist.append(test_acc)
-                test_losses.append(test_loss)
-                test_accs.append(test_acc)
+                val_loss, val_acc = test(gen_val, decolle_loss, net, params['burnin_steps'], print_error=True)
+                val_acc_hist.append(val_acc)
+                val_losses.append(val_loss)
+                val_accs.append(val_acc)
 
                 if not args.no_save:
-                    write_stats(e, test_acc, test_loss, writer)
-                    np.save(log_dir + '/test_acc.npy', np.array(test_acc_hist), )
+                    write_stats(e, val_acc, val_loss, writer)
+                    np.save(log_dir + '/test_acc.npy', np.array(val_acc_hist), )
 
             total_loss, act_rate = train(gen_train, decolle_loss, net, opt, e, params['burnin_steps'],
                                          online_update=params['online_update'])
@@ -197,9 +196,12 @@ def main(args):
                 for i in range(len(net)):
                     writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)
 
-            results.update(train_losses=train_losses, test_losses=test_losses, test_accs=test_accs)
+            results.update(train_losses=train_losses, test_losses=val_losses, test_accs=val_accs)
             if time.perf_counter() > stop_time:
                 break
+
+    test_loss, test_acc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True)
+    results.update(test_loss=test_loss, test_acc=test_acc)
 
     return args, results
 

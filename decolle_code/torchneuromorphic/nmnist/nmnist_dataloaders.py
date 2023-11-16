@@ -182,6 +182,7 @@ def create_dataloader(
         transform_test=None,
         target_transform_train=None,
         target_transform_test=None,
+    validation_split=0.1,
         **dl_kwargs):
     train_d, test_d = create_datasets(
         root=root,
@@ -198,4 +199,13 @@ def create_dataloader(
     train_dl = torch.utils.data.DataLoader(train_d, shuffle=True, batch_size=batch_size, **dl_kwargs)
     test_dl = torch.utils.data.DataLoader(test_d, shuffle=False, batch_size=batch_size, **dl_kwargs)
 
-    return train_dl, test_dl
+
+    val_dl = None
+    if validation_split>0:
+        n_train_samples = int((1-validation_split)*len(train_d))
+        n_val_samples = len(train_d) - n_train_samples
+        train_d, val_d = torch.utils.data.random_split(train_d, [n_train_samples, n_val_samples])
+        val_dl = torch.utils.data.DataLoader(val_d, batch_size=batch_size, shuffle=sample_shuffle, **dl_kwargs)
+
+
+    return train_dl, val_dl, test_dl
