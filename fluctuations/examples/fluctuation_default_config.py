@@ -41,7 +41,7 @@ def default_cifar10(deep=False):
         'maxpool_kernel_size': 2,
         'recurrent_kwargs': {},
         'dropout_p': 0.0,
-        'batch_size': 32,  # 128
+        'batch_size': 16,  # 128
         'lr': 5e-3,
         'epochs': 50,
         'upperBoundL2Threshold': 10,
@@ -68,7 +68,7 @@ def default_dvs(deep=False):
         'maxpool_kernel_size': 2,
         'recurrent_kwargs': {},
         'dropout_p': 0.0,
-        'batch_size': 16,  # 16
+        'batch_size': 8,  # 16
         'lr': 5e-3,
         'epochs': 20,
         'upperBoundL2Threshold': 10,
@@ -78,7 +78,7 @@ def default_dvs(deep=False):
     if deep:
         config['nb_conv_blocks'] = 4
         config['nb_filters'] = [32, 32, 64, 64, 128, 128, 128, 128]
-        config['batch_size'] = 8
+        config['batch_size'] = 6
 
 
     return config
