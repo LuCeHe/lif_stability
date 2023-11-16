@@ -11,6 +11,8 @@
 # Copyright : (c) 
 # Licence : GPLv2
 # -----------------------------------------------------------------------------
+
+import random, string
 import torch.nn as nn
 import torch.optim as optim
 import torch
@@ -32,6 +34,7 @@ class FastSigmoid(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        print('is here? maybe, not the one you want though')
         (input_,) = ctx.saved_tensors
         grad_input = grad_output.clone()
         grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
@@ -88,18 +91,15 @@ class FastSigmoidIVTest(torch.autograd.Function):
 
 
 class FastSigmoidIVModule(nn.Module):
-    def __init__(self, lambd=1):
+    def __init__(self):
         super().__init__()
-        print(self.__dir__())
-        print('layer', self._get_name())
-        self.lambd = lambd
         self.act = FastSigmoidIVTest.apply
-        self.li = 1
+
+        characters = string.ascii_letters + string.digits
+        self.id = ''.join(random.choice(characters) for _ in range(5))
 
     def forward(self, x):
-        print(torch.var(x), x.size())
-        print(x.size())
-        return self.act(x, self.li)
+        return self.act(x, self.id)
 
 
 class SmoothStep(torch.autograd.Function):
@@ -141,18 +141,16 @@ smooth_sigmoid = SigmoidStep().apply
 fast_sigmoid = FastSigmoid.apply
 
 
-# fast_sigmoid = FastSigmoidReset.apply
-
-
 class BaseLIFLayer(nn.Module):
     NeuronState = namedtuple('NeuronState', ['P', 'Q', 'R', 'S'])
-    sg_function = fast_sigmoid
 
     def __init__(self, layer, alpha=.9, alpharp=.65, wrp=1.0, beta=.85, deltat=1000, do_detach=True, gain=1):
         '''
         deltat: timestep in microseconds (not milliseconds!)
         '''
         super(BaseLIFLayer, self).__init__()
+
+        self.sg_function = fast_sigmoid
         self.base_layer = layer
         self.deltat = deltat
         # self.dt = deltat/1e-6
@@ -278,7 +276,6 @@ class BaseLIFLayer(nn.Module):
 
 
 class LIFLayer(BaseLIFLayer):
-    sg_function = fast_sigmoid
 
     def forward(self, Sin_t):
         if self.state is None:
@@ -315,9 +312,9 @@ class LIFLayer(BaseLIFLayer):
 class LIFLayerPlus(LIFLayer):
     def __init__(self, *args, **kwargs):
         super(LIFLayerPlus, self).__init__(*args, **kwargs)
-        print('here? LLP')
         self.sg_function = FastSigmoidIVModule()
-        # sg_function = lambda: self.sg
+        print('here? hopefully')
+        print(self.sg_function.id)
 
 
 class LIFLayerRefractory(LIFLayer):
