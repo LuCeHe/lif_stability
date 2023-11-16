@@ -44,6 +44,13 @@ def main(args):
     log_dir = dirs['log_dir']
     checkpoint_dir = dirs['checkpoint_dir']
 
+    if 'test' in args.comments:
+        params['Nhid'] = [16, 16]
+        params['Mhid'] = [16]
+        params['batch_size'] = 16
+        params['num_layers'] = 2
+        params['num_conv_layers'] = 2
+
     # print args with json
     args.__dict__.update(dirs)
     print(json.dumps(args.__dict__, indent=2))
@@ -137,7 +144,8 @@ def main(args):
 
     from sg_design_lif.decolle_code.decolle.init_functions import init_LSUV
 
-    init_LSUV(net, data_batch[:32])
+    if not 'test' in args.comments:
+        init_LSUV(net, data_batch[:32])
 
     ##Resume if necessary
     if args.resume_from is not None:

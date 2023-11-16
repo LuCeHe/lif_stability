@@ -128,6 +128,7 @@ class LenetDECOLLE(DECOLLEBase):
             feature_height //= pool_size[i]
             feature_width //= pool_size[i]
             base_layer = nn.Conv2d(Nhid[i], Nhid[i + 1], kernel_size[i], stride[i], padding[i])
+            # print(self.lif_layer_type[i].name)
             layer = self.lif_layer_type[i](base_layer,
                                            alpha=self.alpha[i],
                                            beta=self.beta[i],

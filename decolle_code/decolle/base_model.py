@@ -43,6 +43,7 @@ sg_normalizer = None
 
 class FastSigmoidIV(torch.autograd.Function):
     print('newcall')
+
     @staticmethod
     def forward(ctx, input_):
         ctx.save_for_backward(input_)
@@ -62,12 +63,13 @@ class FastSigmoidIV(torch.autograd.Function):
         return grad
 
 
-
 class FastSigmoidIVTest(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input_, li):
         ctx.save_for_backward(input_)
         print('inside', li)
+        print('inside')
+        ctx.li = li
         return (input_ > 0).type(input_.dtype)
 
     @staticmethod
@@ -81,16 +83,24 @@ class FastSigmoidIVTest(torch.autograd.Function):
             sg_normalizer = torch.std(grad)
 
         grad /= sg_normalizer
-        return grad
+        print('inside', ctx.li)
+        return grad, None
+
 
 class FastSigmoidIVModule(nn.Module):
     def __init__(self, lambd=1):
         super().__init__()
-        print('layer', self.name)
+        print(self.__dir__())
+        print('layer', self._get_name())
         self.lambd = lambd
         self.act = FastSigmoidIVTest.apply
-    def forward(self,x):
-        return self.act(x, self.lambd)
+        self.li = 1
+
+    def forward(self, x):
+        print(torch.var(x), x.size())
+        print(x.size())
+        return self.act(x, self.li)
+
 
 class SmoothStep(torch.autograd.Function):
     '''
@@ -129,6 +139,8 @@ relu = nn.ReLU()
 smooth_step = SmoothStep().apply
 smooth_sigmoid = SigmoidStep().apply
 fast_sigmoid = FastSigmoid.apply
+
+
 # fast_sigmoid = FastSigmoidReset.apply
 
 
@@ -301,8 +313,8 @@ class LIFLayer(BaseLIFLayer):
 
 
 class LIFLayerPlus(LIFLayer):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super(LIFLayerPlus, self).__init__(*args, **kwargs)
         print('here? LLP')
         self.sg_function = FastSigmoidIVModule()
         # sg_function = lambda: self.sg
