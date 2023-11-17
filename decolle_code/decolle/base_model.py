@@ -55,13 +55,14 @@ class FastSigmoidIV(torch.autograd.Function):
     def backward(ctx, grad_output):
         (input_,) = ctx.saved_tensors
         grad_input = grad_output.clone()
-        grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
 
         global sg_normalizer
         if not ctx.id in sg_normalizer.keys():
-            sg_normalizer[ctx.id] = torch.std(grad)
+            sg_normalizer[ctx.id] = torch.std(input_)
+        input_ = input_ / sg_normalizer[ctx.id]
 
-        grad /= sg_normalizer[ctx.id]
+        grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
+
         return grad, None
 
 
@@ -82,7 +83,10 @@ class FastSigmoidIII(torch.autograd.Function):
         if not ctx.id in sg_normalizer.keys():
             sg_normalizer[ctx.id] = torch.max(grad)
 
-        grad /= sg_normalizer[ctx.id]
+        # grad /= sg_normalizer[ctx.id]
+
+        # print('--->', grad.shape, torch.max(grad), torch.std(grad))
+
         return grad, None
 
 

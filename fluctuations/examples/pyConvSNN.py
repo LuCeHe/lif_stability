@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from pyaromatics.stay_organized.utils import NumpyEncoder
+from sg_design_lif.decolle_code.decolle.base_model import ConditionedFastSigmoid
 from sg_design_lif.fluctuations.examples.fluctuation_dataloaders import datasets_available, load_dataset
 from sg_design_lif.fluctuations.examples.fluctuation_default_config import default_config
 
@@ -71,15 +72,6 @@ def main(args):
     maxpool_kernel_size = config['maxpool_kernel_size']
     dropout_p = config['dropout_p']
 
-    if 'test' in args.comments:
-        nb_conv_blocks = 2
-        nb_hidden_layers = 2
-        nb_filters = [3, 4, 5, 6]
-        kernel_size = 2
-        stride = 1
-        padding = 0
-        recurrent_kwargs = dict()
-
     # Neuron Parameters
     # # # # # # # # # # #
 
@@ -99,19 +91,28 @@ def main(args):
     act_fn = stork.activations.SuperSpike
     act_fn.beta = beta
 
-    if 'condIV' in args.comments:
-        act_fn = stork.activations.SuperSpikeIV
+    if 'test' in args.comments:
+        nb_conv_blocks = 1
+        nb_hidden_layers = 2
+        nb_filters = [3, 4]
+        kernel_size = 2
+        stride = 1
+        padding = 0
+        recurrent_kwargs = dict()
 
-    if 'condI' in args.comments:
-        act_fn = stork.activations.SuperSpikeI
+    print('batch_size', batch_size)
 
-    if 'condIII' in args.comments:
-        act_fn = stork.activations.SuperSpikeIII
-
-    if 'condIIIIIV' in args.comments:
-        act_fn = stork.activations.SuperSpikeI_III_IV
-
-
+    # if 'condIV' in args.comments:
+    #     act_fn = stork.activations.SuperSpikeIV
+    #
+    # if 'condI' in args.comments:
+    #     act_fn = stork.activations.SuperSpikeI
+    #
+    # if 'condIII' in args.comments:
+    #     act_fn = stork.activations.SuperSpikeIII
+    #
+    # if 'condIIIIIV' in args.comments:
+    #     act_fn = stork.activations.SuperSpikeI_III_IV
 
     loss_stack = stork.loss_stacks.MaxOverTimeCrossEntropy()
 
@@ -175,6 +176,19 @@ def main(args):
             # # # # # # # # # # # # # # #
 
             li += 1
+
+            if 'condIV' in args.comments:
+                print('Using condition IV')
+                act_fn = ConditionedFastSigmoid(rule='IV')
+            elif 'condIII' in args.comments:
+                print('Using condition III')
+                act_fn = ConditionedFastSigmoid(rule='III')
+            elif 'condI_III_IV' in args.comments:
+                print('Using condition I/III/IV')
+                act_fn = ConditionedFastSigmoid(rule='I_III_IV')
+            elif 'condI' in args.comments:
+                print('Using condition I')
+                act_fn = ConditionedFastSigmoid(rule='I')
 
             neuron_kwargs = {
                 'tau_mem': 20e-3,
@@ -360,9 +374,9 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=2, help='Epochs')
     parser.add_argument('--plot_activity', type=int, default=0, help='Plot activity before and after training')
 
-    parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use',
-                        choices=datasets_available)
-    parser.add_argument('--comments', type=str, default='test_condIV', help='String to activate extra behaviors')
+    parser.add_argument('--dataset', type=str, default='shd', help='Name of dataset to use', choices=datasets_available)
+    # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
+    parser.add_argument('--comments', type=str, default='test_condIII', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
     args = parser.parse_args()

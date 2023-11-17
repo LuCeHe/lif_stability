@@ -336,6 +336,7 @@ class RecurrentSpikingModel(nn.Module):
         self.hist_valid = []
         self.wall_clock_time = []
         for ep in tqdm(range(nb_epochs)):
+
             if not stop_time is None and time.perf_counter() > stop_time:
                 break
             t_start = time.time()

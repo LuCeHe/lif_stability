@@ -72,7 +72,7 @@ def print_params(params):
 def parse_args():
     PPATH = os.path.abspath(os.path.join(CDIR, '..', 'scripts', 'parameters'))
     params_dvs = os.path.join(PPATH, 'params_dvsgestures_torchneuromorphic.yml')
-    params_nmnist = os.path.join(PPATH, 'params_nmnist_torchneuromorphic.yml')
+    params_nmnist = os.path.join(PPATH, 'params_nmnist.yml')
 
     parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
     parser.add_argument('--device', type=str, default='cuda', help='Device to use (cpu or cuda)')
