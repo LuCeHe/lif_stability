@@ -34,22 +34,21 @@ class FastSigmoid(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        print('is here? maybe, not the one you want though')
         (input_,) = ctx.saved_tensors
         grad_input = grad_output.clone()
         grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
         return grad
 
 
-sg_normalizer = None
+sg_normalizer = {}
+sg_centers = {}
 
 
 class FastSigmoidIV(torch.autograd.Function):
-    print('newcall')
-
     @staticmethod
-    def forward(ctx, input_):
+    def forward(ctx, input_, id):
         ctx.save_for_backward(input_)
+        ctx.id = id
         return (input_ > 0).type(input_.dtype)
 
     @staticmethod
@@ -59,41 +58,95 @@ class FastSigmoidIV(torch.autograd.Function):
         grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
 
         global sg_normalizer
-        if sg_normalizer is None:
-            sg_normalizer = torch.std(grad)
+        if not ctx.id in sg_normalizer.keys():
+            sg_normalizer[ctx.id] = torch.std(grad)
 
-        grad /= sg_normalizer
-        return grad
-
-
-class FastSigmoidIVTest(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, input_, li):
-        ctx.save_for_backward(input_)
-        print('inside', li)
-        print('inside')
-        ctx.li = li
-        return (input_ > 0).type(input_.dtype)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        (input_,) = ctx.saved_tensors
-        grad_input = grad_output.clone()
-        grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
-
-        global sg_normalizer
-        if sg_normalizer is None:
-            sg_normalizer = torch.std(grad)
-
-        grad /= sg_normalizer
-        print('inside', ctx.li)
+        grad /= sg_normalizer[ctx.id]
         return grad, None
 
 
-class FastSigmoidIVModule(nn.Module):
-    def __init__(self):
+class FastSigmoidIII(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input_, id):
+        ctx.save_for_backward(input_)
+        ctx.id = id
+        return (input_ > 0).type(input_.dtype)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        (input_,) = ctx.saved_tensors
+        grad_input = grad_output.clone()
+        grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
+
+        global sg_normalizer
+        if not ctx.id in sg_normalizer.keys():
+            sg_normalizer[ctx.id] = torch.max(grad)
+
+        grad /= sg_normalizer[ctx.id]
+        return grad, None
+
+
+class FastSigmoidI_III_IV(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input_, id):
+        ctx.save_for_backward(input_)
+        ctx.id = id
+        return (input_ > 0).type(input_.dtype)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        (input_,) = ctx.saved_tensors
+        grad_input = grad_output.clone()
+
+        global sg_centers
+        if not ctx.id in sg_centers.keys():
+            sg_centers[ctx.id] = torch.mean(grad_input)
+
+        center = sg_centers[ctx.id]
+
+        grad = grad_input / (10 * torch.abs(input_ - center) + 1.0) ** 2
+
+        global sg_normalizer
+        if not ctx.id in sg_normalizer.keys():
+            sg_normalizer[ctx.id] = max(torch.max(grad), torch.std(grad))
+
+        grad /= sg_normalizer[ctx.id]
+        return grad, None
+
+
+class FastSigmoidI(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input_, id):
+        ctx.save_for_backward(input_)
+        ctx.id = id
+        return (input_ > 0).type(input_.dtype)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        (input_,) = ctx.saved_tensors
+        grad_input = grad_output.clone()
+
+        global sg_centers
+        if not ctx.id in sg_centers.keys():
+            sg_centers[ctx.id] = torch.mean(grad_input)
+
+        center = sg_centers[ctx.id]
+        grad = grad_input / (10 * torch.abs(input_ - center) + 1.0) ** 2
+
+        return grad, None
+
+
+class ConditionedFastSigmoid(nn.Module):
+    def __init__(self, rule):
         super().__init__()
-        self.act = FastSigmoidIVTest.apply
+        if rule == 'IV':
+            self.act = FastSigmoidIV.apply
+        elif rule == 'I':
+            self.act = FastSigmoidI.apply
+        elif rule == 'I_III_IV':
+            self.act = FastSigmoidI_III_IV.apply
+        elif rule == 'III':
+            self.act = FastSigmoidIII.apply
 
         characters = string.ascii_letters + string.digits
         self.id = ''.join(random.choice(characters) for _ in range(5))
@@ -310,11 +363,9 @@ class LIFLayer(BaseLIFLayer):
 
 
 class LIFLayerPlus(LIFLayer):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, rule='IV', **kwargs):
         super(LIFLayerPlus, self).__init__(*args, **kwargs)
-        self.sg_function = FastSigmoidIVModule()
-        print('here? hopefully')
-        print(self.sg_function.id)
+        self.sg_function = ConditionedFastSigmoid(rule=rule)
 
 
 class LIFLayerRefractory(LIFLayer):

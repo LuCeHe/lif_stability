@@ -45,11 +45,11 @@ def main(args):
     checkpoint_dir = dirs['checkpoint_dir']
 
     if 'test' in args.comments:
-        params['Nhid'] = [16, 16]
-        params['Mhid'] = [16]
+        params['Nhid'] = [11, 17, 4]
+        params['Mhid'] = [11]
         params['batch_size'] = 16
-        params['num_layers'] = 2
-        params['num_conv_layers'] = 2
+        params['num_layers'] = 3
+        params['num_conv_layers'] = 3
 
     # print args with json
     args.__dict__.update(dirs)
@@ -90,7 +90,16 @@ def main(args):
 
     if 'condIV' in args.comments:
         print('Using condition IV')
-        lif_layer_type = LIFLayerPlus
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='IV', *args, **kwargs)
+    elif 'condI' in args.comments:
+        print('Using condition I')
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I', *args, **kwargs)
+    elif 'condIII' in args.comments:
+        print('Using condition III')
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='III', *args, **kwargs)
+    elif 'condI_III_IV' in args.comments:
+        print('Using condition I/III/IV')
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I_III_IV', *args, **kwargs)
     else:
         lif_layer_type = LIFLayer
 
