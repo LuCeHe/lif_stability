@@ -43,7 +43,7 @@ def default_cifar10(deep=False):
         'dropout_p': 0.0,
         'batch_size': 16,  # 128
         'lr': 5e-3,
-        'epochs': 50,
+        'epochs': 100,
         'upperBoundL2Threshold': 10,
         'nu': 9.2,
     }
@@ -70,7 +70,7 @@ def default_dvs(deep=False):
         'dropout_p': 0.0,
         'batch_size': 8,  # 16
         'lr': 5e-3,
-        'epochs': 20,
+        'epochs': 100,
         'upperBoundL2Threshold': 10,
         'nu': 9.2,
     }

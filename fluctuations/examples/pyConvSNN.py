@@ -186,6 +186,9 @@ def main(args):
             elif 'condI_III_IV' in args.comments:
                 print('Using condition I/III/IV')
                 act_fn = ConditionedFastSigmoid(rule='I_III_IV')
+            elif 'condI_IV' in args.comments:
+                print('Using condition I/IV')
+                act_fn = ConditionedFastSigmoid(rule='I_IV')
             elif 'condI' in args.comments:
                 print('Using condition I')
                 act_fn = ConditionedFastSigmoid(rule='I')
@@ -289,7 +292,6 @@ def main(args):
     # takes around 85 minutes using a powerful GPU
 
     print('Start training...')
-
     history = model.fit_validate(
         train_dataset,
         valid_dataset,
@@ -371,7 +373,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
     parser.add_argument('--seed', type=int, default=0, help='CPU and GPU seed')
-    parser.add_argument('--epochs', type=int, default=2, help='Epochs')
+    parser.add_argument('--epochs', type=int, default=3, help='Epochs')
     parser.add_argument('--plot_activity', type=int, default=0, help='Plot activity before and after training')
 
     parser.add_argument('--dataset', type=str, default='shd', help='Name of dataset to use', choices=datasets_available)

@@ -112,9 +112,37 @@ class FastSigmoidI_III_IV(torch.autograd.Function):
 
         global sg_normalizer
         if not ctx.id in sg_normalizer.keys():
-            sg_normalizer[ctx.id] = max(torch.max(grad), torch.std(grad))
+            sg_normalizer[ctx.id] = torch.std(grad)
+        input_ = input_ / sg_normalizer[ctx.id]
 
-        grad /= sg_normalizer[ctx.id]
+        return grad, None
+
+
+class FastSigmoidI_IV(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input_, id):
+        ctx.save_for_backward(input_)
+        ctx.id = id
+        return (input_ > 0).type(input_.dtype)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        (input_,) = ctx.saved_tensors
+        grad_input = grad_output.clone()
+
+        global sg_centers
+        if not ctx.id in sg_centers.keys():
+            sg_centers[ctx.id] = torch.mean(grad_input)
+
+        global sg_normalizer
+        if not ctx.id in sg_normalizer.keys():
+            sg_normalizer[ctx.id] = torch.std(input_)
+
+        center = sg_centers[ctx.id]
+        std = sg_normalizer[ctx.id]
+        input_ = (input_ - center) / std
+        grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
+
         return grad, None
 
 
@@ -151,6 +179,10 @@ class ConditionedFastSigmoid(nn.Module):
             self.act = FastSigmoidI_III_IV.apply
         elif rule == 'III':
             self.act = FastSigmoidIII.apply
+        elif rule == 'I_IV':
+            self.act = FastSigmoidI_IV.apply
+        else:
+            raise Exception('Unknown rule: {}'.format(rule))
 
         characters = string.ascii_letters + string.digits
         self.id = ''.join(random.choice(characters) for _ in range(5))

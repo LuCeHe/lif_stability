@@ -331,14 +331,23 @@ class RecurrentSpikingModel(nn.Module):
         history = self.get_metrics_history_dict(np.array(self.hist))
         return history
 
-    def fit_validate(self, dataset, valid_dataset, nb_epochs=10, verbose=True, wandb=None, stop_time=None):
+    def fit_validate(self, dataset, valid_dataset, nb_epochs=10, verbose=True, wandb=None, stop_time=None, early_stop=12):
         self.hist_train = []
         self.hist_valid = []
         self.wall_clock_time = []
+        best_val = np.inf
+        best_epoch = -1
         for ep in tqdm(range(nb_epochs)):
 
             if not stop_time is None and time.perf_counter() > stop_time:
+                print('Time limit reached, stopping training')
                 break
+
+            if ep - best_epoch > early_stop:
+                print('Early stopping')
+                break
+
+
             t_start = time.time()
             self.train()
             ret_train = self.train_epoch(dataset)
@@ -347,6 +356,10 @@ class RecurrentSpikingModel(nn.Module):
             ret_valid = self.evaluate(valid_dataset)
             self.hist_train.append(ret_train)
             self.hist_valid.append(ret_valid)
+
+            if ret_valid[0] < best_val:
+                best_val = ret_valid[0]
+                best_epoch = ep
 
             if self.wandb is not None:
                 self.wandb.log({key: value for (key, value) in zip(self.get_metric_names(

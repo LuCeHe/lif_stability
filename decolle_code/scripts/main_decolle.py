@@ -91,15 +91,18 @@ def main(args):
     if 'condIV' in args.comments:
         print('Using condition IV')
         lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='IV', *args, **kwargs)
-    elif 'condI' in args.comments:
-        print('Using condition I')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I', *args, **kwargs)
     elif 'condIII' in args.comments:
         print('Using condition III')
         lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='III', *args, **kwargs)
     elif 'condI_III_IV' in args.comments:
         print('Using condition I/III/IV')
         lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I_III_IV', *args, **kwargs)
+    elif 'condI_IV' in args.comments:
+        print('Using condition I/IV')
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I_IV', *args, **kwargs)
+    elif 'condI' in args.comments:
+        print('Using condition I')
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I', *args, **kwargs)
     else:
         lif_layer_type = LIFLayer
 
