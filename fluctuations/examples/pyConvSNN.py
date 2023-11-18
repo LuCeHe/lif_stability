@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from pyaromatics.stay_organized.utils import NumpyEncoder
-from sg_design_lif.decolle_code.decolle.base_model import ConditionedFastSigmoid
 from sg_design_lif.fluctuations.examples.fluctuation_dataloaders import datasets_available, load_dataset
 from sg_design_lif.fluctuations.examples.fluctuation_default_config import default_config
 
@@ -29,6 +28,7 @@ from sg_design_lif.fluctuations.stork.initializers import FluctuationDrivenCente
 from sg_design_lif.fluctuations.stork.layers import ConvLayer
 
 import sg_design_lif.fluctuations.stork as stork
+from sg_design_lif.neural_models.torch_sgs import ConditionedSG
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)
@@ -169,6 +169,7 @@ def main(args):
     # Set input group as upstream of first hidden layer
     upstream_group = input_group
 
+
     li = -1
     for bi in range(nb_conv_blocks):
         for ci in range(nb_hidden_layers):
@@ -179,19 +180,22 @@ def main(args):
 
             if 'condIV' in args.comments:
                 print('Using condition IV')
-                act_fn = ConditionedFastSigmoid(rule='IV')
+                act_fn = ConditionedSG(rule='IV')
             elif 'condIII' in args.comments:
                 print('Using condition III')
-                act_fn = ConditionedFastSigmoid(rule='III')
+                act_fn = ConditionedSG(rule='III')
             elif 'condI_III_IV' in args.comments:
                 print('Using condition I/III/IV')
-                act_fn = ConditionedFastSigmoid(rule='I_III_IV')
+                act_fn = ConditionedSG(rule='I_III_IV')
             elif 'condI_IV' in args.comments:
                 print('Using condition I/IV')
-                act_fn = ConditionedFastSigmoid(rule='I_IV')
+                act_fn = ConditionedSG(rule='I_IV')
             elif 'condI' in args.comments:
                 print('Using condition I')
-                act_fn = ConditionedFastSigmoid(rule='I')
+                act_fn = ConditionedSG(rule='I')
+            else:
+                print('Using condition 0')
+                act_fn = ConditionedSG(rule='0')
 
             neuron_kwargs = {
                 'tau_mem': 20e-3,

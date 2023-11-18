@@ -11,7 +11,7 @@
 # -----------------------------------------------------------------------------
 import json, shutil, time
 
-from pyaromatics.stay_organized.utils import NumpyEncoder
+from pyaromatics.stay_organized.utils import NumpyEncoder, str2val
 from sg_design_lif.decolle_code.decolle.base_model import LIFLayerPlus
 from sg_design_lif.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
 from sg_design_lif.decolle_code.torchneuromorphic.dvs_gestures import dvsgestures_dataloaders
@@ -33,6 +33,7 @@ np.set_printoptions(precision=4)
 def main(args):
     stop_time = time.perf_counter() + args.stop_time - 30 * 60
     starting_epoch = 0
+    early_stop = 12
     device = args.device if torch.cuda.is_available() else 'cpu'
 
     # get name of this file with code that is windows and linux compatible
@@ -88,23 +89,25 @@ def main(args):
     if 'dropout' not in params.keys():
         params['dropout'] = [.5]
 
+    curve_name = str2val(args.comments, 'sgcurve', str, default='dfastsigmoid')
     if 'condIV' in args.comments:
         print('Using condition IV')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='IV', *args, **kwargs)
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='IV', curve_name=curve_name, *args, **kwargs)
     elif 'condIII' in args.comments:
         print('Using condition III')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='III', *args, **kwargs)
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='III', curve_name=curve_name, *args, **kwargs)
     elif 'condI_III_IV' in args.comments:
         print('Using condition I/III/IV')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I_III_IV', *args, **kwargs)
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I_III_IV', curve_name=curve_name, *args, **kwargs)
     elif 'condI_IV' in args.comments:
         print('Using condition I/IV')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I_IV', *args, **kwargs)
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I_IV', curve_name=curve_name, *args, **kwargs)
     elif 'condI' in args.comments:
         print('Using condition I')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I', *args, **kwargs)
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I', curve_name=curve_name, *args, **kwargs)
     else:
-        lif_layer_type = LIFLayer
+        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='0', curve_name=curve_name, *args, **kwargs)
+        # lif_layer_type = LIFLayer
 
     ## Create Model, Optimizer and Loss
     net = LenetDECOLLE(out_channels=params['out_channels'],
@@ -182,6 +185,8 @@ def main(args):
         val_losses = []
         val_accs = []
         val_acc_hist = []
+        best_val = np.inf
+        best_epoch = -1
         for e in range(starting_epoch, params['num_epochs']):
 
             interval = e // params['lr_drop_interval']
@@ -193,32 +198,42 @@ def main(args):
                 print('Changing learning rate from {} to {}'.format(lr, opt.param_groups[-1]['lr']))
                 opt.param_groups[-1]['lr'] = np.array(params['learning_rate'])
 
-            if (e % params['test_interval']) == 0 and e != 0:
-                print('---------------Epoch {}-------------'.format(e))
-                if not args.no_save:
-                    print('---------Saving checkpoint---------')
-                    save_checkpoint(e, checkpoint_dir, net, opt)
+            print('---------------Epoch {}-------------'.format(e))
+            if not args.no_save:
+                print('---------Saving checkpoint---------')
+                save_checkpoint(e, checkpoint_dir, net, opt)
 
-                val_loss, val_acc = test(gen_val, decolle_loss, net, params['burnin_steps'], print_error=True)
-                val_acc_hist.append(val_acc)
-                val_losses.append(val_loss)
-                val_accs.append(val_acc)
+            val_loss, val_acc = test(gen_val, decolle_loss, net, params['burnin_steps'], print_error=True)
+            val_acc_hist.append(val_acc)
+            val_losses.append(val_loss)
+            val_accs.append(val_acc)
 
-                if not args.no_save:
-                    write_stats(e, val_acc, val_loss, writer)
-                    np.save(log_dir + '/test_acc.npy', np.array(val_acc_hist), )
+            if val_loss < best_val:
+                best_val = val_loss
+                best_epoch = e
+
+            # if not args.no_save:
+            #     write_stats(e, val_acc, val_loss, writer)
+            #     np.save(log_dir + '/test_acc.npy', np.array(val_acc_hist), )
 
             total_loss, act_rate = train(gen_train, decolle_loss, net, opt, e, params['burnin_steps'],
                                          online_update=params['online_update'])
             train_losses.append(total_loss)
 
-            if not args.no_save:
-                for i in range(len(net)):
-                    writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)
+            # if not args.no_save:
+            #     for i in range(len(net)):
+            #         writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)
 
             results.update(train_losses=train_losses, test_losses=val_losses, test_accs=val_accs)
             if time.perf_counter() > stop_time:
+                print('Time assigned to this job is over, stopping')
                 break
+
+            if e - best_epoch > early_stop:
+                print('Early stopping')
+                break
+
+
 
     test_loss, test_acc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True)
     results.update(test_loss=test_loss, test_acc=test_acc)

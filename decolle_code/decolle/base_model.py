@@ -22,6 +22,7 @@ from collections import namedtuple, OrderedDict
 import warnings
 from sg_design_lif.decolle_code.decolle.utils import train, test, accuracy, load_model_from_checkpoint, save_checkpoint, \
     write_stats, get_output_shape, state_detach
+from sg_design_lif.neural_models.torch_sgs import ConditionedSG
 
 dtype = torch.float32
 
@@ -38,157 +39,6 @@ class FastSigmoid(torch.autograd.Function):
         grad_input = grad_output.clone()
         grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
         return grad
-
-
-sg_normalizer = {}
-sg_centers = {}
-
-
-class FastSigmoidIV(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, input_, id):
-        ctx.save_for_backward(input_)
-        ctx.id = id
-        return (input_ > 0).type(input_.dtype)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        (input_,) = ctx.saved_tensors
-        grad_input = grad_output.clone()
-
-        global sg_normalizer
-        if not ctx.id in sg_normalizer.keys():
-            sg_normalizer[ctx.id] = torch.std(input_)
-        input_ = input_ / sg_normalizer[ctx.id]
-
-        grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
-
-        return grad, None
-
-
-class FastSigmoidIII(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, input_, id):
-        ctx.save_for_backward(input_)
-        ctx.id = id
-        return (input_ > 0).type(input_.dtype)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        (input_,) = ctx.saved_tensors
-        grad_input = grad_output.clone()
-        grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
-
-        global sg_normalizer
-        if not ctx.id in sg_normalizer.keys():
-            sg_normalizer[ctx.id] = torch.max(grad)
-
-        # grad /= sg_normalizer[ctx.id]
-
-        # print('--->', grad.shape, torch.max(grad), torch.std(grad))
-
-        return grad, None
-
-
-class FastSigmoidI_III_IV(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, input_, id):
-        ctx.save_for_backward(input_)
-        ctx.id = id
-        return (input_ > 0).type(input_.dtype)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        (input_,) = ctx.saved_tensors
-        grad_input = grad_output.clone()
-
-        global sg_centers
-        if not ctx.id in sg_centers.keys():
-            sg_centers[ctx.id] = torch.mean(grad_input)
-
-        center = sg_centers[ctx.id]
-
-        grad = grad_input / (10 * torch.abs(input_ - center) + 1.0) ** 2
-
-        global sg_normalizer
-        if not ctx.id in sg_normalizer.keys():
-            sg_normalizer[ctx.id] = torch.std(grad)
-        input_ = input_ / sg_normalizer[ctx.id]
-
-        return grad, None
-
-
-class FastSigmoidI_IV(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, input_, id):
-        ctx.save_for_backward(input_)
-        ctx.id = id
-        return (input_ > 0).type(input_.dtype)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        (input_,) = ctx.saved_tensors
-        grad_input = grad_output.clone()
-
-        global sg_centers
-        if not ctx.id in sg_centers.keys():
-            sg_centers[ctx.id] = torch.mean(grad_input)
-
-        global sg_normalizer
-        if not ctx.id in sg_normalizer.keys():
-            sg_normalizer[ctx.id] = torch.std(input_)
-
-        center = sg_centers[ctx.id]
-        std = sg_normalizer[ctx.id]
-        input_ = (input_ - center) / std
-        grad = grad_input / (10 * torch.abs(input_) + 1.0) ** 2
-
-        return grad, None
-
-
-class FastSigmoidI(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, input_, id):
-        ctx.save_for_backward(input_)
-        ctx.id = id
-        return (input_ > 0).type(input_.dtype)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        (input_,) = ctx.saved_tensors
-        grad_input = grad_output.clone()
-
-        global sg_centers
-        if not ctx.id in sg_centers.keys():
-            sg_centers[ctx.id] = torch.mean(grad_input)
-
-        center = sg_centers[ctx.id]
-        grad = grad_input / (10 * torch.abs(input_ - center) + 1.0) ** 2
-
-        return grad, None
-
-
-class ConditionedFastSigmoid(nn.Module):
-    def __init__(self, rule):
-        super().__init__()
-        if rule == 'IV':
-            self.act = FastSigmoidIV.apply
-        elif rule == 'I':
-            self.act = FastSigmoidI.apply
-        elif rule == 'I_III_IV':
-            self.act = FastSigmoidI_III_IV.apply
-        elif rule == 'III':
-            self.act = FastSigmoidIII.apply
-        elif rule == 'I_IV':
-            self.act = FastSigmoidI_IV.apply
-        else:
-            raise Exception('Unknown rule: {}'.format(rule))
-
-        characters = string.ascii_letters + string.digits
-        self.id = ''.join(random.choice(characters) for _ in range(5))
-
-    def forward(self, x):
-        return self.act(x, self.id)
 
 
 class SmoothStep(torch.autograd.Function):
@@ -399,9 +249,9 @@ class LIFLayer(BaseLIFLayer):
 
 
 class LIFLayerPlus(LIFLayer):
-    def __init__(self, *args, rule='IV', **kwargs):
+    def __init__(self, *args, rule='IV', curve_name='dfastsigmoid', **kwargs):
         super(LIFLayerPlus, self).__init__(*args, **kwargs)
-        self.sg_function = ConditionedFastSigmoid(rule=rule)
+        self.sg_function = ConditionedSG(rule=rule, curve_name=curve_name)
 
 
 class LIFLayerRefractory(LIFLayer):
