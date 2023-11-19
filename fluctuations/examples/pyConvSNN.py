@@ -382,7 +382,7 @@ def parse_args():
 
     parser.add_argument('--dataset', type=str, default='shd', help='Name of dataset to use', choices=datasets_available)
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
-    parser.add_argument('--comments', type=str, default='test_condIII', help='String to activate extra behaviors')
+    parser.add_argument('--comments', type=str, default='test_condI_IV', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
     args = parser.parse_args()

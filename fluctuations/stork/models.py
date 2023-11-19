@@ -223,6 +223,8 @@ class RecurrentSpikingModel(nn.Module):
             metrics.append(
                 [self.out_loss.item(), self.reg_loss.item()] + self.loss_stack.metrics)
 
+            break
+
         return np.mean(np.array(metrics), axis=0)
 
     def regtrain_epoch(self, dataset, shuffle=True):
@@ -266,6 +268,8 @@ class RecurrentSpikingModel(nn.Module):
 
             self.optimizer_instance.step()
             self.apply_constraints()
+
+            break
 
         return np.mean(np.array(metrics), axis=0)
 
@@ -336,14 +340,16 @@ class RecurrentSpikingModel(nn.Module):
         self.hist_valid = []
         self.wall_clock_time = []
         best_val = np.inf
-        best_epoch = -1
+        best_val_epoch = -1
+        best_acc = 0
+        best_acc_epoch = -1
         for ep in tqdm(range(nb_epochs)):
 
             if not stop_time is None and time.perf_counter() > stop_time:
                 print('Time limit reached, stopping training')
                 break
 
-            if ep - best_epoch > early_stop:
+            if ep - best_val_epoch > early_stop and ep - best_acc_epoch > early_stop:
                 print('Early stopping')
                 break
 
@@ -359,7 +365,11 @@ class RecurrentSpikingModel(nn.Module):
 
             if ret_valid[0] < best_val:
                 best_val = ret_valid[0]
-                best_epoch = ep
+                best_val_epoch = ep
+
+            if ret_valid[2] > best_acc:
+                best_acc = ret_valid[2]
+                best_acc_epoch = ep
 
             if self.wandb is not None:
                 self.wandb.log({key: value for (key, value) in zip(self.get_metric_names(
