@@ -147,8 +147,6 @@ def create_dataloader(
     if isinstance(ds, int):
         ds = [ds, ds]
 
-    print('here!', root)
-    # print(os.listdir(root))
     size = [2, 128 // ds[0], 128 // ds[1]]
 
     if n_events_attention is None:

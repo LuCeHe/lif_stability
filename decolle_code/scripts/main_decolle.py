@@ -90,23 +90,22 @@ def main(args):
         params['dropout'] = [.5]
 
     curve_name = str2val(args.comments, 'sgcurve', str, default='dfastsigmoid')
+    continous_sg = 'continuous' in args.comments
     if 'condIV' in args.comments:
         print('Using condition IV')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='IV', curve_name=curve_name, *args, **kwargs)
-    elif 'condIII' in args.comments:
-        print('Using condition III')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='III', curve_name=curve_name, *args, **kwargs)
-    elif 'condI_III_IV' in args.comments:
-        print('Using condition I/III/IV')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I_III_IV', curve_name=curve_name, *args, **kwargs)
+        lif_layer_type = lambda *args, **kwargs: \
+            LIFLayerPlus(rule='IV', curve_name=curve_name, continuous=continous_sg, *args, **kwargs)
     elif 'condI_IV' in args.comments:
         print('Using condition I/IV')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I_IV', curve_name=curve_name, *args, **kwargs)
+        lif_layer_type = lambda *args, **kwargs: \
+            LIFLayerPlus(rule='I_IV', curve_name=curve_name, continuous=continous_sg, *args, **kwargs)
     elif 'condI' in args.comments:
         print('Using condition I')
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='I', curve_name=curve_name, *args, **kwargs)
+        lif_layer_type = lambda *args, **kwargs: \
+            LIFLayerPlus(rule='I', curve_name=curve_name, continuous=continous_sg, *args, **kwargs)
     else:
-        lif_layer_type = lambda *args, **kwargs: LIFLayerPlus(rule='0', curve_name=curve_name, *args, **kwargs)
+        lif_layer_type = lambda *args, **kwargs: \
+            LIFLayerPlus(rule='0', curve_name=curve_name, continuous=continous_sg, *args, **kwargs)
         # lif_layer_type = LIFLayer
 
     ## Create Model, Optimizer and Loss
@@ -185,9 +184,13 @@ def main(args):
         val_losses = []
         val_accs = []
         val_acc_hist = []
-        best_val = np.inf
-        best_epoch = -1
-        for e in range(starting_epoch, params['num_epochs']):
+        best_loss = np.inf
+        best_loss_epoch = -1
+        best_acc = 0
+        best_acc_epoch = -1
+
+        epochs = params['num_epochs'] if not 'test' in args.comments else 1
+        for e in range(starting_epoch, epochs):
 
             interval = e // params['lr_drop_interval']
             lr = opt.param_groups[-1]['lr']
@@ -208,9 +211,13 @@ def main(args):
             val_losses.append(val_loss)
             val_accs.append(val_acc)
 
-            if val_loss < best_val:
-                best_val = val_loss
-                best_epoch = e
+            if min(val_loss) < best_loss:
+                best_loss = min(val_loss)
+                best_loss_epoch = e
+
+            if max(val_acc) > best_acc:
+                best_acc = max(val_acc)
+                best_acc_epoch = e
 
             # if not args.no_save:
             #     write_stats(e, val_acc, val_loss, writer)
@@ -220,20 +227,18 @@ def main(args):
                                          online_update=params['online_update'])
             train_losses.append(total_loss)
 
-            # if not args.no_save:
-            #     for i in range(len(net)):
-            #         writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)
+            if not args.no_save:
+                for i in range(len(net)):
+                    writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)
 
             results.update(train_losses=train_losses, test_losses=val_losses, test_accs=val_accs)
             if time.perf_counter() > stop_time:
                 print('Time assigned to this job is over, stopping')
                 break
 
-            if e - best_epoch > early_stop:
+            if e - best_loss_epoch > early_stop and e - best_acc_epoch > early_stop:
                 print('Early stopping')
                 break
-
-
 
     test_loss, test_acc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True)
     results.update(test_loss=test_loss, test_acc=test_acc)
@@ -251,25 +256,28 @@ if __name__ == '__main__':
     results.update(time_elapsed=time_elapsed)
     results.update(hostname=socket.gethostname())
 
-    args = args.__dict__
-    for d in [args, results]:
+    if not args.no_save:
+        # remove events files
+        events = [e for e in os.listdir(args.log_dir) if 'events' in e]
+        for e in events:
+            if os.path.exists(os.path.join(args.log_dir, e)):
+                os.remove(os.path.join(args.log_dir, e))
+
+    print(args)
+    # remove checkpoints folder
+    if os.path.exists(os.path.join(args.log_dir, 'checkpoints')):
+        shutil.rmtree(os.path.join(args.log_dir, 'checkpoints'))
+
+    args_dict = args.__dict__
+    for d in [args_dict, results]:
+        print(d)
         string_result = json.dumps(d, indent=4, cls=NumpyEncoder)
         var_name = [k for k, v in locals().items() if v is d if not k == 'd'][0]
         print(var_name)
 
-        path = os.path.join(args['log_dir'], var_name + '.txt')
+        path = os.path.join(args.log_dir, var_name + '.txt')
         with open(path, "w") as f:
             f.write(string_result)
 
-    # remove events files
-    events = [e for e in os.listdir(args['log_dir']) if 'events' in e]
-    for e in events:
-        if os.path.exists(os.path.join(args['log_dir'], e)):
-            os.remove(os.path.join(args['log_dir'], e))
-
-    # remove checkpoints folder
-    if os.path.exists(os.path.join(args['log_dir'], 'checkpoints')):
-        shutil.rmtree(os.path.join(args['log_dir'], 'checkpoints'))
-
-    shutil.make_archive(args['log_dir'], 'zip', args['log_dir'])
+    shutil.make_archive(args.log_dir, 'zip', args.log_dir)
     print('All done, in ' + str(time_elapsed) + 's')

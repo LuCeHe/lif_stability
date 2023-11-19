@@ -246,9 +246,9 @@ class LIFLayer(BaseLIFLayer):
 
 
 class LIFLayerPlus(LIFLayer):
-    def __init__(self, *args, rule='IV', curve_name='dfastsigmoid', **kwargs):
+    def __init__(self, *args, rule='IV', curve_name='dfastsigmoid', continuous=False, **kwargs):
         super(LIFLayerPlus, self).__init__(*args, **kwargs)
-        self.sg_function = ConditionedSG(rule=rule, curve_name=curve_name)
+        self.sg_function = ConditionedSG(rule=rule, curve_name=curve_name, continuous=continuous)
 
 
 class LIFLayerRefractory(LIFLayer):

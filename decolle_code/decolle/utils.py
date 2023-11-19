@@ -80,15 +80,15 @@ def parse_args():
                         help='Path to a previously saved checkpoint')
     parser.add_argument('--params_file', type=str, default='',
                         help='Path to parameters file to load. Ignored if resuming from checkpoint')
-    parser.add_argument('--no_save', dest='no_save', action='store_true',
+    parser.add_argument('--no_save', dest='no_save', action='store_false',
                         help='Set this flag if you don\'t want to save results')
     parser.add_argument('--save_dir', type=str, default='default', help='Name of subdirectory to save results in')
     parser.add_argument('--verbose', type=bool, default=False, help='print verbose outputs')
     parser.add_argument('--seed', type=int, default=-1, help='CPU and GPU seed')
     parser.add_argument('--no_train', dest='no_train', action='store_true', help='Train model (useful for resume)')
-    parser.add_argument('--comments', type=str, default='test_condI', help='String to activate extra behaviors')
+    parser.add_argument('--comments', type=str, default='test_condI_continuous', help='String to activate extra behaviors')
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
-    parser.add_argument("--stop_time", default=600, type=int, help="Stop time (seconds)")
+    parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--datasetname', type=str, default='dvs', help='Dataset to use', choices=['dvs', 'nmnist'])
 
     parsed, unknown = parser.parse_known_args()
@@ -116,16 +116,17 @@ def prepare_experiment(name, args):
     if args.resume_from is None:
         params_file = args.params_file
         log_dir = 'nosave'
+
+        named_tuple = time.localtime()  # get struct_time
+        time_string = time.strftime("%Y-%m-%d--%H-%M-%S--", named_tuple)
+        characters = string.ascii_letters + string.digits
+        random_string = ''.join(random.choice(characters) for _ in range(5))
+
+        log_dir = os.path.join(EXPSDIR, time_string + random_string + '_decolle')
+        checkpoint_dir = os.path.join(log_dir, 'checkpoints')
+        os.makedirs(log_dir, exist_ok=True)
+
         if not args.no_save:
-            named_tuple = time.localtime()  # get struct_time
-            time_string = time.strftime("%Y-%m-%d--%H-%M-%S--", named_tuple)
-            characters = string.ascii_letters + string.digits
-            random_string = ''.join(random.choice(characters) for _ in range(5))
-
-            log_dir = os.path.join(EXPSDIR, time_string + random_string + '_decolle')
-            checkpoint_dir = os.path.join(log_dir, 'checkpoints')
-            os.makedirs(log_dir, exist_ok=True)
-
             from shutil import copy2
             copy2(params_file, os.path.join(log_dir, 'params.yml'))
             writer = SummaryWriter(log_dir=log_dir)
@@ -159,7 +160,7 @@ def prepare_experiment(name, args):
         directories = {'log_dir': log_dir, 'checkpoint_dir': checkpoint_dir}
         writer = None
     else:
-        directories = {'log_dir': '', 'checkpoint_dir': ''}
+        directories = {'log_dir': log_dir, 'checkpoint_dir': ''}
         writer = None
 
     if args.seed != -1:
@@ -320,6 +321,8 @@ def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, 
         if batches_per_epoch > 0:
             if batch_iter >= batches_per_epoch: break
 
+        break
+
     total_loss /= t_sample
     print('Loss {0}'.format(total_loss))
     print('Activity Rate {0}'.format(act_rate))
@@ -362,6 +365,8 @@ def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False):
                     r_cum[l, k - burnin, :, :] += tonp(sigmoid(r[n]))
             test_res.append(prediction_mostcommon(r_cum))
             test_labels += tonp(target_batch).sum(1).argmax(axis=-1).tolist()
+
+            break
         test_acc = accuracy(np.column_stack(test_res), np.column_stack(test_labels))
         test_loss /= len(gen_test)
         if print_error:
