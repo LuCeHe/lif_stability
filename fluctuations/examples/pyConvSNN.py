@@ -169,7 +169,7 @@ def main(args):
     # Set input group as upstream of first hidden layer
     upstream_group = input_group
 
-
+    continuous_sg = 'continuous' in args.comments
     li = -1
     for bi in range(nb_conv_blocks):
         for ci in range(nb_hidden_layers):
@@ -177,22 +177,15 @@ def main(args):
             # # # # # # # # # # # # # # #
 
             li += 1
-
             if 'condIV' in args.comments:
                 print('Using condition IV')
-                act_fn = ConditionedSG(rule='IV')
-            elif 'condIII' in args.comments:
-                print('Using condition III')
-                act_fn = ConditionedSG(rule='III')
-            elif 'condI_III_IV' in args.comments:
-                print('Using condition I/III/IV')
-                act_fn = ConditionedSG(rule='I_III_IV')
+                act_fn = ConditionedSG(rule='IV', continuous=continuous_sg)
             elif 'condI_IV' in args.comments:
                 print('Using condition I/IV')
-                act_fn = ConditionedSG(rule='I_IV')
+                act_fn = ConditionedSG(rule='I_IV', continuous=continuous_sg)
             elif 'condI' in args.comments:
                 print('Using condition I')
-                act_fn = ConditionedSG(rule='I')
+                act_fn = ConditionedSG(rule='I', continuous=continuous_sg)
             else:
                 print('Using condition 0')
                 act_fn = ConditionedSG(rule='0')

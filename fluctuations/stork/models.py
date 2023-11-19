@@ -223,8 +223,6 @@ class RecurrentSpikingModel(nn.Module):
             metrics.append(
                 [self.out_loss.item(), self.reg_loss.item()] + self.loss_stack.metrics)
 
-            break
-
         return np.mean(np.array(metrics), axis=0)
 
     def regtrain_epoch(self, dataset, shuffle=True):
@@ -268,8 +266,6 @@ class RecurrentSpikingModel(nn.Module):
 
             self.optimizer_instance.step()
             self.apply_constraints()
-
-            break
 
         return np.mean(np.array(metrics), axis=0)
 
