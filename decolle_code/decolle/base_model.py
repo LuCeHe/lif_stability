@@ -12,17 +12,14 @@
 # Licence : GPLv2
 # -----------------------------------------------------------------------------
 
-import random, string
 import torch.nn as nn
-import torch.optim as optim
 import torch
 import numpy as np
 from itertools import chain
 from collections import namedtuple, OrderedDict
 import warnings
-from sg_design_lif.decolle_code.decolle.utils import train, test, accuracy, load_model_from_checkpoint, save_checkpoint, \
-    write_stats, get_output_shape, state_detach
-from sg_design_lif.neural_models.torch_sgs import ConditionedSG
+from sg_design_lif.decolle_code.decolle.utils import get_output_shape, state_detach
+from pyaromatics.torch_tools.esotorch_layers.torch_sgs import ConditionedSG
 
 dtype = torch.float32
 

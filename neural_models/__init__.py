@@ -1,6 +1,5 @@
 import sys
 
-from pyaromatics.keras_tools.esoteric_layers.rate_voltage_reg import RateVoltageRegularization
 from sg_design_lif.neural_models.custom_lstm import customLSTM, spikingLSTM, gravesLSTM
 from sg_design_lif.neural_models.fast_alif import FastALIFCell
 from sg_design_lif.neural_models.lsnn import *

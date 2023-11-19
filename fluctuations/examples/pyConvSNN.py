@@ -28,7 +28,7 @@ from sg_design_lif.fluctuations.stork.initializers import FluctuationDrivenCente
 from sg_design_lif.fluctuations.stork.layers import ConvLayer
 
 import sg_design_lif.fluctuations.stork as stork
-from sg_design_lif.neural_models.torch_sgs import ConditionedSG
+from pyaromatics.torch_tools.esotorch_layers.torch_sgs import ConditionedSG
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)
