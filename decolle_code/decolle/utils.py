@@ -321,8 +321,6 @@ def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, 
         if batches_per_epoch > 0:
             if batch_iter >= batches_per_epoch: break
 
-        break
-
     total_loss /= t_sample
     print('Loss {0}'.format(total_loss))
     print('Activity Rate {0}'.format(act_rate))
@@ -366,7 +364,6 @@ def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False):
             test_res.append(prediction_mostcommon(r_cum))
             test_labels += tonp(target_batch).sum(1).argmax(axis=-1).tolist()
 
-            break
         test_acc = accuracy(np.column_stack(test_res), np.column_stack(test_labels))
         test_loss /= len(gen_test)
         if print_error:
