@@ -172,7 +172,11 @@ def main(args):
     curve_name = str2val(args.comments, 'sgcurve', str, default='dfastsigmoid')
     continuous_sg = 'continuous' in args.comments
     normcurv = 'normcurv' in args.comments
-    sg_kwargs = {'curve_name': curve_name, 'continuous': continuous_sg, 'normalized_curve': normcurv}
+    oningrad = 'oningrad' in args.comments
+    sg_kwargs = {
+        'curve_name': curve_name, 'continuous': continuous_sg, 'normalized_curve': normcurv,
+        'on_ingrad': oningrad
+    }
     li = -1
     for bi in range(nb_conv_blocks):
         for ci in range(nb_hidden_layers):
@@ -299,6 +303,7 @@ def main(args):
         nb_epochs=nb_epochs,
         verbose=False,
         stop_time=stop_time,
+        shorten = 'test' in args.comments
     )
 
     results["train_loss"] = history["loss"].tolist()
@@ -315,7 +320,7 @@ def main(args):
     # ## Test
 
     print('Start testing...')
-    scores = model.evaluate(test_dataset).tolist()
+    scores = model.evaluate(test_dataset, shorten='test' in args.comments).tolist()
     results["test_loss"], _, results["test_acc"] = scores
 
     # #### Visualize performance
@@ -379,7 +384,7 @@ def parse_args():
 
     parser.add_argument('--dataset', type=str, default='shd', help='Name of dataset to use', choices=datasets_available)
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
-    parser.add_argument('--comments', type=str, default='test_condI_IV', help='String to activate extra behaviors')
+    parser.add_argument('--comments', type=str, default='test_condI_continuous_normcurv_oningrad', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
     args = parser.parse_args()

@@ -92,7 +92,11 @@ def main(args):
     curve_name = str2val(args.comments, 'sgcurve', str, default='dfastsigmoid')
     continuous_sg = 'continuous' in args.comments
     normcurv = 'normcurv' in args.comments
-    sg_kwargs = {'curve_name': curve_name, 'continuous': continuous_sg, 'normalized_curve': normcurv}
+    oningrad = 'oningrad' in args.comments
+    sg_kwargs = {
+        'curve_name': curve_name, 'continuous': continuous_sg, 'normalized_curve': normcurv,
+        'on_ingrad': oningrad
+    }
     if 'condIV' in args.comments:
         print('Using condition IV')
         sg_kwargs.update({'rule': 'IV'})
@@ -106,7 +110,7 @@ def main(args):
         sg_kwargs.update({'rule': '0'})
 
     lif_layer_type = lambda *args, **kwargs: \
-        LIFLayerPlus(**sg_kwargs, *args, **kwargs)
+        LIFLayerPlus(*args, **sg_kwargs, **kwargs)
 
     ## Create Model, Optimizer and Loss
     net = LenetDECOLLE(out_channels=params['out_channels'],
@@ -189,7 +193,7 @@ def main(args):
         best_acc = 0
         best_acc_epoch = -1
 
-        epochs = params['num_epochs'] if not 'test' in args.comments else 1
+        epochs = params['num_epochs'] if not 'test' in args.comments else 2
         for e in range(starting_epoch, epochs):
 
             interval = e // params['lr_drop_interval']
@@ -206,7 +210,8 @@ def main(args):
                 print('---------Saving checkpoint---------')
                 save_checkpoint(e, checkpoint_dir, net, opt)
 
-            val_loss, val_acc = test(gen_val, decolle_loss, net, params['burnin_steps'], print_error=True)
+            val_loss, val_acc = test(gen_val, decolle_loss, net, params['burnin_steps'], print_error=True,
+                                     shorten='test' in args.comments)
             val_acc_hist.append(val_acc)
             val_losses.append(val_loss)
             val_accs.append(val_acc)
@@ -224,7 +229,7 @@ def main(args):
                 np.save(log_dir + '/test_acc.npy', np.array(val_acc_hist), )
 
             total_loss, act_rate = train(gen_train, decolle_loss, net, opt, e, params['burnin_steps'],
-                                         online_update=params['online_update'])
+                                         online_update=params['online_update'],                                     shorten='test' in args.comments)
             train_losses.append(total_loss)
 
             if not args.no_save:
@@ -240,7 +245,8 @@ def main(args):
                 print('Early stopping')
                 break
 
-    test_loss, test_acc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True)
+    test_loss, test_acc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True,
+                               shorten='test' in args.comments)
     results.update(test_loss=test_loss, test_acc=test_acc)
 
     return args, results

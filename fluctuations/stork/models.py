@@ -212,7 +212,7 @@ class RecurrentSpikingModel(nn.Module):
 
         return total_loss
 
-    def evaluate(self, test_dataset, train_mode=False):
+    def evaluate(self, test_dataset, train_mode=False, shorten=False):
         self.train(train_mode)
         self.prepare_data(test_dataset)
         metrics = []
@@ -222,6 +222,8 @@ class RecurrentSpikingModel(nn.Module):
             # store loss and other metrics
             metrics.append(
                 [self.out_loss.item(), self.reg_loss.item()] + self.loss_stack.metrics)
+            if shorten:
+                break
 
         return np.mean(np.array(metrics), axis=0)
 
@@ -248,7 +250,7 @@ class RecurrentSpikingModel(nn.Module):
 
         return np.mean(np.array(metrics), axis=0)
 
-    def train_epoch(self, dataset, shuffle=True):
+    def train_epoch(self, dataset, shuffle=True, shorten=False):
         self.train(True)
         self.prepare_data(dataset)
         metrics = []
@@ -266,6 +268,8 @@ class RecurrentSpikingModel(nn.Module):
 
             self.optimizer_instance.step()
             self.apply_constraints()
+            if shorten:
+                break
 
         return np.mean(np.array(metrics), axis=0)
 
@@ -331,7 +335,7 @@ class RecurrentSpikingModel(nn.Module):
         history = self.get_metrics_history_dict(np.array(self.hist))
         return history
 
-    def fit_validate(self, dataset, valid_dataset, nb_epochs=10, verbose=True, wandb=None, stop_time=None, early_stop=12):
+    def fit_validate(self, dataset, valid_dataset, nb_epochs=10, verbose=True, wandb=None, stop_time=None, early_stop=12, shorten=False):
         self.hist_train = []
         self.hist_valid = []
         self.wall_clock_time = []
@@ -352,10 +356,10 @@ class RecurrentSpikingModel(nn.Module):
 
             t_start = time.time()
             self.train()
-            ret_train = self.train_epoch(dataset)
+            ret_train = self.train_epoch(dataset, shorten=shorten)
 
             self.train(False)
-            ret_valid = self.evaluate(valid_dataset)
+            ret_valid = self.evaluate(valid_dataset, shorten=shorten)
             self.hist_train.append(ret_train)
             self.hist_valid.append(ret_valid)
 
@@ -376,6 +380,9 @@ class RecurrentSpikingModel(nn.Module):
                 self.wall_clock_time.append(t_iter)
                 print("%02i %s --%s t_iter=%.2f" % (
                     ep, self.get_metrics_string(ret_train), self.get_metrics_string(ret_valid, prefix="val_"), t_iter))
+
+            if shorten:
+                break
 
         self.hist = np.concatenate(
             (np.array(self.hist_train), np.array(self.hist_valid)))

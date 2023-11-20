@@ -86,7 +86,7 @@ def parse_args():
     parser.add_argument('--verbose', type=bool, default=False, help='print verbose outputs')
     parser.add_argument('--seed', type=int, default=-1, help='CPU and GPU seed')
     parser.add_argument('--no_train', dest='no_train', action='store_true', help='Train model (useful for resume)')
-    parser.add_argument('--comments', type=str, default='test_condI_continuous', help='String to activate extra behaviors')
+    parser.add_argument('--comments', type=str, default='test_condI_continuous_normcurv_oningrad', help='String to activate extra behaviors')
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--datasetname', type=str, default='dvs', help='Dataset to use', choices=['dvs', 'nmnist'])
@@ -258,7 +258,7 @@ def get_activities(gen_train, decolle_loss, net, opt, epoch, burnin, online_upda
     return total_loss, act_rate, s_hist, r_hist, u_hist
 
 
-def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, batches_per_epoch=-1):
+def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, batches_per_epoch=-1, shorten=False):
     ''' 
     Trains a DECOLLE network 
  
@@ -320,6 +320,8 @@ def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, 
         batch_iter += 1
         if batches_per_epoch > 0:
             if batch_iter >= batches_per_epoch: break
+        if shorten:
+            break
 
     total_loss /= t_sample
     print('Loss {0}'.format(total_loss))
@@ -327,7 +329,7 @@ def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, 
     return total_loss, act_rate
 
 
-def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False):
+def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False, shorten=False):
     net.eval()
     if hasattr(net.LIF_layers[0], 'base_layer'):
         dtype = net.LIF_layers[0].base_layer.weight.dtype
@@ -363,6 +365,8 @@ def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False):
                     r_cum[l, k - burnin, :, :] += tonp(sigmoid(r[n]))
             test_res.append(prediction_mostcommon(r_cum))
             test_labels += tonp(target_batch).sum(1).argmax(axis=-1).tolist()
+            if shorten:
+                break
 
         test_acc = accuracy(np.column_stack(test_res), np.column_stack(test_labels))
         test_loss /= len(gen_test)
