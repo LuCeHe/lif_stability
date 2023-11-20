@@ -16,7 +16,7 @@ import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from pyaromatics.stay_organized.utils import NumpyEncoder
+from pyaromatics.stay_organized.utils import NumpyEncoder, str2val
 from sg_design_lif.fluctuations.examples.fluctuation_dataloaders import datasets_available, load_dataset
 from sg_design_lif.fluctuations.examples.fluctuation_default_config import default_config
 
@@ -169,7 +169,10 @@ def main(args):
     # Set input group as upstream of first hidden layer
     upstream_group = input_group
 
+    curve_name = str2val(args.comments, 'sgcurve', str, default='dfastsigmoid')
     continuous_sg = 'continuous' in args.comments
+    normcurv = 'normcurv' in args.comments
+    sg_kwargs = {'curve_name': curve_name, 'continuous': continuous_sg, 'normalized_curve': normcurv}
     li = -1
     for bi in range(nb_conv_blocks):
         for ci in range(nb_hidden_layers):
@@ -179,16 +182,17 @@ def main(args):
             li += 1
             if 'condIV' in args.comments:
                 print('Using condition IV')
-                act_fn = ConditionedSG(rule='IV', continuous=continuous_sg)
+                sg_kwargs.update({'rule': 'IV'})
             elif 'condI_IV' in args.comments:
                 print('Using condition I/IV')
-                act_fn = ConditionedSG(rule='I_IV', continuous=continuous_sg)
+                sg_kwargs.update({'rule': 'I_IV'})
             elif 'condI' in args.comments:
                 print('Using condition I')
-                act_fn = ConditionedSG(rule='I', continuous=continuous_sg)
+                sg_kwargs.update({'rule': 'I'})
             else:
                 print('Using condition 0')
-                act_fn = ConditionedSG(rule='0')
+                sg_kwargs.update({'rule': '0'})
+            act_fn = ConditionedSG(**sg_kwargs)
 
             neuron_kwargs = {
                 'tau_mem': 20e-3,

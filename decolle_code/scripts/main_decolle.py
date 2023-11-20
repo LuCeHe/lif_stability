@@ -90,23 +90,23 @@ def main(args):
         params['dropout'] = [.5]
 
     curve_name = str2val(args.comments, 'sgcurve', str, default='dfastsigmoid')
-    continous_sg = 'continuous' in args.comments
+    continuous_sg = 'continuous' in args.comments
+    normcurv = 'normcurv' in args.comments
+    sg_kwargs = {'curve_name': curve_name, 'continuous': continuous_sg, 'normalized_curve': normcurv}
     if 'condIV' in args.comments:
         print('Using condition IV')
-        lif_layer_type = lambda *args, **kwargs: \
-            LIFLayerPlus(rule='IV', curve_name=curve_name, continuous=continous_sg, *args, **kwargs)
+        sg_kwargs.update({'rule': 'IV'})
     elif 'condI_IV' in args.comments:
         print('Using condition I/IV')
-        lif_layer_type = lambda *args, **kwargs: \
-            LIFLayerPlus(rule='I_IV', curve_name=curve_name, continuous=continous_sg, *args, **kwargs)
+        sg_kwargs.update({'rule': 'I_IV'})
     elif 'condI' in args.comments:
         print('Using condition I')
-        lif_layer_type = lambda *args, **kwargs: \
-            LIFLayerPlus(rule='I', curve_name=curve_name, continuous=continous_sg, *args, **kwargs)
+        sg_kwargs.update({'rule': 'I'})
     else:
-        lif_layer_type = lambda *args, **kwargs: \
-            LIFLayerPlus(rule='0', curve_name=curve_name, continuous=continous_sg, *args, **kwargs)
-        # lif_layer_type = LIFLayer
+        sg_kwargs.update({'rule': '0'})
+
+    lif_layer_type = lambda *args, **kwargs: \
+        LIFLayerPlus(**sg_kwargs, *args, **kwargs)
 
     ## Create Model, Optimizer and Loss
     net = LenetDECOLLE(out_channels=params['out_channels'],
@@ -219,9 +219,9 @@ def main(args):
                 best_acc = max(val_acc)
                 best_acc_epoch = e
 
-            # if not args.no_save:
-            #     write_stats(e, val_acc, val_loss, writer)
-            #     np.save(log_dir + '/test_acc.npy', np.array(val_acc_hist), )
+            if not args.no_save:
+                write_stats(e, val_acc, val_loss, writer)
+                np.save(log_dir + '/test_acc.npy', np.array(val_acc_hist), )
 
             total_loss, act_rate = train(gen_train, decolle_loss, net, opt, e, params['burnin_steps'],
                                          online_update=params['online_update'])
@@ -231,7 +231,7 @@ def main(args):
                 for i in range(len(net)):
                     writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)
 
-            results.update(train_losses=train_losses, test_losses=val_losses, test_accs=val_accs)
+            results.update(train_losses=train_losses, val_loss=val_losses, val_acc=val_accs)
             if time.perf_counter() > stop_time:
                 print('Time assigned to this job is over, stopping')
                 break
