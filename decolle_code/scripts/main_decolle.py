@@ -93,9 +93,11 @@ def main(args):
     continuous_sg = 'continuous' in args.comments
     normcurv = 'normcurv' in args.comments
     oningrad = 'oningrad' in args.comments
+    forwback = 'forwback' in args.comments
+
     sg_kwargs = {
         'curve_name': curve_name, 'continuous': continuous_sg, 'normalized_curve': normcurv,
-        'on_ingrad': oningrad
+        'on_ingrad': oningrad, 'forwback': forwback
     }
     if 'condIV' in args.comments:
         print('Using condition IV')
