@@ -112,7 +112,7 @@ def main(args):
         sg_kwargs.update({'rule': '0'})
 
     lif_layer_type = lambda *args, **kwargs: \
-        LIFLayerPlus(*args, **sg_kwargs, **kwargs)
+        LIFLayerPlus(*args, sg_kwargs=sg_kwargs, **kwargs)
 
     ## Create Model, Optimizer and Loss
     net = LenetDECOLLE(out_channels=params['out_channels'],

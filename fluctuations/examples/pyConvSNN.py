@@ -94,25 +94,13 @@ def main(args):
     if 'test' in args.comments:
         nb_conv_blocks = 1
         nb_hidden_layers = 2
-        nb_filters = [3, 4]
-        kernel_size = 2
+        nb_filters = [30, 40]
+        kernel_size = 5
         stride = 1
         padding = 0
         recurrent_kwargs = dict()
 
-    print('batch_size', batch_size)
-
-    # if 'condIV' in args.comments:
-    #     act_fn = stork.activations.SuperSpikeIV
-    #
-    # if 'condI' in args.comments:
-    #     act_fn = stork.activations.SuperSpikeI
-    #
-    # if 'condIII' in args.comments:
-    #     act_fn = stork.activations.SuperSpikeIII
-    #
-    # if 'condIIIIIV' in args.comments:
-    #     act_fn = stork.activations.SuperSpikeI_III_IV
+        batch_size = 12
 
     loss_stack = stork.loss_stacks.MaxOverTimeCrossEntropy()
 
@@ -131,9 +119,11 @@ def main(args):
     # Define regularizer list
     regs = []
 
-    regUB = stork.regularizers.UpperBoundL2(upperBoundL2Strength,
-                                            threshold=upperBoundL2Threshold,
-                                            dims=[-2, -1])
+    regUB = stork.regularizers.UpperBoundL2(
+        upperBoundL2Strength,
+        threshold=upperBoundL2Threshold,
+        dims=[-2, -1]
+    )
     regs.append(regUB)
 
     # #### Initializer setup
@@ -160,7 +150,8 @@ def main(args):
         nb_time_steps,
         nb_inputs,
         device,
-        dtype)
+        dtype
+    )
 
     # INPUT LAYER
     # # # # # # # # # # # # # # #
@@ -203,6 +194,7 @@ def main(args):
                 'tau_mem': 20e-3,
                 'tau_syn': 10e-3,
                 'activation': act_fn,
+                'comments': args.comments
             }
 
             # Generate Layer name and config
@@ -304,7 +296,7 @@ def main(args):
         nb_epochs=nb_epochs,
         verbose=False,
         stop_time=stop_time,
-        shorten = 'test' in args.comments
+        shorten='test' in args.comments
     )
 
     results["train_loss"] = history["loss"].tolist()
@@ -383,9 +375,10 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=3, help='Epochs')
     parser.add_argument('--plot_activity', type=int, default=0, help='Plot activity before and after training')
 
-    parser.add_argument('--dataset', type=str, default='shd', help='Name of dataset to use', choices=datasets_available)
+    parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use', choices=datasets_available)
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
-    parser.add_argument('--comments', type=str, default='test_condI_continuous_normcurv_oningrad', help='String to activate extra behaviors')
+    parser.add_argument('--comments', type=str, default='test_currentp5',
+                        help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
     args = parser.parse_args()

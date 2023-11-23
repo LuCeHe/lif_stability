@@ -78,7 +78,7 @@ class RecurrentSpikingModel(nn.Module):
             self.batch_size = batch_size
         saved_state = self.state_dict()
         saved_optimizer = self.optimizer_instance
-        self.nb_time_steps = int(self.nb_time_steps*self.time_step/time_step)
+        self.nb_time_steps = int(self.nb_time_steps * self.time_step / time_step)
         self.configure(self.input_group, self.output_group, loss_stack=self.loss_stack, generator=self.data_generator_,
                        time_step=time_step,
                        optimizer=self.optimizer_class,
@@ -172,6 +172,7 @@ class RecurrentSpikingModel(nn.Module):
             c.remove_regularizers()
 
     def run(self, x_batch, cur_batch_size=None, record=False):
+        print('input shape', x_batch.shape)
         if cur_batch_size is None:
             cur_batch_size = len(x_batch)
         self.reset_states(cur_batch_size)
@@ -275,7 +276,7 @@ class RecurrentSpikingModel(nn.Module):
 
     def get_metric_names(self, prefix="", postfix=""):
         metric_names = ["loss", "reg_loss"] + \
-            self.loss_stack.get_metric_names()
+                       self.loss_stack.get_metric_names()
         return ["%s%s%s" % (prefix, k, postfix) for k in metric_names]
 
     def get_metrics_string(self, metrics_array, prefix="", postfix=""):
@@ -301,7 +302,7 @@ class RecurrentSpikingModel(nn.Module):
 
             if self.wandb is not None:
                 self.wandb.log({key: value for (key, value)
-                               in zip(self.get_metric_names(), ret)})
+                                in zip(self.get_metric_names(), ret)})
 
             if verbose:
                 t_iter = (time.time() - t_start)
@@ -323,7 +324,7 @@ class RecurrentSpikingModel(nn.Module):
 
             if self.wandb is not None:
                 self.wandb.log({key: value for (key, value)
-                               in zip(self.get_metric_names(), ret)})
+                                in zip(self.get_metric_names(), ret)})
 
             if verbose:
                 t_iter = (time.time() - t_start)
@@ -335,7 +336,8 @@ class RecurrentSpikingModel(nn.Module):
         history = self.get_metrics_history_dict(np.array(self.hist))
         return history
 
-    def fit_validate(self, dataset, valid_dataset, nb_epochs=10, verbose=True, wandb=None, stop_time=None, early_stop=12, shorten=False):
+    def fit_validate(self, dataset, valid_dataset, nb_epochs=10, verbose=True, wandb=None, stop_time=None,
+                     early_stop=12, shorten=False):
         self.hist_train = []
         self.hist_valid = []
         self.wall_clock_time = []
@@ -352,7 +354,6 @@ class RecurrentSpikingModel(nn.Module):
             if ep - best_val_epoch > early_stop and ep - best_acc_epoch > early_stop:
                 print('Early stopping')
                 break
-
 
             t_start = time.time()
             self.train()
@@ -537,7 +538,7 @@ class RecurrentSpikingModel(nn.Module):
             test_scores.append(score)
             if callbacks is not None:
                 callback_returns.append([callback(self)
-                                        for callback in callbacks])
+                                         for callback in callbacks])
 
         if callbacks is not None:
             return results, test_scores, callback_returns
