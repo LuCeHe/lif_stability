@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from pyaromatics.stay_organized.utils import NumpyEncoder, str2val
+from pyaromatics.torch_tools.esoteric_optimizers.adabelief import AdaBelief
 from sg_design_lif.fluctuations.examples.fluctuation_dataloaders import datasets_available, load_dataset
 from sg_design_lif.fluctuations.examples.fluctuation_default_config import default_config
 
@@ -68,9 +69,10 @@ def main(args):
     stride = config['stride']
     padding = config['padding']
     recurrent_kwargs = config['recurrent_kwargs']
-    lr = config['lr']
     maxpool_kernel_size = config['maxpool_kernel_size']
     dropout_p = config['dropout_p']
+    lr = str2val(args.comments, 'lr', float, default=config['lr'])
+
 
     # Neuron Parameters
     # # # # # # # # # # #
@@ -105,7 +107,13 @@ def main(args):
     loss_stack = stork.loss_stacks.MaxOverTimeCrossEntropy()
 
     # #### Optimizer setup
-    opt = stork.optimizers.SMORMS3
+    if 'adabelief' in args.comments:
+        print('Using AdaBelief')
+        opt = AdaBelief
+    else:
+        opt = stork.optimizers.SMORMS3
+
+
     nb_workers = 4 if not 'DESKTOP' in socket.gethostname() else 0
     persistent_workers = not 'DESKTOP' in socket.gethostname()
     generator = StandardGenerator(nb_workers=nb_workers, persistent_workers=persistent_workers)
@@ -370,16 +378,16 @@ def parse_args():
 
     log_dir = os.path.join(EXPSDIR, time_string + random_string + '_fluctuations')
 
-    parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
+    parser = argparse.ArgumentParser(description='Fluctuations-driven init experiments')
     parser.add_argument('--seed', type=int, default=0, help='CPU and GPU seed')
     parser.add_argument('--epochs', type=int, default=3, help='Epochs')
     parser.add_argument('--plot_activity', type=int, default=0, help='Plot activity before and after training')
 
     parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use', choices=datasets_available)
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
-    parser.add_argument('--comments', type=str, default='test_currentp5',
+    parser.add_argument('--comments', type=str, default='test_adabelief',
                         help='String to activate extra behaviors')
-    parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
+    parser.add_argument("--stop_time", default=2000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
     args = parser.parse_args()
 

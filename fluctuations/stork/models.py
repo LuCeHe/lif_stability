@@ -172,7 +172,7 @@ class RecurrentSpikingModel(nn.Module):
             c.remove_regularizers()
 
     def run(self, x_batch, cur_batch_size=None, record=False):
-        print('input shape', x_batch.shape)
+        # print('input shape', x_batch.shape)
         if cur_batch_size is None:
             cur_batch_size = len(x_batch)
         self.reset_states(cur_batch_size)
