@@ -12,6 +12,7 @@
 import json, shutil, time
 
 from pyaromatics.stay_organized.utils import NumpyEncoder, str2val
+from pyaromatics.torch_tools.esoteric_optimizers.adabelief import AdaBelief
 from sg_design_lif.decolle_code.decolle.base_model import LIFLayerPlus
 from sg_design_lif.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
 from sg_design_lif.decolle_code.torchneuromorphic.dvs_gestures import dvsgestures_dataloaders
@@ -132,17 +133,24 @@ def main(args):
                        method=params['learning_method'],
                        with_output_layer=params['with_output_layer']).to(device)
 
+
+    if 'adabelief' in args.comments:
+        opt_fn = AdaBelief
+    else:
+        opt_fn = torch.optim.Adamax
+    lr = str2val(args.comments, 'lr', float, default=params['learning_rate'])
+
     if hasattr(params['learning_rate'], '__len__'):
         from sg_design_lif.decolle_code.decolle.utils import MultiOpt
 
         opts = []
-        for i in range(len(params['learning_rate'])):
+        for i in range(len(lr)):
             opts.append(
-                torch.optim.Adamax(net.get_trainable_parameters(i), lr=params['learning_rate'][i],
+                opt_fn(net.get_trainable_parameters(i), lr=lr[i],
                                    betas=params['betas']))
         opt = MultiOpt(*opts)
     else:
-        opt = torch.optim.Adamax(net.get_trainable_parameters(), lr=params['learning_rate'], betas=params['betas'])
+        opt = opt_fn(net.get_trainable_parameters(), lr=lr, betas=params['betas'])
 
     reg_l = params['reg_l'] if 'reg_l' in params else None
 
