@@ -95,10 +95,11 @@ def main(args):
     normcurv = 'normcurv' in args.comments
     oningrad = 'oningrad' in args.comments
     forwback = 'forwback' in args.comments
+    sgoutn = 'sgoutn' in args.comments
 
     sg_kwargs = {
         'curve_name': curve_name, 'continuous': continuous_sg, 'normalized_curve': normcurv,
-        'on_ingrad': oningrad, 'forwback': forwback
+        'on_ingrad': oningrad, 'forwback': forwback, 'sgoutn': sgoutn
     }
     if 'condIV' in args.comments:
         print('Using condition IV')
@@ -133,7 +134,6 @@ def main(args):
                        method=params['learning_method'],
                        with_output_layer=params['with_output_layer']).to(device)
 
-
     if 'adabelief' in args.comments:
         opt_fn = AdaBelief
     else:
@@ -147,7 +147,7 @@ def main(args):
         for i in range(len(lr)):
             opts.append(
                 opt_fn(net.get_trainable_parameters(i), lr=lr[i],
-                                   betas=params['betas']))
+                       betas=params['betas']))
         opt = MultiOpt(*opts)
     else:
         opt = opt_fn(net.get_trainable_parameters(), lr=lr, betas=params['betas'])
@@ -239,7 +239,7 @@ def main(args):
                 np.save(log_dir + '/test_acc.npy', np.array(val_acc_hist), )
 
             total_loss, act_rate = train(gen_train, decolle_loss, net, opt, e, params['burnin_steps'],
-                                         online_update=params['online_update'],                                     shorten='test' in args.comments)
+                                         online_update=params['online_update'], shorten='test' in args.comments)
             train_losses.append(total_loss)
 
             if not args.no_save:
