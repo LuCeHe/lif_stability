@@ -15,6 +15,7 @@ import torch
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+from torch.nn import init
 
 from pyaromatics.stay_organized.utils import NumpyEncoder, str2val
 from pyaromatics.torch_tools.esoteric_optimizers.adabelief import AdaBelief
@@ -50,6 +51,8 @@ def main(args):
     dconfig = dataset['data_config']
     dt = dconfig['dt']
     duration = dconfig['duration']
+    if 'cifar10' in args.dataset and 'deep' in args.comments:
+        duration = 0.3
     nb_time_steps = dconfig['nb_time_steps']
     nb_inputs = dconfig['nb_inputs']
     input_shape = dconfig['input_shape']
@@ -72,7 +75,6 @@ def main(args):
     maxpool_kernel_size = config['maxpool_kernel_size']
     dropout_p = config['dropout_p']
     lr = str2val(args.comments, 'lr', float, default=config['lr'])
-
 
     # Neuron Parameters
     # # # # # # # # # # #
@@ -112,7 +114,6 @@ def main(args):
         opt = AdaBelief
     else:
         opt = stork.optimizers.SMORMS3
-
 
     nb_workers = 4 if not 'DESKTOP' in socket.gethostname() else 0
     persistent_workers = not 'DESKTOP' in socket.gethostname()
@@ -198,6 +199,20 @@ def main(args):
             # # # # # # # # # # # # # # #
 
             li += 1
+
+            # Generate Layer name and config
+            name = f'Block {bi} Conv {ci}'
+            ksi = kernel_size[li] if isinstance(kernel_size, list) else kernel_size
+            si = stride[li] if isinstance(stride, list) else stride
+            pi = padding[li] if isinstance(padding, list) else padding
+            fi = nb_filters[li] if isinstance(nb_filters, list) else nb_filters
+            recurrent = True if args.dataset == 'shd' else False
+            connection_class = ConvConnection if args.dataset == 'shd' else Conv2dConnection
+            fanout = ksi * fi if args.dataset == 'shd' else ksi * ksi * fi
+            fanout = 2 * fanout if 'rfanout' in args.comments else fanout
+            fanout = 1 if not 'fanout' in args.comments else fanout
+
+            sg_kwargs.update({'fanout': fanout})
             act_fn = ConditionedSG(**sg_kwargs)
             neuron_kwargs = {
                 'tau_mem': 20e-3,
@@ -206,14 +221,6 @@ def main(args):
                 'comments': args.comments
             }
 
-            # Generate Layer name and config
-            name = f'Block {bi} Conv {ci}'
-            ksi = kernel_size[li] if isinstance(kernel_size, list) else kernel_size
-            si = stride[li] if isinstance(stride, list) else stride
-            pi = padding[li] if isinstance(padding, list) else padding
-            recurrent = True if args.dataset == 'shd' else False
-            connection_class = ConvConnection if args.dataset == 'shd' else Conv2dConnection
-
             # Make layer
             layer = ConvLayer(name=name,
                               model=model,
@@ -221,7 +228,7 @@ def main(args):
                               kernel_size=ksi,
                               stride=si,
                               padding=pi,
-                              nb_filters=nb_filters[li],
+                              nb_filters=fi,
                               recurrent=recurrent,
                               neuron_class=neuron_group,
                               neuron_kwargs=neuron_kwargs,
@@ -383,8 +390,9 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=0, help='CPU and GPU seed')
     parser.add_argument('--epochs', type=int, default=3, help='Epochs')
     parser.add_argument('--plot_activity', type=int, default=0, help='Plot activity before and after training')
-
-    parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use', choices=datasets_available)
+    # shd and cifar10 on my laptop
+    parser.add_argument('--dataset', type=str, default='shd', help='Name of dataset to use',
+                        choices=datasets_available)
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
     parser.add_argument('--comments', type=str, default='test_adabelief',
                         help='String to activate extra behaviors')
