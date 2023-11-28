@@ -26,7 +26,8 @@ from sg_design_lif.fluctuations.stork.models import RecurrentSpikingModel
 from sg_design_lif.fluctuations.stork.nodes import InputGroup, ReadoutGroup, LIFGroup, MaxPool2d
 from sg_design_lif.fluctuations.stork.connections import Connection, Conv2dConnection, ConvConnection
 from sg_design_lif.fluctuations.stork.generators import StandardGenerator
-from sg_design_lif.fluctuations.stork.initializers import FluctuationDrivenCenteredNormalInitializer, DistInitializer
+from sg_design_lif.fluctuations.stork.initializers import FluctuationDrivenCenteredNormalInitializer, DistInitializer, \
+    FluctuationDrivenNormalInitializer
 from sg_design_lif.fluctuations.stork.layers import ConvLayer
 
 import sg_design_lif.fluctuations.stork as stork
@@ -121,18 +122,21 @@ def main(args):
 
     # #### Regularizer setup
     # Define regularizer parameters (set regularizer strenght to 0 if you don't want to use them)
-    upperBoundL2Strength = 0.01
+    upperBoundL2Strength = 0.01 if not 'noreg' in args.comments else 0.0
     # Regularizes spikecount: 7 spikes ~ 10 Hz in 700ms simulation time
     upperBoundL2Threshold = config['upperBoundL2Threshold']
 
     # Define regularizer list
     regs = []
+    reg_kwargs = {
+        'strength': upperBoundL2Strength,
+        'threshold': upperBoundL2Threshold,
+        'dims': [-2, -1],
+    }
+    if 'regp5' in args.comments:
+        reg_kwargs.update({'sum_or_mean': 'mean', 'threshold': 0.5})
 
-    regUB = stork.regularizers.UpperBoundL2(
-        upperBoundL2Strength,
-        threshold=upperBoundL2Threshold,
-        dims=[-2, -1]
-    )
+    regUB = stork.regularizers.UpperBoundL2(**reg_kwargs)
     regs.append(regUB)
 
     # #### Initializer setup
@@ -140,12 +144,21 @@ def main(args):
     sigma_u = 1.0
     nu = config['nu']
 
-    initializer = FluctuationDrivenCenteredNormalInitializer(
-        sigma_u=sigma_u,
-        nu=nu,
-        timestep=dt,
-        alpha=0.9
-    )
+    if 'muone' in args.comments:
+        initializer = FluctuationDrivenNormalInitializer(
+            mu_u=1.0,
+            xi=1 / sigma_u,
+            nu=nu,
+            timestep=dt,
+            alpha=.9
+        )
+    else:
+        initializer = FluctuationDrivenCenteredNormalInitializer(
+            sigma_u=sigma_u,
+            nu=nu,
+            timestep=dt,
+            alpha=0.9
+        )
 
     readout_initializer = DistInitializer(
         dist=torch.distributions.Normal(0, 1),

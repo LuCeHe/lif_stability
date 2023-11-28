@@ -4,7 +4,7 @@ import torch
 class ActivityRegularizer:
     """ Abstract base class for activity regularizers. """
 
-    def __init__(self, strength=1.0, threshold=0.0, dims=-1):
+    def __init__(self, strength=1.0, threshold=0.0, dims=-1, sum_or_mean='sum'):
         """ Constructor
 
         Args:
@@ -25,10 +25,12 @@ class ActivityRegularizer:
         if self.dims:
             assert isinstance(self.dims, (int, tuple, list))
 
+        self.sumean = torch.sum if sum_or_mean == 'sum' else torch.mean
+
     def __call__(self, group):
         """ Expects input with (batch x time x units) """
         act = group.get_out_sequence()      # get output
-        cnt = torch.sum(act, dim=1)         # get spikecount
+        cnt = self.sumean(act, dim=1)         # get spikecount
 
         # if population-level regularizer, calculate mean across defined dims
         if self.dims:
