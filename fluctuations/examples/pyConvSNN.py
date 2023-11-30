@@ -134,19 +134,21 @@ def main(args):
         'dims': [-2, -1],
     }
     if 'regp5' in args.comments:
-        reg_kwargs.update({'sum_or_mean': 'mean', 'threshold': 0.5})
+        thr = str2val(args.comments, 'regp5', float, default=0.5)
+        reg_kwargs.update({'sum_or_mean': 'mean', 'threshold': thr})
 
     regUB = stork.regularizers.UpperBoundL2(**reg_kwargs)
     regs.append(regUB)
 
     # #### Initializer setup
-    # We initialize in the fluctuation-driven regime with a target membrane potential standard deviation $\sigma_U=1.0$. Additionally, we set the proportion of membrane potential fluctuations driven by feed-forward inputs to $\alpha=0.9$.
+    # We initialize in the fluctuation-driven regime with a target membrane potential standard deviation $\sigma_U=1.0$.
+    # Additionally, we set the proportion of membrane potential fluctuations driven by feed-forward inputs to $\alpha=0.9$.
     sigma_u = 1.0
     nu = config['nu']
 
     if 'muone' in args.comments:
         initializer = FluctuationDrivenNormalInitializer(
-            mu_u=1.0,
+            mu_u=.5,
             xi=1 / sigma_u,
             nu=nu,
             timestep=dt,
@@ -407,7 +409,7 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='shd', help='Name of dataset to use',
                         choices=datasets_available)
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
-    parser.add_argument('--comments', type=str, default='test_adabelief',
+    parser.add_argument('--comments', type=str, default='test_smorms3_deep_condIV_muone_lr:0.005',
                         help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=2000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')

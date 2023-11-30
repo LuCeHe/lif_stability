@@ -17,6 +17,7 @@ def default_shd(deep=False):
         'upperBoundL2Threshold': 7,
         'nu': 15.8,
     }
+
     if deep:
         config['nb_hidden_layers'] = 7
         config['nb_filters'] = [16, 32, 64, 64, 64, 64, 64]
@@ -29,7 +30,7 @@ def default_shd(deep=False):
 
 
 def default_cifar10(deep=False):
-    config =  {
+    config = {
         'beta': 20,
         'nb_conv_blocks': 1,
         'nb_hidden_layers': 2,
@@ -47,16 +48,17 @@ def default_cifar10(deep=False):
         'upperBoundL2Threshold': 10,
         'nu': 9.2,
     }
+
     if deep:
         config['nb_conv_blocks'] = 2
         config['nb_filters'] = [32, 32, 64, 64]
-        # config['batch_size'] = 128
+        config['batch_size'] = 12
 
     return config
 
 
 def default_dvs(deep=False):
-    config =  {
+    config = {
         'beta': 20,
         'nb_conv_blocks': 3,
         'nb_hidden_layers': 2,
@@ -79,7 +81,6 @@ def default_dvs(deep=False):
         config['nb_conv_blocks'] = 4
         config['nb_filters'] = [32, 32, 64, 64, 128, 128, 128, 128]
         config['batch_size'] = 6
-
 
     return config
 
