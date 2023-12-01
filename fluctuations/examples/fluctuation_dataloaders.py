@@ -1,7 +1,8 @@
 import os
 import numpy as np
 import torch
-import torchvision
+import torchvision.transforms as tvtf
+import torchvision.datasets as tvds
 import tonic
 import logging
 
@@ -21,7 +22,7 @@ def _get_cifar10_dataset(train=True, valid=True, test=True):
     os.makedirs(datadir, exist_ok=True)
 
     target_size = 32  # downscale to 32x32
-    input_shape = [3, target_size, target_size] # in the article it seems 32x32
+    input_shape = [3, target_size, target_size]  # in the article it seems 32x32
     duration = .5  # 1 second
     time_step = dt = 2e-3
     nb_time_steps = int(duration / time_step)
@@ -29,21 +30,23 @@ def _get_cifar10_dataset(train=True, valid=True, test=True):
     valid_split = 0.1
     logger.info("Loading CIFAR10")
 
-    all_transforms = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        torchvision.transforms.Lambda(lambda tensor: tensor.reshape((1, 3, 32, 32))),
-        torchvision.transforms.Lambda(lambda tensor: tensor.expand((nb_time_steps, -1, -1, -1))),
+    all_transforms = tvtf.Compose([
+        tvtf.ToTensor(),
+        tvtf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        tvtf.Lambda(lambda tensor: tensor.reshape((1, 3, 32, 32))),
+        tvtf.Lambda(lambda tensor: tensor.expand((nb_time_steps, -1, -1, -1))),
     ])
 
     test_transforms = all_transforms
     train_transforms = all_transforms
 
     if train:
-        ds_train = torchvision.datasets.CIFAR10(datadir,
-                                                train=True,
-                                                download=True,
-                                                transform=train_transforms)
+        ds_train = tvds.CIFAR10(
+            datadir,
+            train=True,
+            download=True,
+            transform=train_transforms
+        )
         logger.info("Generated {} training data".format(len(ds_train)))
 
     else:
@@ -58,10 +61,12 @@ def _get_cifar10_dataset(train=True, valid=True, test=True):
         ds_valid = False
 
     if test:
-        ds_test = torchvision.datasets.CIFAR10(datadir,
-                                               train=False,
-                                               download=True,
-                                               transform=test_transforms)
+        ds_test = tvds.CIFAR10(
+            datadir,
+            train=False,
+            download=True,
+            transform=test_transforms
+        )
         logger.info("Generated {} testing data".format(len(ds_test)))
 
     else:
@@ -152,7 +157,6 @@ def _get_DVSgestures_dataset(train=True, valid=True, test=True):
 
     else:
         ds_train = False
-
 
     if valid:
         new_train_length = int(len(ds_train) * (1 - valid_split))

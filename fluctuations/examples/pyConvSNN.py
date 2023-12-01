@@ -406,7 +406,7 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=3, help='Epochs')
     parser.add_argument('--plot_activity', type=int, default=0, help='Plot activity before and after training')
     # shd and cifar10 on my laptop
-    parser.add_argument('--dataset', type=str, default='shd', help='Name of dataset to use',
+    parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use',
                         choices=datasets_available)
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
     parser.add_argument('--comments', type=str, default='test_smorms3_deep_condIV_muone_lr:0.005',
