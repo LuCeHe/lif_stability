@@ -147,6 +147,32 @@ class PopulationFiringRateMonitor(Monitor):
         return torch.sum(s1, dim=-1) / self.group.nb_units
 
 
+
+class MeanFiringRateMonitor(Monitor):
+    """ Monitors population firing rate (nr of spikes / nr of neurons for every timestep)
+
+    Args:
+        group: The group to record from
+
+    Returns:
+        A tensor with population firing rate for each input and timestep
+    """
+
+    def __init__(self, group):
+        super().__init__()
+        self.group = group
+
+    def reset(self):
+        self.data = []
+
+    def execute(self):
+        pass
+
+    def get_data(self):
+        s1 = self.group.get_out_sequence().detach().cpu()
+        s1 = s1.reshape(s1.shape[0], s1.shape[1], self.group.nb_units)
+        return torch.mean(s1)
+
 class MeanVarianceMonitor(Monitor):
     """ Measures mean and variance of input
 

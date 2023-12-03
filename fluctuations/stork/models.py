@@ -172,18 +172,21 @@ class RecurrentSpikingModel(nn.Module):
             c.remove_regularizers()
 
     def run(self, x_batch, cur_batch_size=None, record=False):
-        # print('input shape', x_batch.shape)
         if cur_batch_size is None:
             cur_batch_size = len(x_batch)
         self.reset_states(cur_batch_size)
         self.input_group.feed_data(x_batch)
         for t in range(self.nb_time_steps):
+            print('timestep', t)
             sg_design_lif.fluctuations.stork.nodes.base.CellGroup.clk = t
             self.evolve_all()
             self.propagate_all()
             self.execute_all()
             if record:
                 self.monitor_all()
+                # print(self.monitors)
+                print(self.monitors[0].get_data())
+
         self.out = self.output_group.get_out_sequence()
         return self.out
 
@@ -213,12 +216,12 @@ class RecurrentSpikingModel(nn.Module):
 
         return total_loss
 
-    def evaluate(self, test_dataset, train_mode=False, shorten=False):
+    def evaluate(self, test_dataset, train_mode=False, shorten=False, monitor=False):
         self.train(train_mode)
         self.prepare_data(test_dataset)
         metrics = []
         for local_X, local_y in self.data_generator(test_dataset, shuffle=False):
-            output = self.forward_pass(local_X, cur_batch_size=len(local_X))
+            output = self.forward_pass(local_X, cur_batch_size=len(local_X), record=monitor)
             total_loss = self.get_total_loss(output, local_y)
             # store loss and other metrics
             metrics.append(
@@ -255,7 +258,8 @@ class RecurrentSpikingModel(nn.Module):
         self.train(True)
         self.prepare_data(dataset)
         metrics = []
-        for local_X, local_y in self.data_generator(dataset, shuffle=shuffle):
+        for epoch, (local_X, local_y) in enumerate(self.data_generator(dataset, shuffle=shuffle)):
+            print('epoch', epoch)
             output = self.forward_pass(local_X, cur_batch_size=len(local_X))
             total_loss = self.get_total_loss(output, local_y)
 
@@ -291,6 +295,7 @@ class RecurrentSpikingModel(nn.Module):
         s = ""
         names = self.get_metric_names(prefix, postfix)
         history = {name: metrics_array[:, k] for k, name in enumerate(names)}
+        print(history)
         return history
 
     def prime(self, dataset, nb_epochs=10, verbose=True, wandb=None):
@@ -337,7 +342,7 @@ class RecurrentSpikingModel(nn.Module):
         return history
 
     def fit_validate(self, dataset, valid_dataset, nb_epochs=10, verbose=True, wandb=None, stop_time=None,
-                     early_stop=12, shorten=False):
+                     early_stop=12, shorten=False, monitor=False):
         self.hist_train = []
         self.hist_valid = []
         self.wall_clock_time = []
@@ -360,7 +365,7 @@ class RecurrentSpikingModel(nn.Module):
             ret_train = self.train_epoch(dataset, shorten=shorten)
 
             self.train(False)
-            ret_valid = self.evaluate(valid_dataset, shorten=shorten)
+            ret_valid = self.evaluate(valid_dataset, shorten=shorten, monitor=monitor)
             self.hist_train.append(ret_train)
             self.hist_valid.append(ret_valid)
 

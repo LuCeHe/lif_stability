@@ -85,8 +85,6 @@ class LIFGroup(CellGroup):
 
     def get_spike_and_reset(self, mem):
         mthr = mem - 1.0
-        # print('avg mthr', torch.mean(mthr).cpu().detach().numpy(), mthr.shape)
-        # print('    var mthr', torch.var(mthr).cpu().detach().numpy())
         out = self.spk_nl(mthr)
 
         if self.diff_reset:
@@ -98,13 +96,8 @@ class LIFGroup(CellGroup):
         return out, rst
 
     def forward(self):
-
-        # print('self.default_current', self.default_current)
-
-        # if 'currentp5' in self.comments and self.default_current == 0:
-        if 'currentp5' in self.comments:
-            self.default_current = -torch.mean(self.mem).cpu().detach().numpy() + 1
         self.mem = self.mem + self.default_current
+
         # spike & reset
         new_out, rst = self.get_spike_and_reset(self.mem)
 
@@ -117,23 +110,6 @@ class LIFGroup(CellGroup):
         if self.clamp_mem:
             new_mem = torch.clamp(new_mem, max=1.01)
 
-        # if 'forcep5' in self.comments and random.random() < 0.5:
-        if 'forcep5' in self.comments:
-            new_mem = new_mem - torch.mean(new_mem, dim=2, keepdim=True) + 1
-
-            if not torch.std(new_mem) == 0:
-                new_mem = new_mem / torch.std(new_mem, dim=2, keepdim=True)
-
-        # print(
-        #     'avg fr', torch.mean(new_out).cpu().detach().numpy(),
-        #     'avg mem', torch.mean(self.mem).cpu().detach().numpy(),
-        #     'avg new mem', torch.mean(new_mem).cpu().detach().numpy(),
-        # )
-        # print(
-        #     '   var fr', torch.var(new_out).cpu().detach().numpy(),
-        #     'var mem', torch.var(self.mem).cpu().detach().numpy(),
-        #     'var new mem', torch.var(new_mem).cpu().detach().numpy(),
-        # )
         self.out = self.states["out"] = new_out
         self.mem = self.states["mem"] = new_mem
         self.syn = self.states["syn"] = new_syn

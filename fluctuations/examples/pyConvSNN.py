@@ -97,10 +97,10 @@ def main(args):
     act_fn.beta = beta
 
     if 'test' in args.comments:
-        nb_conv_blocks = 1
+        nb_conv_blocks = 3
         nb_hidden_layers = 2
-        nb_filters = [30, 40]
-        kernel_size = 5
+        nb_filters = 10
+        kernel_size = 2
         stride = 1
         padding = 0
         recurrent_kwargs = dict()
@@ -146,9 +146,11 @@ def main(args):
     sigma_u = 1.0
     nu = config['nu']
 
-    if 'muone' in args.comments:
+    if 'muchange' in args.comments:
+        mu = str2val(args.comments, 'muchange', float, default=1.)
+
         initializer = FluctuationDrivenNormalInitializer(
-            mu_u=.5,
+            mu_u=mu,
             xi=1 / sigma_u,
             nu=nu,
             timestep=dt,
@@ -216,7 +218,7 @@ def main(args):
             li += 1
 
             # Generate Layer name and config
-            name = f'Block {bi} Conv {ci}'
+            name = f'Neuron Block {bi} Conv {ci}'
             ksi = kernel_size[li] if isinstance(kernel_size, list) else kernel_size
             si = stride[li] if isinstance(stride, list) else stride
             pi = padding[li] if isinstance(padding, list) else padding
@@ -284,11 +286,9 @@ def main(args):
     readout_initializer.initialize(readout_connection)
 
     # #### Add monitors for spikes and membrane potential
-    for i in range(nb_hidden_layers):
-        model.add_monitor(stork.monitors.SpikeCountMonitor(model.groups[1 + i]))
-
-    for i in range(nb_hidden_layers):
-        model.add_monitor(stork.monitors.StateMonitor(model.groups[1 + i], "out"))
+    for layer in model.groups:
+        if 'Neuron' in layer.name:
+            model.add_monitor(stork.monitors.MeanFiringRateMonitor(layer))
 
     # #### Configure model for training
     model.configure(input=input_group,
@@ -326,6 +326,7 @@ def main(args):
         valid_dataset,
         nb_epochs=nb_epochs,
         verbose=False,
+        monitor=True,
         stop_time=stop_time,
         shorten='test' in args.comments
     )
@@ -409,7 +410,7 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use',
                         choices=datasets_available)
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
-    parser.add_argument('--comments', type=str, default='test_smorms3_deep_condIV_muone_lr:0.005',
+    parser.add_argument('--comments', type=str, default='test_smorms3_deep_condIV_muchange_lr:0.005',
                         help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=2000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')
