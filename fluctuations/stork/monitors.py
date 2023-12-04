@@ -4,6 +4,7 @@ import torch
 class Monitor():
     def __init__(self):
         self.reset()
+        self.name = self.__class__.__name__
 
     def reset(self):
         raise NotImplementedError
@@ -161,6 +162,7 @@ class MeanFiringRateMonitor(Monitor):
     def __init__(self, group):
         super().__init__()
         self.group = group
+        self.name = "mfr_" + group.name
 
     def reset(self):
         self.data = []

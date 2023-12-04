@@ -177,15 +177,12 @@ class RecurrentSpikingModel(nn.Module):
         self.reset_states(cur_batch_size)
         self.input_group.feed_data(x_batch)
         for t in range(self.nb_time_steps):
-            print('timestep', t)
             sg_design_lif.fluctuations.stork.nodes.base.CellGroup.clk = t
             self.evolve_all()
             self.propagate_all()
             self.execute_all()
             if record:
                 self.monitor_all()
-                # print(self.monitors)
-                print(self.monitors[0].get_data())
 
         self.out = self.output_group.get_out_sequence()
         return self.out
@@ -220,14 +217,25 @@ class RecurrentSpikingModel(nn.Module):
         self.train(train_mode)
         self.prepare_data(test_dataset)
         metrics = []
+
+        monitoring_i = {m.name: [] for m in self.monitors}
         for local_X, local_y in self.data_generator(test_dataset, shuffle=False):
+            for m in self.monitors:
+                m.reset()
+
             output = self.forward_pass(local_X, cur_batch_size=len(local_X), record=monitor)
             total_loss = self.get_total_loss(output, local_y)
+
+            for m in self.monitors:
+                monitoring_i[m.name].append(m.get_data().float())
+
             # store loss and other metrics
             metrics.append(
                 [self.out_loss.item(), self.reg_loss.item()] + self.loss_stack.metrics)
             if shorten:
                 break
+
+        self.monitoring_i = {k: np.mean(v) for k, v in monitoring_i.items()}
 
         return np.mean(np.array(metrics), axis=0)
 
@@ -259,7 +267,7 @@ class RecurrentSpikingModel(nn.Module):
         self.prepare_data(dataset)
         metrics = []
         for epoch, (local_X, local_y) in enumerate(self.data_generator(dataset, shuffle=shuffle)):
-            print('epoch', epoch)
+
             output = self.forward_pass(local_X, cur_batch_size=len(local_X))
             total_loss = self.get_total_loss(output, local_y)
 
@@ -294,8 +302,7 @@ class RecurrentSpikingModel(nn.Module):
         " Create metrics history dict. """
         s = ""
         names = self.get_metric_names(prefix, postfix)
-        history = {name: metrics_array[:, k] for k, name in enumerate(names)}
-        print(history)
+        history = {name: metrics_array[:, k].tolist() for k, name in enumerate(names)}
         return history
 
     def prime(self, dataset, nb_epochs=10, verbose=True, wandb=None):
@@ -350,6 +357,8 @@ class RecurrentSpikingModel(nn.Module):
         best_val_epoch = -1
         best_acc = 0
         best_acc_epoch = -1
+
+        monitoring = {m.name: [] for m in self.monitors}
         for ep in tqdm(range(nb_epochs)):
 
             if not stop_time is None and time.perf_counter() > stop_time:
@@ -366,6 +375,10 @@ class RecurrentSpikingModel(nn.Module):
 
             self.train(False)
             ret_valid = self.evaluate(valid_dataset, shorten=shorten, monitor=monitor)
+
+            for k, v in self.monitoring_i.items():
+                monitoring[k].append(v)
+
             self.hist_train.append(ret_train)
             self.hist_valid.append(ret_valid)
 
@@ -387,17 +400,17 @@ class RecurrentSpikingModel(nn.Module):
                 print("%02i %s --%s t_iter=%.2f" % (
                     ep, self.get_metrics_string(ret_train), self.get_metrics_string(ret_valid, prefix="val_"), t_iter))
 
-            if shorten:
+            if shorten and ep > 1:
                 break
 
         self.hist = np.concatenate(
             (np.array(self.hist_train), np.array(self.hist_valid)))
         self.fit_runs.append(self.hist)
         dict1 = self.get_metrics_history_dict(
-            np.array(self.hist_train), prefix="")
+            np.array(self.hist_train), prefix="train_")
         dict2 = self.get_metrics_history_dict(
-            np.array(self.hist_valid), prefix="val_")
-        history = {**dict1, **dict2}
+            np.array(self.hist_valid), prefix="valid_")
+        history = {**dict1, **dict2, **monitoring}
         return history
 
     def get_probabilities(self, x_input):

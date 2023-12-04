@@ -218,7 +218,7 @@ def main(args):
             li += 1
 
             # Generate Layer name and config
-            name = f'Neuron Block {bi} Conv {ci}'
+            name = f'Neuron_b{bi}c{ci}' # f'Neuron Block {bi} Conv {ci}'
             ksi = kernel_size[li] if isinstance(kernel_size, list) else kernel_size
             si = stride[li] if isinstance(stride, list) else stride
             pi = padding[li] if isinstance(padding, list) else padding
@@ -331,10 +331,9 @@ def main(args):
         shorten='test' in args.comments
     )
 
-    results["train_loss"] = history["loss"].tolist()
-    results["train_acc"] = history["acc"].tolist()
-    results["valid_loss"] = history["val_loss"].tolist()
-    results["valid_acc"] = history["val_acc"].tolist()
+    print('history', history)
+
+    results.update(history)
 
     # Free up some GPU space and clear cache
     # This might not be necessary for you if your GPU has enough memory
@@ -388,6 +387,7 @@ def main(args):
         plotpath = os.path.join(args.log_dir, 'post_activity.png')
         fig.savefig(plotpath, dpi=300)
 
+    print(json.dumps(results, indent=4, cls=NumpyEncoder))
     return results
 
 
