@@ -81,15 +81,15 @@ def parse_args():
     parser.add_argument('--params_file', type=str, default='',
                         help='Path to parameters file to load. Ignored if resuming from checkpoint')
     parser.add_argument('--no_save', dest='no_save', action='store_false',
-                        help='Set this flag if you don\'t want to save results')
+                        help=r'Set this flag if you don\'t want to save results')
     parser.add_argument('--save_dir', type=str, default='default', help='Name of subdirectory to save results in')
     parser.add_argument('--verbose', type=bool, default=False, help='print verbose outputs')
     parser.add_argument('--seed', type=int, default=-1, help='CPU and GPU seed')
     parser.add_argument('--no_train', dest='no_train', action='store_true', help='Train model (useful for resume)')
-    parser.add_argument('--comments', type=str, default='test_condI_continuous_normcurv_oningrad_adabelief', help='String to activate extra behaviors')
+    parser.add_argument('--comments', type=str, default='test_condI_continuous_normcurv_oningrad', help='String to activate extra behaviors')
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
-    parser.add_argument('--datasetname', type=str, default='dvs', help='Dataset to use', choices=['dvs', 'nmnist'])
+    parser.add_argument('--datasetname', type=str, default='nmnist', help='Dataset to use', choices=['dvs', 'nmnist'])
 
     parsed, unknown = parser.parse_known_args()
 

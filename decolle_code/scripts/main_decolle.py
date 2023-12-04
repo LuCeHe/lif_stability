@@ -9,22 +9,19 @@
 # Copyright : (c) UC Regents, Emre Neftci
 # Licence : GPLv2
 # -----------------------------------------------------------------------------
-import json, shutil, time
+import copy
+import json, shutil, time, socket, os
+import numpy as np
+import torch
 
 from pyaromatics.stay_organized.utils import NumpyEncoder, str2val
 from pyaromatics.torch_tools.esoteric_optimizers.adabelief import AdaBelief
 from sg_design_lif.decolle_code.decolle.base_model import LIFLayerPlus
 from sg_design_lif.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
 from sg_design_lif.decolle_code.torchneuromorphic.dvs_gestures import dvsgestures_dataloaders
-from sg_design_lif.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss, LIFLayerVariableTau, \
-    LIFLayer
+from sg_design_lif.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss
 from sg_design_lif.decolle_code.decolle.utils import parse_args, train, test, accuracy, save_checkpoint, \
     load_model_from_checkpoint, prepare_experiment, write_stats, cross_entropy_one_hot
-import datetime, os, socket, tqdm
-import numpy as np
-import torch
-import importlib
-import os
 
 CDIR = os.path.dirname(os.path.realpath(__file__))
 DATADIR = os.path.abspath(os.path.join(CDIR, '..', '..', '..', 'data'))
@@ -139,6 +136,7 @@ def main(args):
     else:
         opt_fn = torch.optim.Adamax
     lr = str2val(args.comments, 'lr', float, default=params['learning_rate'])
+    print('Learning rate = {}'.format(lr))
 
     if hasattr(params['learning_rate'], '__len__'):
         from sg_design_lif.decolle_code.decolle.utils import MultiOpt
@@ -192,11 +190,13 @@ def main(args):
 
     print('\n------Starting training with {} DECOLLE layers-------'.format(len(net)))
 
+    best_net = copy.deepcopy(net)
     # --------TRAINING LOOP----------
     if not args.no_train:
         train_losses = []
         val_losses = []
         val_accs = []
+        bad_test_acc = []
         val_acc_hist = []
         best_loss = np.inf
         best_loss_epoch = -1
@@ -226,6 +226,10 @@ def main(args):
             val_losses.append(val_loss)
             val_accs.append(val_acc)
 
+            _, bad_tacc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True,
+                               shorten='test' in args.comments)
+            bad_test_acc.append(bad_tacc)
+
             if min(val_loss) < best_loss:
                 best_loss = min(val_loss)
                 best_loss_epoch = e
@@ -233,6 +237,7 @@ def main(args):
             if max(val_acc) > best_acc:
                 best_acc = max(val_acc)
                 best_acc_epoch = e
+                best_net = copy.deepcopy(net)
 
             if not args.no_save:
                 write_stats(e, val_acc, val_loss, writer)
@@ -246,7 +251,7 @@ def main(args):
                 for i in range(len(net)):
                     writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)
 
-            results.update(train_losses=train_losses, val_loss=val_losses, val_acc=val_accs)
+            results.update(train_losses=train_losses, val_loss=val_losses, val_acc=val_accs, bad_test_acc=bad_test_acc)
             if time.perf_counter() > stop_time:
                 print('Time assigned to this job is over, stopping')
                 break
@@ -255,7 +260,7 @@ def main(args):
                 print('Early stopping')
                 break
 
-    test_loss, test_acc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True,
+    test_loss, test_acc = test(gen_test, decolle_loss, best_net, params['burnin_steps'], print_error=True,
                                shorten='test' in args.comments)
     results.update(test_loss=test_loss, test_acc=test_acc)
 
