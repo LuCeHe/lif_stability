@@ -4,7 +4,7 @@ import torch
 class ActivityRegularizer:
     """ Abstract base class for activity regularizers. """
 
-    def __init__(self, strength=1.0, threshold=0.0, dims=-1, sum_or_mean='sum'):
+    def __init__(self, strength=1.0, threshold=0.0, dims=-1, sum_or_mean='sum', reglag=-1):
         """ Constructor
 
         Args:
@@ -20,6 +20,7 @@ class ActivityRegularizer:
         self.strength = float(strength)
         self.threshold = float(threshold)
         self.dims = dims
+        self.reglag = reglag
 
         # Assert that dimensions is either False, int, tuple or list
         if self.dims:
@@ -27,23 +28,24 @@ class ActivityRegularizer:
 
         self.sumean = torch.sum if sum_or_mean == 'sum' else torch.mean
 
-    def __call__(self, group):
+    def __call__(self, group, epoch=None):
         """ Expects input with (batch x time x units) """
-        act = group.get_out_sequence()      # get output
-        cnt = self.sumean(act, dim=1)         # get spikecount
+        act = group.get_out_sequence()  # get output
+        cnt = self.sumean(act, dim=1)  # get spikecount
 
         # if population-level regularizer, calculate mean across defined dims
         if self.dims:
             cnt = torch.mean(cnt, dim=self.dims)
 
-        return self.calc_regloss(cnt)
+        regloss = self.calc_regloss(cnt) if epoch > self.reglag else 0
+        return regloss
 
     def calc_regloss(self, cnt):
         """
         Args: cnt:    Spikecount
         """
         reg = cnt - self.threshold
-        reg_loss = self.strength*torch.mean(torch.square(reg))
+        reg_loss = self.strength * torch.mean(torch.square(reg))
         return reg_loss
 
 
@@ -51,8 +53,8 @@ class ActivityRegularizerL1(ActivityRegularizer):
     """ Penalizes activity above and below threshold """
 
     def calc_regloss(self, cnt):
-        reg = cnt-self.threshold
-        reg_loss = self.strength*torch.mean(torch.abs(reg))
+        reg = cnt - self.threshold
+        reg_loss = self.strength * torch.mean(torch.abs(reg))
         return reg_loss
 
 
@@ -60,8 +62,8 @@ class UpperBoundL1(ActivityRegularizer):
     """ Provides an upper bound L1 regularizer on the spike count """
 
     def calc_regloss(self, cnt):
-        reg = torch.relu(cnt-self.threshold)
-        reg_loss = self.strength*torch.mean(torch.abs(reg))
+        reg = torch.relu(cnt - self.threshold)
+        reg_loss = self.strength * torch.mean(torch.abs(reg))
         return reg_loss
 
 
@@ -69,8 +71,8 @@ class LowerBoundL1(ActivityRegularizer):
     """ Provides a lower bound L1 regularizer on the spike count """
 
     def calc_regloss(self, cnt):
-        reg = torch.relu(-(cnt-self.threshold))
-        reg_loss = self.strength*torch.mean(torch.abs(reg))
+        reg = torch.relu(-(cnt - self.threshold))
+        reg_loss = self.strength * torch.mean(torch.abs(reg))
         return reg_loss
 
 
@@ -78,8 +80,8 @@ class UpperBoundL2(ActivityRegularizer):
     """ Provides an upper bound L2 regularizer on the spike count """
 
     def calc_regloss(self, cnt):
-        reg = torch.relu(cnt-self.threshold)
-        reg_loss = self.strength*torch.mean(torch.square(reg))
+        reg = torch.relu(cnt - self.threshold)
+        reg_loss = self.strength * torch.mean(torch.square(reg))
         return reg_loss
 
 
@@ -87,8 +89,8 @@ class LowerBoundL2(ActivityRegularizer):
     """ Provides a lower bound L2 regularizer on the spike count """
 
     def calc_regloss(self, cnt):
-        reg = torch.relu(-(cnt-self.threshold))
-        reg_loss = self.strength*torch.mean(torch.square(reg))
+        reg = torch.relu(-(cnt - self.threshold))
+        reg_loss = self.strength * torch.mean(torch.square(reg))
         return reg_loss
 
 
@@ -105,7 +107,7 @@ class WeightL2Regularizer:
 
     def __call__(self, w):
         """ Expects input with weights (channels x stuff) """
-        return self.strength*torch.mean(w**2)
+        return self.strength * torch.mean(w ** 2)
 
 
 class WeightL1Regularizer:
@@ -121,4 +123,4 @@ class WeightL1Regularizer:
 
     def __call__(self, w):
         """ Expects input with weights (channels x stuff) """
-        return self.strength*torch.mean(torch.abs(w))
+        return self.strength * torch.mean(torch.abs(w))

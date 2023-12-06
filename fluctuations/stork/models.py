@@ -21,6 +21,7 @@ class RecurrentSpikingModel(nn.Module):
 
         self.device = device
         self.dtype = dtype
+        self.epoch=-1
 
         self.fit_runs = []
 
@@ -160,7 +161,7 @@ class RecurrentSpikingModel(nn.Module):
     def compute_regularizer_losses(self):
         reg_loss = torch.zeros(1, device=self.device)
         for g in self.groups:
-            reg_loss += g.get_regularizer_loss()
+            reg_loss += g.get_regularizer_loss(epoch=self.epoch)
         for c in self.connections:
             reg_loss += c.get_regularizer_loss()
         return reg_loss
@@ -360,6 +361,7 @@ class RecurrentSpikingModel(nn.Module):
 
         monitoring = {m.name: [] for m in self.monitors}
         for ep in tqdm(range(nb_epochs)):
+            self.epoch=ep
 
             if not stop_time is None and time.perf_counter() > stop_time:
                 print('Time limit reached, stopping training')

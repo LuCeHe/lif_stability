@@ -253,6 +253,7 @@ class FluctuationDrivenNormalInitializer(Initializer):
                  timestep,
                  epsilon_calc_mode='numerical',
                  alpha=0.9,
+                 epsilon=-1,
                  **kwargs):
 
         super().__init__(scaling=None,  # None, as scaling is implemented in the weight sampling
@@ -264,6 +265,7 @@ class FluctuationDrivenNormalInitializer(Initializer):
         self.timestep = timestep
         self.epsilon_calc_mode = epsilon_calc_mode
         self.alpha = alpha
+        self.epsilon = epsilon
 
     def _calc_epsilon(self, dst):
         """
@@ -322,7 +324,10 @@ class FluctuationDrivenNormalInitializer(Initializer):
 
         theta = 1.0  # Theta (firing threshold) is hardcoded as in the LIFGroup code
 
-        ebar, ehat = self._calc_epsilon(dst)
+        if self.epsilon < 0:
+            ebar, ehat = self._calc_epsilon(dst)
+        else:
+            ebar, ehat = self.epsilon, self.epsilon
 
         # Read out some properties of the afferent connections
         nb_recurrent = len([c for c in dst.afferents if c.is_recurrent])

@@ -137,6 +137,16 @@ def main(args):
         thr = str2val(args.comments, 'regp5', float, default=0.5)
         reg_kwargs.update({'sum_or_mean': 'mean', 'threshold': thr})
 
+
+    if 'reglag' in args.comments:
+        if args.dataset == 'cifar10':
+            reglag = 10
+        else:
+            reglag = 40
+        reg_kwargs.update({'reglag': reglag})
+
+
+
     regUB = stork.regularizers.UpperBoundL2(**reg_kwargs)
     regs.append(regUB)
 
@@ -148,11 +158,14 @@ def main(args):
 
     if 'muchange' in args.comments:
         mu = str2val(args.comments, 'muchange', float, default=1.)
+        nu = str2val(args.comments, 'nu', float, default=nu)
+        epsilon = str2val(args.comments, 'eps', float, default=-1)
 
         initializer = FluctuationDrivenNormalInitializer(
             mu_u=mu,
             xi=1 / sigma_u,
             nu=nu,
+            epsilon=epsilon,
             timestep=dt,
             alpha=.9
         )
@@ -410,7 +423,7 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='cifar10', help='Name of dataset to use',
                         choices=datasets_available)
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
-    parser.add_argument('--comments', type=str, default='test_smorms3_deep_condIV_muchange_lr:0.005',
+    parser.add_argument('--comments', type=str, default='test_reglag_smorms3_deep_condIV_muchange_lr:0.005',
                         help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=2000, type=int, help="Stop time (seconds)")
     parser.add_argument('--log_dir', type=str, default=log_dir, help='Name of subdirectory to save results in')

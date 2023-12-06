@@ -13,7 +13,7 @@ def default_shd(deep=False):
         'dropout_p': 0.0,
         'batch_size': 400,
         'lr': 5e-3,
-        'epochs': 200,
+        'epochs': 300,
         'upperBoundL2Threshold': 7,
         'nu': 15.8,
     }
@@ -44,7 +44,7 @@ def default_cifar10(deep=False):
         'dropout_p': 0.0,
         'batch_size': 16,  # 128
         'lr': 5e-3,
-        'epochs': 100,
+        'epochs': 200,
         'upperBoundL2Threshold': 10,
         'nu': 9.2,
     }
@@ -72,7 +72,7 @@ def default_dvs(deep=False):
         'dropout_p': 0.0,
         'batch_size': 8,  # 16
         'lr': 5e-3,
-        'epochs': 100,
+        'epochs': 200,
         'upperBoundL2Threshold': 10,
         'nu': 9.2,
     }
