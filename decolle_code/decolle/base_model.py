@@ -101,10 +101,8 @@ class BaseLIFLayer(nn.Module):
         self.do_detach = do_detach
         self.gain = gain
 
-
         characters = string.ascii_letters + string.digits
         self.id = ''.join(random.choice(characters) for _ in range(5))
-
 
     def cuda(self, device=None):
         '''
@@ -228,12 +226,14 @@ class LIFLayer(BaseLIFLayer):
         P = self.alpha * state.P + (1 - self.alpha) * state.Q
         R = self.alpharp * state.R - (1 - self.alpharp) * state.S * self.wrp
         U = self.base_layer(P) + R
-        print('here')
-        print('id', self.id)
-        print('w stats', self.base_layer.weight.mean(), self.base_layer.weight.std())
-        print('U stats', U.mean(), U.std())
         S = self.sg_function(U)
-        print('S stats', S.mean(), S.std())
+
+        # print('here')
+        # print('id', self.id)
+        # print('w stats', self.base_layer.weight.mean(), self.base_layer.weight.std())
+        # print('U stats', U.mean(), U.std())
+        # print('S stats', S.mean(), S.std())
+
         self.state = self.NeuronState(P=P, Q=Q, R=R, S=S)
         if self.do_detach:
             state_detach(self.state)
@@ -554,7 +554,7 @@ class DECOLLELoss(object):
     def __len__(self):
         return self.nlayers
 
-    def __call__(self, s, r, u, target, mask=1, sum_=True):
+    def __call__(self, s, r, u, target, mask=1, sum_=True, epoch=0):
         loss_tv = []
         for i, loss_layer in enumerate(self.loss_fn):
             if loss_layer is not None:
@@ -564,6 +564,45 @@ class DECOLLELoss(object):
                     reg1_loss = self.reg_l[i] * ((relu(uflat + .01) * mask)).mean()
                     reg2_loss = self.reg_l[i] * 3e-3 * relu((mask * (.1 - sigmoid(uflat))).mean())
                     loss_tv[-1] += reg1_loss + reg2_loss
+
+        if sum_:
+            return sum(loss_tv)
+        else:
+            return loss_tv
+
+
+class frDECOLLELoss(object):
+    def __init__(self, loss_fn, net, frfrom=None, frto=None, switchep=5):
+        self.loss_fn = loss_fn
+        self.nlayers = len(net)
+        self.num_losses = len([l for l in loss_fn if l is not None])
+        self.loss_layer = [i for i, l in enumerate(loss_fn) if l is not None]
+        if len(loss_fn) != self.nlayers:
+            warnings.warn(
+                "Mismatch is in number of loss functions and layers. You need to specify one loss function per layer")
+
+        assert frfrom is None or 0 <= frfrom <= 1
+        assert frto is None or 0 <= frto <= 1
+        self.frfrom = frfrom
+        self.frto = frto
+        self.switchep = switchep
+
+    def __len__(self):
+        return self.nlayers
+
+    def __call__(self, s, r, u, target, mask=1, sum_=True, epoch=0):
+        loss_tv = []
+        for i, loss_layer in enumerate(self.loss_fn):
+            if loss_layer is not None:
+                loss_tv.append(loss_layer(r[i] * mask, target * mask))
+
+                if self.frfrom is not None:
+                    if epoch <= self.switchep:
+                        loss_tv[-1] += .1 * torch.mean(torch.abs(s[i] - self.frfrom))
+
+                if self.frto is not None:
+                    if epoch > self.switchep:
+                        loss_tv[-1] += .1 * torch.mean(torch.abs(s[i] - self.frto))
 
         if sum_:
             return sum(loss_tv)

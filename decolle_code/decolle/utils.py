@@ -86,7 +86,8 @@ def parse_args():
     parser.add_argument('--verbose', type=bool, default=False, help='print verbose outputs')
     parser.add_argument('--seed', type=int, default=-1, help='CPU and GPU seed')
     parser.add_argument('--no_train', dest='no_train', action='store_true', help='Train model (useful for resume)')
-    parser.add_argument('--comments', type=str, default='test_condI_continuous_normcurv_oningrad', help='String to activate extra behaviors')
+    parser.add_argument('--comments', type=str, default='test_frcontrol_frfrom:.5',
+                        help='String to activate extra behaviors')
     # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
     parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
     parser.add_argument('--datasetname', type=str, default='nmnist', help='Dataset to use', choices=['dvs', 'nmnist'])
@@ -271,7 +272,7 @@ def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, 
     device = net.get_input_layer_device()
     iter_gen_train = iter(gen_train)
     total_loss = np.zeros(decolle_loss.num_losses)
-    act_rate = [0 for i in range(len(net))]
+    act_rate = [0 for _ in range(len(net))]
 
     loss_tv = torch.tensor(0.).to(device)
     net.train()
@@ -297,7 +298,8 @@ def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, 
         t_sample = data_batch.shape[1]
         for k in (range(burnin, t_sample)):
             s, r, u = net.step(data_batch[:, k, :, :])
-            loss_ = decolle_loss(s, r, u, target=target_batch[:, k, :], mask=loss_mask[:, k, :], sum_=False)
+            loss_ = decolle_loss(s, r, u, target=target_batch[:, k, :], mask=loss_mask[:, k, :], sum_=False,
+                                 epoch=epoch)
             total_loss += tonp(torch.tensor(loss_))
             loss_tv += sum(loss_)
             if online_update:
@@ -305,14 +307,15 @@ def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, 
                 opt.step()
                 opt.zero_grad()
                 for i in range(len(net)):
-                    act_rate[i] += tonp(s[i].mean().data) / t_sample
+                    act_rate[i] += tonp(s[i].mean().data) / (t_sample - burnin)
                 loss_tv = torch.tensor(0.).to(device)
+
         if not online_update:
             loss_tv.backward()
             opt.step()
             opt.zero_grad()
             for i in range(len(net)):
-                act_rate[i] += tonp(s[i].mean().data) / t_sample
+                act_rate[i] += tonp(s[i].mean().data) / (t_sample - burnin)
             loss_tv = torch.tensor(0.).to(device)
         batch_iter += 1
         if batches_per_epoch > 0:
@@ -323,10 +326,11 @@ def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, 
     total_loss /= t_sample
     print('Loss {0}'.format(total_loss))
     print('Activity Rate {0}'.format(act_rate))
+    # print('t_sample', t_sample)
     return total_loss, act_rate
 
 
-def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False, shorten=False):
+def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False, shorten=False, epoch=0):
     net.eval()
     if hasattr(net.LIF_layers[0], 'base_layer'):
         dtype = net.LIF_layers[0].base_layer.weight.dtype
@@ -356,7 +360,7 @@ def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False, sho
 
             for k in (range(burnin, timesteps)):
                 s, r, u = net.step(data_batch[:, k, :, :])
-                test_loss_tv = decolle_loss(s, r, u, target=target_batch[:, k], sum_=False)
+                test_loss_tv = decolle_loss(s, r, u, target=target_batch[:, k], sum_=False, epoch=epoch)
                 test_loss += [tonp(x) for x in test_loss_tv]
                 for l, n in enumerate(decolle_loss.loss_layer):
                     r_cum[l, k - burnin, :, :] += tonp(sigmoid(r[n]))

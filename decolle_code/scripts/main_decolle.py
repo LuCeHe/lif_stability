@@ -16,7 +16,7 @@ import torch
 
 from pyaromatics.stay_organized.utils import NumpyEncoder, str2val
 from pyaromatics.torch_tools.esoteric_optimizers.adabelief import AdaBelief
-from sg_design_lif.decolle_code.decolle.base_model import LIFLayerPlus
+from sg_design_lif.decolle_code.decolle.base_model import LIFLayerPlus, frDECOLLELoss
 from sg_design_lif.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
 from sg_design_lif.decolle_code.torchneuromorphic.dvs_gestures import dvsgestures_dataloaders
 from sg_design_lif.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss
@@ -154,17 +154,23 @@ def main(args):
 
     print('reg', params['loss_scope'], reg_l)
     if 'loss_scope' in params and params['loss_scope'] == 'global':
-        loss = [None for i in range(len(net))]
+        loss = [None for _ in range(len(net))]
         if net.with_output_layer:
             loss[-1] = cross_entropy_one_hot
         else:
             raise RuntimeError('bptt mode needs output layer')
-        decolle_loss = DECOLLELoss(net=net, loss_fn=loss, reg_l=reg_l)
     else:
-        loss = [torch.nn.SmoothL1Loss() for i in range(len(net))]
+        loss = [torch.nn.SmoothL1Loss() for _ in range(len(net))]
         if net.with_output_layer:
             loss[-1] = cross_entropy_one_hot
-        decolle_loss = DECOLLELoss(net=net, loss_fn=loss, reg_l=reg_l)
+
+    decolle_loss = DECOLLELoss(net=net, loss_fn=loss, reg_l=reg_l)
+    if 'frcontrol' in args.comments:
+        frfrom = str2val(args.comments, 'frfrom', float, default=None)
+        frto = str2val(args.comments, 'frto', float, default=None)
+        switchep = str2val(args.comments, 'switchep', int, default=5)
+
+        decolle_loss = frDECOLLELoss(net=net, loss_fn=loss, frfrom=frfrom, frto=frto, switchep=switchep)
 
     ##Initialize
     net.init_parameters(data_batch[:32])
@@ -199,6 +205,7 @@ def main(args):
         val_accs = []
         bad_test_acc = []
         val_acc_hist = []
+        activities = []
         best_loss = np.inf
         best_loss_epoch = -1
         best_acc = 0
@@ -222,13 +229,13 @@ def main(args):
                 save_checkpoint(e, checkpoint_dir, net, opt)
 
             val_loss, val_acc = test(gen_val, decolle_loss, net, params['burnin_steps'], print_error=True,
-                                     shorten='test' in args.comments)
+                                     shorten='test' in args.comments, epoch=e)
             val_acc_hist.append(val_acc)
             val_losses.append(val_loss)
             val_accs.append(val_acc)
 
             _, bad_tacc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True,
-                               shorten='test' in args.comments)
+                               shorten='test' in args.comments, epoch=e)
             bad_test_acc.append(bad_tacc)
 
             if min(val_loss) < best_loss:
@@ -248,6 +255,12 @@ def main(args):
                                          online_update=params['online_update'], shorten='test' in args.comments)
             train_losses.append(total_loss)
 
+            if len(activities) == 0:  # suggest
+                activities = [[] for _ in act_rate]
+
+            for frs, fr in zip(activities, act_rate):
+                frs.append(fr)
+
             if not args.no_save:
                 for i in range(len(net)):
                     writer.add_scalar('/act_rate/{0}'.format(i), act_rate[i], e)
@@ -264,6 +277,9 @@ def main(args):
     test_loss, test_acc = test(gen_test, decolle_loss, best_net, params['burnin_steps'], print_error=True,
                                shorten='test' in args.comments)
     results.update(test_loss=test_loss, test_acc=test_acc)
+
+    for i, act in enumerate(activities):
+        results[f'fr_{i}'] = act
 
     return args, results
 
@@ -285,17 +301,17 @@ if __name__ == '__main__':
             if os.path.exists(os.path.join(args.log_dir, e)):
                 os.remove(os.path.join(args.log_dir, e))
 
-    print(args)
-    # remove checkpoints folder
+                # remove checkpoints folder
     if os.path.exists(os.path.join(args.log_dir, 'checkpoints')):
         shutil.rmtree(os.path.join(args.log_dir, 'checkpoints'))
 
     args_dict = args.__dict__
     for d in [args_dict, results]:
-        print(d)
         string_result = json.dumps(d, indent=4, cls=NumpyEncoder)
         var_name = [k for k, v in locals().items() if v is d if not k == 'd'][0]
         print(var_name)
+        # print(d.name)
+        print(string_result)
 
         path = os.path.join(args.log_dir, var_name + '.txt')
         with open(path, "w") as f:
