@@ -44,11 +44,11 @@ def main(args):
     checkpoint_dir = dirs['checkpoint_dir']
 
     if 'test' in args.comments:
-        params['Nhid'] = [11, 17, 4]
+        params['Nhid'] = [50, 40]
         params['Mhid'] = [11]
         params['batch_size'] = 16
         params['num_layers'] = 3
-        params['num_conv_layers'] = 3
+        params['num_conv_layers'] = 2
 
     # print args with json
     args.__dict__.update(dirs)
@@ -152,6 +152,7 @@ def main(args):
 
     reg_l = params['reg_l'] if 'reg_l' in params else None
 
+    print('reg', params['loss_scope'], reg_l)
     if 'loss_scope' in params and params['loss_scope'] == 'global':
         loss = [None for i in range(len(net))]
         if net.with_output_layer:

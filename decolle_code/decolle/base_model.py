@@ -12,6 +12,7 @@
 # Licence : GPLv2
 # -----------------------------------------------------------------------------
 
+import string, random
 import torch.nn as nn
 import torch
 import numpy as np
@@ -99,6 +100,11 @@ class BaseLIFLayer(nn.Module):
         self.state = None
         self.do_detach = do_detach
         self.gain = gain
+
+
+        characters = string.ascii_letters + string.digits
+        self.id = ''.join(random.choice(characters) for _ in range(5))
+
 
     def cuda(self, device=None):
         '''
@@ -222,7 +228,12 @@ class LIFLayer(BaseLIFLayer):
         P = self.alpha * state.P + (1 - self.alpha) * state.Q
         R = self.alpharp * state.R - (1 - self.alpharp) * state.S * self.wrp
         U = self.base_layer(P) + R
+        print('here')
+        print('id', self.id)
+        print('w stats', self.base_layer.weight.mean(), self.base_layer.weight.std())
+        print('U stats', U.mean(), U.std())
         S = self.sg_function(U)
+        print('S stats', S.mean(), S.std())
         self.state = self.NeuronState(P=P, Q=Q, R=R, S=S)
         if self.do_detach:
             state_detach(self.state)

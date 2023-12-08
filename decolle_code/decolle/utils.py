@@ -100,9 +100,6 @@ def parse_args():
 
     args = parser.parse_args()
 
-    if args.no_save:
-        print('!!!!WARNING!!!!\n\nRESULTS OF THIS TRAINING WILL NOT BE SAVED\n\n!!!!WARNING!!!!\n\n')
-
     if args.datasetname == 'dvs':
         args.params_file = params_dvs
     else:
@@ -112,7 +109,7 @@ def parse_args():
 
 
 def prepare_experiment(name, args):
-    from tensorboardX import SummaryWriter
+    # from tensorboardX import SummaryWriter
     if args.resume_from is None:
         params_file = args.params_file
         log_dir = 'nosave'
