@@ -583,6 +583,7 @@ class frDECOLLELoss(object):
 
         assert frfrom is None or 0 <= frfrom <= 1
         assert frto is None or 0 <= frto <= 1
+
         self.frfrom = frfrom
         self.frto = frto
         self.switchep = switchep
@@ -598,11 +599,11 @@ class frDECOLLELoss(object):
 
                 if self.frfrom is not None:
                     if epoch <= self.switchep:
-                        loss_tv[-1] += .1 * torch.mean(torch.abs(s[i] - self.frfrom))
+                        loss_tv[-1] += .1 * torch.abs(torch.mean(s[i]) - self.frfrom)
 
                 if self.frto is not None:
                     if epoch > self.switchep:
-                        loss_tv[-1] += .1 * torch.mean(torch.abs(s[i] - self.frto))
+                        loss_tv[-1] += .1 * torch.abs(torch.mean(s[i]) - self.frto)
 
         if sum_:
             return sum(loss_tv)
