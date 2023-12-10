@@ -69,46 +69,6 @@ def print_params(params):
         print('{}{} : {}'.format(k, ' ' * (m - len(k)), v))
 
 
-def parse_args():
-    PPATH = os.path.abspath(os.path.join(CDIR, '..', 'scripts', 'parameters'))
-    params_dvs = os.path.join(PPATH, 'params_dvsgestures_torchneuromorphic.yml')
-    params_nmnist = os.path.join(PPATH, 'params_nmnist.yml')
-
-    parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
-    parser.add_argument('--device', type=str, default='cuda', help='Device to use (cpu or cuda)')
-    parser.add_argument('--resume_from', type=str, default=None, metavar='path_to_logdir',
-                        help='Path to a previously saved checkpoint')
-    parser.add_argument('--params_file', type=str, default='',
-                        help='Path to parameters file to load. Ignored if resuming from checkpoint')
-    parser.add_argument('--no_save', dest='no_save', action='store_false',
-                        help=r'Set this flag if you don\'t want to save results')
-    parser.add_argument('--save_dir', type=str, default='default', help='Name of subdirectory to save results in')
-    parser.add_argument('--verbose', type=bool, default=False, help='print verbose outputs')
-    parser.add_argument('--seed', type=int, default=-1, help='CPU and GPU seed')
-    parser.add_argument('--no_train', dest='no_train', action='store_true', help='Train model (useful for resume)')
-    parser.add_argument('--comments', type=str, default='test_frcontrol_frfrom:.5',
-                        help='String to activate extra behaviors')
-    # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
-    parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
-    parser.add_argument('--datasetname', type=str, default='nmnist', help='Dataset to use', choices=['dvs', 'nmnist'])
-
-    parsed, unknown = parser.parse_known_args()
-
-    for arg in unknown:
-        if arg.startswith(("-", "--")):
-            # you can pass any arguments to add_argument
-            parser.add_argument(arg, type=str)
-
-    args = parser.parse_args()
-
-    if args.datasetname == 'dvs':
-        args.params_file = params_dvs
-    else:
-        args.params_file = params_nmnist
-
-    return args
-
-
 def prepare_experiment(name, args):
     # from tensorboardX import SummaryWriter
     if args.resume_from is None:
@@ -263,8 +223,8 @@ def train(gen_train, decolle_loss, net, opt, epoch, burnin, online_update=True, 
     Arguments: 
     gen_train: a dataloader 
     decolle_loss: a DECOLLE loss function, as defined in base_model 
-    net: DECOLLE network 
-    opt: optimizaer 
+    net: DECOLLE network
+    opt: optimizer
     epoch: epoch number, for printing purposes only 
     burnin: time during which the dynamics will be run, but no updates are made 
     online_update: whether updates should be made at every timestep or at the end of the sequence. 
@@ -342,8 +302,11 @@ def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False, sho
         test_res = []
         test_labels = []
         test_loss = np.zeros([decolle_loss.num_losses])
+        act_rate = [0 for _ in range(len(net))]
 
+        n_batches = 0
         for data_batch, target_batch in tqdm.tqdm(iter_data_labels, desc='Testing'):
+            n_batches +=1
             data_batch = torch.tensor(data_batch).type(dtype).to(device)
             target_batch = torch.tensor(target_batch).type(dtype).to(device)
 
@@ -364,11 +327,15 @@ def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False, sho
                 test_loss += [tonp(x) for x in test_loss_tv]
                 for l, n in enumerate(decolle_loss.loss_layer):
                     r_cum[l, k - burnin, :, :] += tonp(sigmoid(r[n]))
+
+                for i in range(len(net)):
+                    act_rate[i] += tonp(s[i].mean().data) / (timesteps - burnin)
             test_res.append(prediction_mostcommon(r_cum))
             test_labels += tonp(target_batch).sum(1).argmax(axis=-1).tolist()
             if shorten:
                 break
 
+        act_rate = [r/n_batches for r in act_rate]
         test_acc = accuracy(np.column_stack(test_res), np.column_stack(test_labels))
         test_loss /= len(gen_test)
         if print_error:
@@ -376,7 +343,7 @@ def test(gen_test, decolle_loss, net, burnin, print_error=True, debug=False, sho
     if debug:
         return test_loss, test_acc, s, r, u
     else:
-        return test_loss, test_acc
+        return test_loss, test_acc, act_rate
 
 
 def accuracy(outputs, targets, one_hot=True):

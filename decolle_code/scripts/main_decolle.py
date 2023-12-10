@@ -9,8 +9,8 @@
 # Copyright : (c) UC Regents, Emre Neftci
 # Licence : GPLv2
 # -----------------------------------------------------------------------------
-import copy
-import json, shutil, time, socket, os
+
+import json, shutil, time, socket, os, argparse, copy
 import numpy as np
 import torch
 
@@ -20,7 +20,7 @@ from sg_design_lif.decolle_code.decolle.base_model import LIFLayerPlus, frDECOLL
 from sg_design_lif.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
 from sg_design_lif.decolle_code.torchneuromorphic.dvs_gestures import dvsgestures_dataloaders
 from sg_design_lif.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss
-from sg_design_lif.decolle_code.decolle.utils import parse_args, train, test, accuracy, save_checkpoint, \
+from sg_design_lif.decolle_code.decolle.utils import train, test, accuracy, save_checkpoint, \
     load_model_from_checkpoint, prepare_experiment, write_stats, cross_entropy_one_hot
 
 CDIR = os.path.dirname(os.path.realpath(__file__))
@@ -159,6 +159,8 @@ def main(args):
             loss[-1] = cross_entropy_one_hot
         else:
             raise RuntimeError('bptt mode needs output layer')
+    elif 'allxe' in args.comments:
+        loss = [cross_entropy_one_hot for _ in range(len(net))]
     else:
         loss = [torch.nn.SmoothL1Loss() for _ in range(len(net))]
         if net.with_output_layer:
@@ -169,8 +171,9 @@ def main(args):
         frfrom = str2val(args.comments, 'frfrom', float, default=None)
         frto = str2val(args.comments, 'frto', float, default=None)
         switchep = str2val(args.comments, 'switchep', int, default=5)
+        lmbd = str2val(args.comments, 'lmbd', float, default=.1)
 
-        decolle_loss = frDECOLLELoss(net=net, loss_fn=loss, frfrom=frfrom, frto=frto, switchep=switchep)
+        decolle_loss = frDECOLLELoss(net=net, loss_fn=loss, frfrom=frfrom, frto=frto, switchep=switchep, lmbd=lmbd)
 
     ##Initialize
     net.init_parameters(data_batch[:32])
@@ -198,6 +201,8 @@ def main(args):
     print('\n------Starting training with {} DECOLLE layers-------'.format(len(net)))
 
     best_net = copy.deepcopy(net)
+    activities = []
+    val_activities = []
     # --------TRAINING LOOP----------
     if not args.no_train:
         train_losses = []
@@ -205,7 +210,6 @@ def main(args):
         val_accs = []
         bad_test_acc = []
         val_acc_hist = []
-        activities = []
         best_loss = np.inf
         best_loss_epoch = -1
         best_acc = 0
@@ -228,13 +232,20 @@ def main(args):
                 print('---------Saving checkpoint---------')
                 save_checkpoint(e, checkpoint_dir, net, opt)
 
-            val_loss, val_acc = test(gen_val, decolle_loss, net, params['burnin_steps'], print_error=True,
+            val_loss, val_acc, val_act_rate = test(gen_val, decolle_loss, net, params['burnin_steps'], print_error=True,
                                      shorten='test' in args.comments, epoch=e)
             val_acc_hist.append(val_acc)
             val_losses.append(val_loss)
             val_accs.append(val_acc)
 
-            _, bad_tacc = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True,
+            if len(val_activities) == 0:  # suggest
+                val_activities = [[] for _ in val_act_rate]
+
+            for frs, fr in zip(val_activities, val_act_rate):
+                frs.append(fr)
+
+
+            _, bad_tacc, _ = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True,
                                shorten='test' in args.comments, epoch=e)
             bad_test_acc.append(bad_tacc)
 
@@ -281,8 +292,52 @@ def main(args):
     for i, act in enumerate(activities):
         results[f'fr_{i}'] = act
 
+
+    for i, act in enumerate(val_activities):
+        results[f'val_fr_{i}'] = act
+
+
     return args, results
 
+
+def parse_args():
+    PPATH = os.path.abspath(os.path.join(CDIR, '..', 'scripts', 'parameters'))
+    params_dvs = os.path.join(PPATH, 'params_dvsgestures_torchneuromorphic.yml')
+    params_nmnist = os.path.join(PPATH, 'params_nmnist.yml')
+
+    parser = argparse.ArgumentParser(description='DECOLLE for event-driven object recognition')
+    parser.add_argument('--device', type=str, default='cuda', help='Device to use (cpu or cuda)')
+    parser.add_argument('--resume_from', type=str, default=None, metavar='path_to_logdir',
+                        help='Path to a previously saved checkpoint')
+    parser.add_argument('--params_file', type=str, default='',
+                        help='Path to parameters file to load. Ignored if resuming from checkpoint')
+    parser.add_argument('--no_save', dest='no_save', action='store_false',
+                        help=r'Set this flag if you don\'t want to save results')
+    parser.add_argument('--save_dir', type=str, default='default', help='Name of subdirectory to save results in')
+    parser.add_argument('--verbose', type=bool, default=False, help='print verbose outputs')
+    parser.add_argument('--seed', type=int, default=-1, help='CPU and GPU seed')
+    parser.add_argument('--no_train', dest='no_train', action='store_true', help='Train model (useful for resume)')
+    parser.add_argument('--comments', type=str, default='test_frcontrol_frfrom:.5_allxe',
+                        help='String to activate extra behaviors')
+    # parser.add_argument('--comments', type=str, default='test', help='String to activate extra behaviors')
+    parser.add_argument("--stop_time", default=6000, type=int, help="Stop time (seconds)")
+    parser.add_argument('--datasetname', type=str, default='nmnist', help='Dataset to use', choices=['dvs', 'nmnist'])
+
+    parsed, unknown = parser.parse_known_args()
+
+    for arg in unknown:
+        if arg.startswith(("-", "--")):
+            # you can pass any arguments to add_argument
+            parser.add_argument(arg, type=str)
+
+    args = parser.parse_args()
+
+    if args.datasetname == 'dvs':
+        args.params_file = params_dvs
+    else:
+        args.params_file = params_nmnist
+
+    return args
 
 if __name__ == '__main__':
     args = parse_args()
