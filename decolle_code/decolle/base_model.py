@@ -572,7 +572,7 @@ class DECOLLELoss(object):
 
 
 class frDECOLLELoss(object):
-    def __init__(self, loss_fn, net, frfrom=None, frto=None, switchep=5, lmbd=0.1):
+    def __init__(self, loss_fn, net, frfrom=None, frto=None, switchep=5, lmbd=0.1, onlyreg=False):
         self.loss_fn = loss_fn
         self.nlayers = len(net)
         self.num_losses = len([l for l in loss_fn if l is not None])
@@ -588,6 +588,7 @@ class frDECOLLELoss(object):
         self.frto = frto
         self.switchep = switchep
         self.lmbd = lmbd
+        self.onlyreg = onlyreg
 
     def __len__(self):
         return self.nlayers
@@ -600,11 +601,21 @@ class frDECOLLELoss(object):
 
                 if self.frfrom is not None:
                     if epoch <= self.switchep:
-                        loss_tv[-1] += self.lmbd * torch.abs(torch.mean(s[i]) - self.frfrom)
+                        reg = self.lmbd * torch.abs(torch.mean(s[i]) - self.frfrom)
+                        # loss_tv[-1] += self.lmbd * torch.abs(torch.mean(s[i]) - self.frfrom)
+                        if not self.onlyreg:
+                            loss_tv[-1] += reg
+                        else:
+                            loss_tv[-1] = reg
 
                 if self.frto is not None:
                     if epoch > self.switchep:
-                        loss_tv[-1] += self.lmbd * torch.abs(torch.mean(s[i]) - self.frto)
+                        reg = self.lmbd * torch.abs(torch.mean(s[i]) - self.frto)
+                        # loss_tv[-1] += self.lmbd * torch.abs(torch.mean(s[i]) - self.frto)
+                        if not self.onlyreg:
+                            loss_tv[-1] += reg
+                        else:
+                            loss_tv[-1] = reg
 
         if sum_:
             return sum(loss_tv)

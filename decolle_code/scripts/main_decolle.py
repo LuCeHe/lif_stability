@@ -172,15 +172,15 @@ def main(args):
         frto = str2val(args.comments, 'frto', float, default=None)
         switchep = str2val(args.comments, 'switchep', int, default=5)
         lmbd = str2val(args.comments, 'lmbd', float, default=.1)
-
-        decolle_loss = frDECOLLELoss(net=net, loss_fn=loss, frfrom=frfrom, frto=frto, switchep=switchep, lmbd=lmbd)
+        onlyreg = 'onlyreg' in args.comments
+        decolle_loss = frDECOLLELoss(net=net, loss_fn=loss, frfrom=frfrom, frto=frto, switchep=switchep, lmbd=lmbd,
+                                     onlyreg=onlyreg)
 
     ##Initialize
     net.init_parameters(data_batch[:32])
 
-    from sg_design_lif.decolle_code.decolle.init_functions import init_LSUV
-
     if not 'test' in args.comments:
+        from sg_design_lif.decolle_code.decolle.init_functions import init_LSUV
         init_LSUV(net, data_batch[:32])
 
     ##Resume if necessary
@@ -233,7 +233,7 @@ def main(args):
                 save_checkpoint(e, checkpoint_dir, net, opt)
 
             val_loss, val_acc, val_act_rate = test(gen_val, decolle_loss, net, params['burnin_steps'], print_error=True,
-                                     shorten='test' in args.comments, epoch=e)
+                                                   shorten='test' in args.comments, epoch=e)
             val_acc_hist.append(val_acc)
             val_losses.append(val_loss)
             val_accs.append(val_acc)
@@ -244,9 +244,8 @@ def main(args):
             for frs, fr in zip(val_activities, val_act_rate):
                 frs.append(fr)
 
-
             _, bad_tacc, _ = test(gen_test, decolle_loss, net, params['burnin_steps'], print_error=True,
-                               shorten='test' in args.comments, epoch=e)
+                                  shorten='test' in args.comments, epoch=e)
             bad_test_acc.append(bad_tacc)
 
             if min(val_loss) < best_loss:
@@ -286,16 +285,14 @@ def main(args):
                 break
 
     test_loss, test_acc, _ = test(gen_test, decolle_loss, best_net, params['burnin_steps'], print_error=True,
-                               shorten='test' in args.comments)
+                                  shorten='test' in args.comments)
     results.update(test_loss=test_loss, test_acc=test_acc)
 
     for i, act in enumerate(activities):
         results[f'fr_{i}'] = act
 
-
     for i, act in enumerate(val_activities):
         results[f'val_fr_{i}'] = act
-
 
     return args, results
 
@@ -338,6 +335,7 @@ def parse_args():
         args.params_file = params_nmnist
 
     return args
+
 
 if __name__ == '__main__':
     args = parse_args()
