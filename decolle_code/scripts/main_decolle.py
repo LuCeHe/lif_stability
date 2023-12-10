@@ -285,7 +285,7 @@ def main(args):
                 print('Early stopping')
                 break
 
-    test_loss, test_acc = test(gen_test, decolle_loss, best_net, params['burnin_steps'], print_error=True,
+    test_loss, test_acc, _ = test(gen_test, decolle_loss, best_net, params['burnin_steps'], print_error=True,
                                shorten='test' in args.comments)
     results.update(test_loss=test_loss, test_acc=test_acc)
 
