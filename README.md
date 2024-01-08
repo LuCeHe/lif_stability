@@ -17,6 +17,7 @@ python training.py with task_name=##x## net_name=##y##
      lr=##z## comments=embproj_nogradreset_dropout:.3_timerepeat:2_##w## 
 ```
 
+
 where ```##x##``` should be changed by one of the following three tasks ```wordptb```, ```heidelberg```, ```sl_mnist```,
 ```##y##``` by one of the following three networks ```maLIF``` for the LIF, 
 ```maLSNN``` for the ALIF and ```spikingLSTM```, 
