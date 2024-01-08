@@ -3,6 +3,10 @@
 This is the official repository of the [Stabilizing Spiking Neuron Training](https://arxiv.org/abs/2202.00282) 
 article, submitted to IEEE.
 
+
+![Drag Racing](conds.png)
+
+
 Run the following commands to reproduce the results:
 
 - ```training.py``` for each individual experiments;
