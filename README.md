@@ -4,7 +4,7 @@ This is the official repository of the [Stabilizing Spiking Neuron Training](htt
 article, submitted to IEEE.
 
 
-![Drag Racing](conds.png)
+![Drag Racing](visualization_tools/conds.png)
 
 
 Run the following commands to reproduce the results:
