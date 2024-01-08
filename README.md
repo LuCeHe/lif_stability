@@ -30,20 +30,33 @@ and ```##w##``` is used to specify the Surrogate Gradient (SG) shape, and should
 
 
 
-For Figure 3, run as one line
+For Figure 3, run 
 
 ```
 python lif_stability/training.py with task_name=heidelberg net_name=maLSNN seed=##s##
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None lr=None
-     comments=embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_adjfi:##x##_adjff:.01 
+     comments=noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_adjfi:##x##_adjff:.01 
 ```
 
 replacing ```##x##``` by one in ```[0.01, 0.1, 0.3, 0.5,  0.7, 0.9, 0.99]```, where ```adjfi``` 
-stands for adjust the initial firing rate whil ```adjff``` stands for adjust the final firing rate.
+stands for adjust the initial firing rate while ```adjff``` stands for adjust the final firing rate.
 
 
-Figure 4
+For Figure 4, run
 
+```
+python lif_stability/training.py with task_name=heidelberg net_name=maLSNN seed=##s##
+     epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None lr=None
+     comments=noalif_exponentialpseudod_##x## 
+```
+
+with ```##x##``` as one of these strings: ```conditionI```, 
+```conditionII```, 
+```conditionIII```, 
+```conditionIV```, 
+```conditionI_conditionII```, 
+```conditionI_conditionII_conditionIII``` or
+```conditionI_conditionII_conditionIII_conditionIV```.
 
 
 Figure 5, for the color curves, run
@@ -55,10 +68,10 @@ python lif_stability/training.py with task_name=heidelberg net_name=maLSNN
 ```
 
 where for the left panel, you change ```##w##``` by one of the SG flags mentioned above
-followed by ```_dampf:##x##``` where ```##x##``` is in ```[0.25, 0.5, 0.75, 1.0, 1.25, 1.5]```,
-and for the central panel you follow the same ```##w##``` by ```_sharpn:##x##```
+followed by ```dampf:##x##``` where ```##x##``` is in ```[0.25, 0.5, 0.75, 1.0, 1.25, 1.5]```,
+and for the central panel you follow the same ```##w##``` by ```sharpn:##x##```
 where ```##x##``` is in ```[0.25, 0.5, 0.75, 1.0, 1.25, 1.5]```. Instead for the right panel
-you change ```##w##``` by ```_ntailpseudod_tailvalue:##x##``` with the tail fatness ```##x##```
+you change ```##w##``` by ```ntailpseudod_tailvalue:##x##``` with the tail fatness ```##x##```
 in ```[1.0100, 1.0226, 1.0514, 1.1165, 1.2643, 1.5994, 2.3593, 4.0823, 7.9894, 16.8489]```.
 
 For the dashed line

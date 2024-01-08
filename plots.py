@@ -36,8 +36,8 @@ GEXPERIMENTS = [
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
     # r'E:\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
-    r'E:\work\stochastic_spiking\good_experiments\2022-09-17--sparsity-for-figure',
-    # r'E:\work\stochastic_spiking\good_experiments\2022-01-12--decent-SHD-conditions',
+    # r'E:\work\stochastic_spiking\good_experiments\2022-09-17--sparsity-for-figure',
+    r'E:\work\stochastic_spiking\good_experiments\2022-01-12--decent-SHD-conditions',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
     # r'D:\work\lif_stability\good_experiments\2023-11-01--ptblif',
