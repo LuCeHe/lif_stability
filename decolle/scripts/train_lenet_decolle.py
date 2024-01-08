@@ -12,11 +12,11 @@
 import json, shutil, time
 
 from pyaromatics.stay_organized.utils import NumpyEncoder
-from lif_stability.decolle_code.decolle.base_model import LIFLayerPlus
-from lif_stability.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
-from lif_stability.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss, LIFLayerVariableTau, \
+from lif_stability.decolle.decolle.base_model import LIFLayerPlus
+from lif_stability.decolle.torchneuromorphic.nmnist import nmnist_dataloaders
+from lif_stability.decolle.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss, LIFLayerVariableTau, \
     LIFLayer
-from lif_stability.decolle_code.decolle.utils import parse_args, train, test, accuracy, save_checkpoint, \
+from lif_stability.decolle.decolle.utils import parse_args, train, test, accuracy, save_checkpoint, \
     load_model_from_checkpoint, prepare_experiment, write_stats, cross_entropy_one_hot
 import datetime, os, socket, tqdm
 import numpy as np
@@ -100,7 +100,7 @@ def main(args):
                        with_output_layer=params['with_output_layer']).to(device)
 
     if hasattr(params['learning_rate'], '__len__'):
-        from lif_stability.decolle_code.decolle.utils import MultiOpt
+        from lif_stability.decolle.decolle.utils import MultiOpt
 
         opts = []
         for i in range(len(params['learning_rate'])):
@@ -129,7 +129,7 @@ def main(args):
     ##Initialize
     net.init_parameters(data_batch[:32])
 
-    from lif_stability.decolle_code.decolle.init_functions import init_LSUV
+    from lif_stability.decolle.decolle.init_functions import init_LSUV
 
     init_LSUV(net, data_batch[:32])
 

@@ -12,15 +12,15 @@ Figure 1 can be generated running ```plot_sgs.py```. To generate the experiments
 for Figure 2, run as one line
 
 ```
-python training.py with task_name=##x## net_name=##y## 
+python training.py with task_name=##x## net_name=##y## seed=##s##
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
-     lr=##z## comments=embproj_nogradreset_dropout:.3_timerepeat:2_##w## 
+     lr=##z## comments=embproj_nogradreset_timerepeat:2_##w## 
 ```
 
 
 where ```##x##``` should be changed by one of the following three tasks ```wordptb```, ```heidelberg```, ```sl_mnist```,
 ```##y##``` by one of the following three networks ```maLIF``` for the LIF, 
-```maLSNN``` for the ALIF and ```spikingLSTM```, 
+```maLSNN``` for the ALIF and ```spikingLSTM```, the seed ```##s##``` always from ```[0, 1, 2, 3]```,
 ```##z##``` by one of the learning rates in the list ```[1e-5, 3.16e-5, 1e-4, 3.16e-4, 1e-3, 3.16e-3, 1e-2]```, 
 and ```##w##``` is used to specify the Surrogate Gradient (SG) shape, and should be changed by one of the following 
 ```cappedskippseudod``` for the rectangular SG, ```originalpseudod``` for the triangular,
@@ -43,7 +43,7 @@ Figure 5, for the color curves, run
 ```
 python training.py with task_name=heidelberg net_name=maLSNN 
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
-     lr=None comments=embproj_noalif_nogradreset_dropout:.3_timerepeat:2_##w## 
+     lr=None comments=embproj_noalif_nogradreset_timerepeat:2_##w## 
 ```
 
 where for the left panel, you change ```##w##``` by one of the SG flags mentioned above
@@ -57,7 +57,16 @@ For the dashed line
 
 
 
-Table 1
+Table 1, run
 
+```
+python decolle/scripts/main_decolle.py --datasetname=dvs --seed=##s##
+     --comments=##x## 
+```
+
+replacing the seed ```##s##``` always from ```[0, 1, 2, 3]```,
+```##x##``` by ```frcontrol_frfrom:0.158_lmbd:100_switchep:1``` for the 0.158 case,
+by ```frcontrol_frfrom:0.5_lmbd:100_switchep:1``` for the 0.5 case, and keeping it empty for the
+default setting.
 
 Table 2

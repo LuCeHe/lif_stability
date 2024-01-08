@@ -19,7 +19,7 @@ import numpy as np
 from itertools import chain
 from collections import namedtuple, OrderedDict
 import warnings
-from lif_stability.decolle_code.decolle.utils import get_output_shape, state_detach
+from lif_stability.decolle.decolle.utils import get_output_shape, state_detach
 from pyaromatics.torch_tools.esotorch_layers.torch_sgs import ConditionedSG
 
 dtype = torch.float32
@@ -517,7 +517,7 @@ class DECOLLEBase(nn.Module):
         *data_batch*: batch of inputs, same shape as for data_batch in step()
         '''
         with torch.no_grad():
-            from lif_stability.decolle_code.decolle.utils import tonp
+            from lif_stability.decolle.decolle.utils import tonp
             net.init(data_batch)
             t = (data_batch.shape[1],)
             out_states = net.step(data_batch[:, 0])

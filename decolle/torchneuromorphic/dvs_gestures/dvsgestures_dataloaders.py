@@ -16,10 +16,10 @@ import h5py
 import torch.utils.data
 
 
-from lif_stability.decolle_code.torchneuromorphic.dvs_gestures.create_hdf5 import create_events_hdf5
-from lif_stability.decolle_code.torchneuromorphic.neuromorphic_dataset import NeuromorphicDataset
-from lif_stability.decolle_code.torchneuromorphic.events_timeslices import *
-from lif_stability.decolle_code.torchneuromorphic.transforms import *
+from lif_stability.decolle.torchneuromorphic.dvs_gestures.create_hdf5 import create_events_hdf5
+from lif_stability.decolle.torchneuromorphic.neuromorphic_dataset import NeuromorphicDataset
+from lif_stability.decolle.torchneuromorphic.events_timeslices import *
+from lif_stability.decolle.torchneuromorphic.transforms import *
 import os
 
 mapping = {0: 'Hand Clapping',
