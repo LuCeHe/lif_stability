@@ -78,4 +78,5 @@ python lif_stability/fluctuations/examples/main_fluctuations.py --dataset=##d## 
 
 replacing the seed as before, ```##d##``` by one of ``` [dvs, shd, cifar10]```, and 
 ```##x##``` by one in ```[shallow, deep]``` followed by either ```[_lr:##y##, _muchange_lr:##y##, _muchange_nu:1_eps:1_lr:##y##]```,
-where the optimal learning rate ```##y##``` found for SHD was 0.05, and for DVS and CIFAR10 was 0.0005.
+where the optimal learning rate ```##y##``` found on the default settings was 0.05 for SHD, 
+and for DVS and CIFAR10 was 0.0005.
