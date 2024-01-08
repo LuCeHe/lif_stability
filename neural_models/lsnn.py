@@ -152,6 +152,12 @@ class baseLSNN(tf.keras.layers.Layer):
 
         self.spike_type = SurrogatedStep(config=self.config, dampening=dampening, sharpness=sharpness)
 
+        if 'adjff' in self.config:
+            self.loss_switch = self.add_weight(
+                name=f'switch_{stacki}_{self.name}', shape=(), initializer=tf.keras.initializers.Constant(1.),
+                trainable=False
+            )
+
         self.built = True
         super().build(input_shape)
 
@@ -295,6 +301,14 @@ class baseLSNN(tf.keras.layers.Layer):
 
         fr = tf.reduce_mean(z)
         self.add_metric(fr, aggregation='mean', name='firing_rate_' + self.name)
+
+        if 'adjff' in self.config:
+            target_firing_rate = str2val(self.config, 'adjff', float, default=.1)
+
+            loss = tf.square(tf.reduce_mean(z) - target_firing_rate)
+
+            self.add_loss(self.loss_switch * loss)
+            self.add_metric(self.loss_switch * loss, name='adjff', aggregation='mean')
 
         output, new_state = self.prepare_outputs(new_v, old_v, z, old_z, new_a, old_a, new_last_spike_distance,
                                                  last_spike_distance, self.athr, v_sc)
@@ -456,7 +470,6 @@ class maLSNNb(maLSNN):
     def __init__(self, *args, **kwargs):
         kwargs['config'] = kwargs['config'] + '_gaussbeta'
         super().__init__(*args, **kwargs)
-
 
 
 class maLIF(maLSNN):

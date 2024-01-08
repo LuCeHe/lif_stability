@@ -2,6 +2,7 @@ import os, shutil, logging, json, copy
 
 import pandas as pd
 
+from lif_stability.neural_models.find_sparsities import reduce_model_firing_activity
 from pyaromatics.keras_tools.esoteric_tasks import language_tasks
 from pyaromatics.keras_tools.silence_tensorflow import silence_tf
 
@@ -181,6 +182,30 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
                 epochs=final_epochs, variables_to_anneal=['switch'], annealing_schedule=annealing_schedule,
             )
         )
+
+
+    if 'adjfi' in comments:
+        # Pretrain biases to achieve desired initial firing rates for Figure 3.
+        new_model_args = copy.deepcopy(model_args)
+        new_model_args['comments'] = new_model_args['comments'].replace('adjff:', '')
+
+        tf.keras.backend.clear_session()
+        del train_model
+
+        train_model = build_model(**new_model_args)
+
+        target_firing_rate = str2val(comments, 'adjfi', float, default=.1)
+        adjfi_epochs = 2 if 'test' in comments else 15
+        sparsification_results = reduce_model_firing_activity(
+            train_model, target_firing_rate, gen_train, epochs=adjfi_epochs
+        )
+        results.update(sparsification_results)
+        weights = train_model.get_weights()
+        tf.keras.backend.clear_session()
+        del train_model
+
+        train_model = build_model(**model_args)
+        train_model.set_weights(weights)
 
     train_model.fit(
         gen_train, batch_size=batch_size, validation_data=gen_val, epochs=final_epochs,

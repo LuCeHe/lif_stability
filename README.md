@@ -30,8 +30,16 @@ and ```##w##``` is used to specify the Surrogate Gradient (SG) shape, and should
 
 
 
-Figure 3
+For Figure 3, run as one line
 
+```
+python lif_stability/training.py with task_name=heidelberg net_name=maLSNN seed=##s##
+     epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None lr=None
+     comments=embproj_noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_adjfi:##x##_adjff:.01 
+```
+
+replacing ```##x##``` by one in ```[0.01, 0.1, 0.3, 0.5,  0.7, 0.9, 0.99]```, where ```adjfi``` 
+stands for adjust the initial firing rate whil ```adjff``` stands for adjust the final firing rate.
 
 
 Figure 4

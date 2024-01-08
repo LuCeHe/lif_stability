@@ -1,7 +1,6 @@
 from tensorflow.python.keras.metrics import sparse_categorical_accuracy, sparse_categorical_crossentropy
 
 from pyaromatics.keras_tools.esoteric_layers import *
-from pyaromatics.keras_tools.esoteric_layers.combine_tensors import CombineTensors
 
 try:
     from lru_unofficial.src.lru_unofficial.tf.linear_recurrent_unit import ResLRUCell, LinearRecurrentUnitCell, \

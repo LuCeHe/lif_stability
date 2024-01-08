@@ -35,8 +35,9 @@ GEXPERIMENTS = [
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-21--adaptsg',
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
-    r'E:\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
-    # r'D:\work\stochastic_spiking\good_experiments\2022-01-12--decent-SHD-conditions',
+    # r'E:\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
+    r'E:\work\stochastic_spiking\good_experiments\2022-09-17--sparsity-for-figure',
+    # r'E:\work\stochastic_spiking\good_experiments\2022-01-12--decent-SHD-conditions',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
     # r'D:\work\lif_stability\good_experiments\2023-11-01--ptblif',
@@ -49,7 +50,8 @@ HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
 # metric_sort = 'v_ppl'
 metric_sort = 'val_macc'
 # metrics_oi = ['v_ppl', 'v_macc', 't_ppl', 't_macc', 'fr_initial', 'fr_final', 'fr_1_initial', 'fr_1_final']
-metrics_oi = ['val_macc', 'macc_test']
+# metrics_oi = ['val_macc', 'macc_test']
+metrics_oi = ['val_macc']
 reduce_samples = False
 group_cols = ['net_name', 'task_name', 'initializer', 'comments', 'lr']
 group_cols = ['net_name', 'task_name', 'initializer', 'comments']
