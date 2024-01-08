@@ -35,14 +35,13 @@ GEXPERIMENTS = [
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-21--adaptsg',
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
-    # r'D:\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
+    r'E:\work\stochastic_spiking\good_experiments\2022-02-11--final_for_lif',
     # r'D:\work\stochastic_spiking\good_experiments\2022-01-12--decent-SHD-conditions',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
-    r'D:\work\lif_stability\good_experiments\2023-11-01--ptblif',
+    # r'D:\work\lif_stability\good_experiments\2023-11-01--ptblif',
 ]
-EXPERIMENTS = r'D:\work\stochastic_spiking\experiments'
-# EXPERIMENTS = r'D:\work\stochastic_spiking\good_experiments\2022-09-17--sparsity-for-figure'
+EXPERIMENTS = r'E:\work\stochastic_spiking\experiments'
 
 CSVPATH = os.path.join(EXPERIMENTS, 'means.h5')
 HSITORIESPATH = os.path.join(EXPERIMENTS, 'histories.json')
@@ -57,7 +56,7 @@ group_cols = ['net_name', 'task_name', 'initializer', 'comments']
 
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument(
-    '--type', default='nothing', type=str, help='main behavior',
+    '--type', default='excel', type=str, help='main behavior',
     choices=[
         'excel', 'histories', 'interactive_histories', 'activities', 'weights', 'continue', 'robustness', 'init_sg',
         'pseudod', 'move_folders', 'conventional2spike', 'n_tail', 'task_net_dependence', 'sharpness_dampening',
