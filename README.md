@@ -74,8 +74,24 @@ where ```##x##``` is in ```[0.25, 0.5, 0.75, 1.0, 1.25, 1.5]```. Instead for the
 you change ```##w##``` by ```ntailpseudod_tailvalue:##x##``` with the tail fatness ```##x##```
 in ```[1.0100, 1.0226, 1.0514, 1.1165, 1.2643, 1.5994, 2.3593, 4.0823, 7.9894, 16.8489]```.
 
-For the dashed line
+For the dashed line run 
 
+```
+python lif_stability/training.py with task_name=heidelberg net_name=maLSNN 
+     epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
+     lr=None comments=embproj_noalif_nogradreset_timerepeat:2_conditionIII 
+     
+python lif_stability/training.py with task_name=heidelberg net_name=maLSNN 
+     epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
+     lr=None comments=embproj_noalif_nogradreset_timerepeat:2_exponentialpseudod_conditionIV 
+     
+python lif_stability/training.py with task_name=heidelberg net_name=maLSNN 
+     epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
+     lr=None comments=embproj_noalif_nogradreset_timerepeat:2_ntailpseudod_conditionIV_optimizetail 
+```
+
+The first will save the predicted dampening factor in the results, the second the predicted sharpness, 
+and the third one the predicted tail fatness.
 
 
 To reproduce Table 1, run

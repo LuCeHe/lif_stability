@@ -54,6 +54,8 @@ class baseLSNN(tf.keras.layers.Layer):
         if 'withrecdiag' in self.config:
             self.mask = tf.ones((self.num_neurons, self.num_neurons))
 
+        self.lsnn_results = {}
+
     def decay_v(self):
         return tf.exp(-1 / self.tau)
 
@@ -121,6 +123,7 @@ class baseLSNN(tf.keras.layers.Layer):
             thr = self.thr if not 'multreset' in self.config else 0
             dampening = optimize_dampening(self.recurrent_weights, thr=thr, decay=decay_v, w_in=self.input_weights,
                                            dampening_in=dampening_in, od_type=od_type)
+            self.lsnn_results.update({f'dampening_{self.name}': dampening})
 
         if 'conditionIV' in self.config and not 'optimizetail' in self.config:
             assert 'exponentialpseudod' in self.config, \
@@ -131,15 +134,19 @@ class baseLSNN(tf.keras.layers.Layer):
                                            thr=self.thr, dampening=dampening,
                                            dampening_in=dampening_in,
                                            sharpness_in=sharpness_in, os_type=os_type, config=self.config)
+            self.lsnn_results.update({f'sharpness_{self.name}': sharpness})
+
+
 
         if 'conditionIV' in self.config and 'optimizetail' in self.config:
             assert 'ntailpseudod' in self.config, \
-                "Condition IV optimizetail has been coded only for exponential SG !"
+                "Condition IV optimizetail has been coded only for ntailpseudod SG !"
 
             tail = optimize_tail(
                 self.recurrent_weights, self.input_weights, decay_v, self.thr, dampening, sharpness_in, dampening_in
             )
             self.config = str2val(self.config, 'tailvalue', replace=np.mean(tail))
+            self.lsnn_results.update({f'tail_{self.name}': sharpness})
 
         # self.inh_exc = tf.ones(self.num_neurons)
         self._beta = tf.concat([tf.zeros(self.n_regular), tf.ones(n_rec - self.n_regular) * self.beta], axis=0)

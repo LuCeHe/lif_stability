@@ -50,7 +50,7 @@ def config():
     task_name = 'wordptb'
 
     # test configuration
-    epochs = 2
+    epochs = 1
     steps_per_epoch = 1
     batch_size = 2
     stack = '3:3:3'
@@ -63,7 +63,7 @@ def config():
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
-    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_mlminputs'
+    comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_mlminputs_conditionIII'
 
     # optimizer properties
     lr = None  # 7e-4
@@ -207,11 +207,19 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
         train_model = build_model(**model_args)
         train_model.set_weights(weights)
 
+    if 'condition' in comments:
+        for layer in train_model.layers:
+            if ('lsnn' in net_name.lower() or 'lif' in net_name.lower()) and 'encoder' in layer.name.lower():
+                for k in layer.cell.lsnn_results.keys():
+                    results.update({k: layer.cell.lsnn_results[k].numpy().mean()})
+
     train_model.fit(
         gen_train, batch_size=batch_size, validation_data=gen_val, epochs=final_epochs,
         steps_per_epoch=steps_per_epoch,
         callbacks=callbacks
     )
+
+
 
     actual_epochs = 0
     if final_epochs > 0:
