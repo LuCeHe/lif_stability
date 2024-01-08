@@ -12,7 +12,7 @@ Figure 1 can be generated running ```plot_sgs.py```. To generate the experiments
 for Figure 2, run as one line
 
 ```
-python training.py with task_name=##x## net_name=##y## seed=##s##
+python lif_stability/training.py with task_name=##x## net_name=##y## seed=##s##
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
      lr=##z## comments=embproj_nogradreset_timerepeat:2_##w## 
 ```
@@ -41,7 +41,7 @@ Figure 4
 Figure 5, for the color curves, run
 
 ```
-python training.py with task_name=heidelberg net_name=maLSNN 
+python lif_stability/training.py with task_name=heidelberg net_name=maLSNN 
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
      lr=None comments=embproj_noalif_nogradreset_timerepeat:2_##w## 
 ```
@@ -57,16 +57,25 @@ For the dashed line
 
 
 
-Table 1, run
+To reproduce Table 1, run
 
 ```
-python decolle/scripts/main_decolle.py --datasetname=dvs --seed=##s##
+python lif_stability/decolle/scripts/main_decolle.py --datasetname=dvs --seed=##s##
      --comments=##x## 
 ```
 
-replacing the seed ```##s##``` always from ```[0, 1, 2, 3]```,
+replacing the seed ```##s##``` as before, and
 ```##x##``` by ```frcontrol_frfrom:0.158_lmbd:100_switchep:1``` for the 0.158 case,
 by ```frcontrol_frfrom:0.5_lmbd:100_switchep:1``` for the 0.5 case, and keeping it empty for the
 default setting.
 
-Table 2
+To reproduce Table 2, run
+
+```
+python lif_stability/fluctuations/examples/main_fluctuations.py --dataset=##d## --seed=##s##
+     --epochs=-1 --comments=##x## 
+```
+
+replacing the seed as before, ```##d##``` by one of ``` [dvs, shd, cifar10]```, and 
+```##x##``` by one in ```[shallow, deep]``` followed by either ```[_lr:##y##, _muchange_lr:##y##, _muchange_nu:1_eps:1_lr:##y##]```,
+where the optimal learning rate ```##y##``` found for SHD was 0.05, and for DVS and CIFAR10 was 0.0005.
