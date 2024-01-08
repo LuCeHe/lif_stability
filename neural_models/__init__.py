@@ -1,13 +1,13 @@
 import sys
 
-from sg_design_lif.neural_models.custom_lstm import customLSTM, spikingLSTM, gravesLSTM
-from sg_design_lif.neural_models.fast_alif import FastALIFCell
-from sg_design_lif.neural_models.lsnn import *
-from sg_design_lif.neural_models.reservoir import *
-from sg_design_lif.neural_models.wta import WTA
-from sg_design_lif.neural_models.izhikevich import Izhikevich
-from sg_design_lif.neural_models.spiking_attention import SpikingAttention
-from sg_design_lif.neural_models.readout import Readout
+from lif_stability.neural_models.custom_lstm import customLSTM, spikingLSTM, gravesLSTM
+from lif_stability.neural_models.fast_alif import FastALIFCell
+from lif_stability.neural_models.lsnn import *
+from lif_stability.neural_models.reservoir import *
+from lif_stability.neural_models.wta import WTA
+from lif_stability.neural_models.izhikevich import Izhikevich
+from lif_stability.neural_models.spiking_attention import SpikingAttention
+from lif_stability.neural_models.readout import Readout
 
 thismodule = sys.modules[__name__]
 

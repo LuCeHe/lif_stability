@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras as k
 
-from sg_design_lif.tf_tools.rebar_tf import create_reparam_variables
+from lif_stability.tf_tools.rebar_tf import create_reparam_variables
 
 
 def safe_log_prob(x, eps=1e-8):

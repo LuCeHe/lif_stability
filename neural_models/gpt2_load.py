@@ -9,10 +9,10 @@ from transformers import TFGPT2LMHeadModel
 from pyaromatics.keras_tools.esoteric_layers.dropword import DropWord
 from pyaromatics.keras_tools.esoteric_optimizers.AdaBelief import AdaBelief
 
-from sg_design_lif.generate_data.huggingface_generator import HuggingfaceGenerator
-from sg_design_lif.neural_models.configuration_performer_attention_spiking import SpikingPerformerAttentionConfig
-from sg_design_lif.neural_models.gpt2_recurrent import linearGPT2
-from sg_design_lif.neural_models.spiking_performer import SpikingGPT2MainLayer
+from lif_stability.generate_data.huggingface_generator import HuggingfaceGenerator
+from lif_stability.neural_models.configuration_performer_attention_spiking import SpikingPerformerAttentionConfig
+from lif_stability.neural_models.gpt2_recurrent import linearGPT2
+from lif_stability.neural_models.spiking_performer import SpikingGPT2MainLayer
 
 CDIR = os.path.dirname(os.path.realpath(__file__))
 DATAPATH = os.path.abspath(os.path.join(CDIR, '..', 'data', 'wikitext2'))

@@ -1,8 +1,6 @@
 import os, json, argparse, copy
 from datetime import timedelta, datetime
 
-from tensorflow import reduce_prod
-
 from pyaromatics.keras_tools.esoteric_initializers import glorotcolor, orthogonalcolor, hecolor
 from pyaromatics.stay_organized.pandardize import simplify_col_names
 
@@ -13,25 +11,19 @@ from tqdm import tqdm
 import pandas as pd
 import matplotlib as mpl
 import numpy as np
-from scipy.stats import mannwhitneyu
 from matplotlib.lines import Line2D
 
-import pickle
 import matplotlib.pyplot as plt
 
-from pyaromatics.keras_tools.convergence_metric import convergence_estimation
 from pyaromatics.keras_tools.esoteric_layers.surrogated_step import possible_pseudod, clean_pseudname, \
     clean_pseudo_name, pseudod_color
 from pyaromatics.keras_tools.plot_tools import plot_history, history_pick
-# from pyaromatics.PlotTools.mpl_tools import load_plot_settings
 from pyaromatics.stay_organized.unzip import unzip_good_exps
-from pyaromatics.stay_organized.plot_tricks import large_num_to_reasonable_string
-from pyaromatics.stay_organized.statistics import significance_to_star
 from pyaromatics.stay_organized.utils import timeStructured, str2val
 from pyaromatics.stay_organized.mpl_tools import load_plot_settings
 
 from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import Task
-from sg_design_lif.visualization_tools.plotting_tools import smart_plot, postprocess_results
+from lif_stability.visualization_tools.plotting_tools import smart_plot, postprocess_results
 
 mpl, pd = load_plot_settings(mpl=mpl, pd=pd)
 
@@ -39,7 +31,7 @@ CDIR = os.path.dirname(os.path.realpath(__file__))
 EXPERIMENTS = os.path.join(CDIR, 'experiments')
 
 GEXPERIMENTS = [
-    # r'C:\Users\PlasticDiscobolus\work\sg_design_lif\good_experiments',
+    # r'C:\Users\PlasticDiscobolus\work\lif_stability\good_experiments',
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-21--adaptsg',
     # r'D:\work\stochastic_spiking\good_experiments\2022-08-20--lr-grid-search',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-10--best-ptb-sofar',
@@ -47,7 +39,7 @@ GEXPERIMENTS = [
     # r'D:\work\stochastic_spiking\good_experiments\2022-01-12--decent-SHD-conditions',
     # r'D:\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb',
     # r'C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments\2022-02-16--verygood-ptb'
-    r'D:\work\sg_design_lif\good_experiments\2023-11-01--ptblif',
+    r'D:\work\lif_stability\good_experiments\2023-11-01--ptblif',
 ]
 EXPERIMENTS = r'D:\work\stochastic_spiking\experiments'
 # EXPERIMENTS = r'D:\work\stochastic_spiking\good_experiments\2022-09-17--sparsity-for-figure'
@@ -195,7 +187,7 @@ def fix_df_comments(df):
 
     # df = df[df['task_name'].str.contains('PTB')]
     # df = df[df['comments'].str.contains('_v0m')]
-    # df = df[df['d_name'] > r'C:\Users\PlasticDiscobolus\work\sg_design_lif\experiments\2022-08-13']
+    # df = df[df['d_name'] > r'C:\Users\PlasticDiscobolus\work\lif_stability\experiments\2022-08-13']
     # df = df[~(df['d_name'].str.contains('2022-08-10--')) | (df['d_name'].str.contains('2022-08-11--'))]
 
     # df = df[(df['d_name'].str.contains('2022-08-12--'))|(df['d_name'].str.contains('2022-08-13--'))]
@@ -1069,110 +1061,6 @@ elif args.type == 'task_net_dependence':
 
 
 
-elif args.type == 'conventional2spike':
-    pd.options.mode.chained_assignment = None
-    print()
-    idf = df[df['comments'].str.contains('4_')]
-
-    print(idf)
-    # annealings = idf['comments'].str.split('_').str[3]
-    # print(annealings)
-    print(idf)
-
-    annealing_types = ['ha', 'pea', 'ea']
-    fig, axs = plt.subplots(1, len(annealing_types), gridspec_kw={'wspace': 0}, sharey=True, figsize=(20, 7))
-
-    for a_i, annealing_type in enumerate(annealing_types):
-        iidf = df[df['comments'].str.contains('annealing:' + annealing_type)]
-        loss_curves = {k: [] for k in possible_pseudod}
-        for _, row in iidf.iterrows():
-            ptype = str2val(row['comments'], 'pseudod', str, equality_symbol='', remove_flag=False)
-            if ptype in possible_pseudod:
-                curve = histories[row['d_name']]['sparse_categorical_crossentropy']
-                if len(curve) == 150:
-                    loss_curves[ptype].append(curve)
-                    print(len(curve), row['d_name'])
-                    # axs[a_i].plot(curve, label='train xe', color=pseudod_color(ptype), linestyle=(0, (5, 3)),
-                    #               linewidth=.5)
-
-        for ptype in possible_pseudod:
-            if len(loss_curves[ptype]) > 0:
-                min_len = np.min([len(c) for c in loss_curves[ptype]])
-                equalized_loss_curves = np.array([c[:min_len] for c in loss_curves[ptype]])
-                mean = np.mean(equalized_loss_curves, axis=0)
-                std = np.std(equalized_loss_curves, axis=0)
-                axs[a_i].plot(mean, label='train xe', color=pseudod_color(ptype))
-                axs[a_i].fill_between(range(len(mean)), mean - std, mean + std, alpha=0.5, color=pseudod_color(ptype))
-                print(ptype, annealing_type, min(mean))
-
-        axs[a_i].set_ylim([.3, 3])
-        axs[a_i].set_title(
-            annealing_type.replace('ha', 'switch').replace('pea', 'probabilistic').replace('ea', 'weighted'))
-        for pos in ['right', 'left', 'bottom', 'top']:
-            axs[a_i].spines[pos].set_visible(False)
-
-    axs[0].set_xlabel('training iteration')
-    axs[0].set_ylabel('crossentropy')
-    plot_filename = r'experiments/figure4_conventional2spike.pdf'
-    fig.savefig(plot_filename, bbox_inches='tight')
-
-    plt.show()
-
-    idf['annealings'] = idf['comments'].str.split('_').str[2].str.replace('annealing:', '')
-    idf['pseudod'] = idf['comments'].str.split('_').str[3]
-
-    counts = idf.groupby(['annealings', 'pseudod']).size().reset_index(name='counts')
-    print(counts)
-
-elif args.type == 'move_folders':
-    destination = os.path.join(GEXPERIMENTS, '2021-10-04--wordptb-improvements_with_BiGamma_initializer')
-
-    df = df[df['where'].str.contains('gra')]  # cdr gra blg
-    ds = df['d_name']
-    print(ds)
-    for path in ds:
-        print('----------------------------')
-        _, d = os.path.split(path)
-        d = d + '.zip'
-        origin = os.path.join(GEXPERIMENTS, d)
-        dest = os.path.join(destination, d)
-        print(origin)
-        print(dest)
-        os.rename(origin, dest)
-
-elif args.type == 'receive_many_selected':
-    list_ = [
-        '2021-07-25--06-50-27--7050-mnl_',
-        '2021-07-24--22-19-45--5723-mnl_',
-    ]
-
-    start_string = '/home/lucacehe/scratch/work/stochastic_spiking/experiments/'
-    end_string = r' "C:\Users\PlasticDiscobolus\work\stochastic_spiking\good_experiments"'
-
-    big_string = '.zip /home/lucacehe/scratch/work/stochastic_spiking/experiments/'.join(list_)
-    string = 'scp -T lucacehe@cedar.computecanada.ca:' + '\"/home/lucacehe/scratch/work/stochastic_spiking/experiments/' + big_string + '.zip\"' + end_string
-    print(string)
-
-elif args.type == 'continue':
-    already_sent = [
-        '2021-07-31--16-31-10--4099-mnl_',
-        '2021-07-31--15-58-59--4959-mnl_',
-        '2021-07-31--16-31-10--7162-mnl_',
-        '2021-07-31--15-54-52--7146-mnl_',
-        '2021-07-31--15-35-34--5876-mnl_',
-    ]
-    # select to continue training
-    # dnames = df[df["task_name"] == 'ptb']['d_name']
-    nets = ['maLSNN', 'LSTM', 'customLSTM', 'spikingLSTM', 'spikingPerformer', 'smallGPT2', 'gravesLSTM']
-    for net in nets:
-        dnames = df[df["net_name"] == net]['d_name']
-        # LSTM customLSTM spikingLSTM spikingPerformer smallGPT2
-        for n in dnames:
-            filename = n.split('\\')[-1]
-            filename = filename.split('/')[-1]
-            if filename not in already_sent:
-                print("'{}',".format(filename))
-
 elif args.type == 'pseudod':
 
     df = df[df['comments'].str.contains("pseudod")]
@@ -1276,328 +1164,7 @@ elif args.type == 'pseudod':
     plt.show()
 
 
-elif args.type == 'interactive_histories':
 
-    from bokeh.plotting import figure, output_notebook, show
-    from bokeh.colors import RGB
-
-    hv = [d['bpc'] for d in list(histories.values())]
-    hk = list(histories.keys())
-
-    fig = figure(title='Compare the Trends of Different Functions', width=1000, height=600)
-
-    cm = plt.get_cmap('tab20')  # Reds tab20 gist_ncar
-    colors = cm(np.linspace(1, 0, len(hk)))
-    for i, (n, v) in enumerate(zip(hk, hv)):
-        print(n)
-        try:
-            print('     ', v[18])
-        except Exception as e:
-            print(e)
-        # print(v)
-        color = RGB(*colors[i] * 255)
-        fig.line(range(len(v)), v, legend_label=n, color=color, line_width=2)
-
-    # Relocate Legend
-    fig.legend.location = 'top_right'
-    # Click to hide/show lines
-    fig.legend.click_policy = 'hide'
-    fig.legend.__setattr__('label_text_font_size', "6pt")
-
-    show(fig)
-
-elif args.type == 'histories':
-    plot_filename = os.path.join(EXPERIMENTS, 'histories.png')
-    histories = {k: v for k, v in histories.items() if '2022-01-02' in k}
-
-    print(histories.keys())
-    hv = list(histories.values())
-    print(hv)
-    hk = list(histories.keys())
-    fig, axs = plot_history(
-        histories=hv, plot_filename=None, epochs=1,
-        method_names=hk, show=True, legend=False,
-        metrics_to_show=['bpc']
-    )
-
-elif args.type == 'rhohistories':
-    import matplotlib.pyplot as plt
-    import copy
-    import numpy as np
-
-    restricted_history = copy.deepcopy({k: v for k, v in histories.items() if not 'caLSNN' in k})
-
-    possible_nbetas = []
-    for k in restricted_history.keys():
-        nbeta = [i.replace('noisebeta:', '')
-                 for i in k.split('_') if 'noisebeta:' in i][0]
-        if not nbeta in ['none', 'learned']:
-            possible_nbetas.append(float(nbeta))
-            print(nbeta)
-
-    possible_nbetas = sorted(set(possible_nbetas))
-    print(possible_nbetas)
-    # restricted_history = {k_: {k: v for k, v in v_.history.items() if 'val' in k} for k_, v_ in restricted_history.items()}
-    keys_to_skip = ['loss', 'accuracy', 'contrastive_disorder', 'contrastive_random', 'perplexity', ]
-    colors = []
-    cm = plt.get_cmap('Reds')
-    for k_, v_ in restricted_history.items():
-        print(k_)
-        if 'noisebeta:learned' in k_:
-            nbeta = 'learned'
-            color = 'green'
-        elif 'noisebeta:none' in k_:
-            nbeta = None
-            color = 'blue'
-        else:
-            nbeta = float([i.replace('noisebeta:', '')
-                           for i in k_.split('_') if 'noisebeta:' in i][0])
-            # possible_nbetas = [0, -0.1, -0.5, -1, -1.5, -2]
-            color = cm(np.linspace(.8, .3, len(possible_nbetas)))[possible_nbetas.index(nbeta)]
-
-        colors.append(color)
-        keys = list(v_.history.keys())
-        for k in keys:
-            if k in keys_to_skip:
-                del restricted_history[k_].history[k]
-
-        if '_ptb_' in k_:
-            restricted_history[k_].history['loss'] = restricted_history[k_].history['bpc']
-            restricted_history[k_].history['accuracy'] = restricted_history[k_].history['zeros_categorical_accuracy']
-        else:
-            restricted_history[k_].history['loss'] = restricted_history[k_].history['categorical_crossentropy']
-            restricted_history[k_].history['accuracy'] = restricted_history[k_].history['mode_accuracy']
-
-    plot_filename = os.path.join(EXPERIMENTS, 'figure_2.png')
-    print(results['final_epochs'])
-    column_id = ['ptb', '_s_mnist', '_ps_mnist', 'heidelberg']
-    fig, axs = plot_history(
-        histories=list(restricted_history.values()), plot_filename=plot_filename, epochs=float(results['final_epochs']),
-        method_names=list(restricted_history.keys()), save=False, show=False,
-        metrics_to_show=['loss', 'accuracy'],
-        column_id=column_id, colors=colors
-    )
-
-    for column in range(len(column_id)):
-        ax = axs[(0, column) if column_id else 0]
-        ax.set_title(standardize_dataset_names(column_id[column]))
-
-    fig.savefig(plot_filename, bbox_inches='tight')
-    plt.show()
-
-
-elif args.type == 'activities':
-
-    k_selection = {'input_spikes': 'input', 'encoder_0_0': 'firing', 'encoder_0_0_1': 'v',
-                   'encoder_0_0_2': 'thr', 'output_net': 'output_net', 'target_output': 'target_output'}
-
-    all_activities = []
-    titles = []
-    for d in ds:
-        d_path = os.path.join(EXPERIMENTS, d)
-        activities_path = os.path.join(d_path, 'images', 'trained', 'png_content.dat')
-        config_path = os.path.join(d_path, '1', 'config.json')
-
-        with open(config_path) as f:
-            config = json.load(f)
-
-        if conditions_activities(config):
-            print('-----------------------------------------')
-            print(config['comments'])
-            print(config['task_name'])
-            print(config['net_name'])
-            with open(activities_path, 'rb') as f:
-                task = pickle.load(f)
-
-            small_task = {k_selection[k]: task[k] for k in k_selection.keys()}
-            # smart_plot(small_task)
-
-            all_activities.append(small_task)
-            titles.append(config['task_name'])
-            # plt.show()
-
-    ordered_titles = ['ptb', 's_mnist', 'ps_mnist', 'heidelberg']
-    all_activities = [all_activities[titles.index(t)] for t in ordered_titles]
-    titles = [titles[titles.index(t)] for t in ordered_titles]
-    titles = []
-
-    fig, axs = smart_plot(all_activities, clean=False, batch_sample=8)
-    for column in range(len(all_activities)):
-        ax = axs[(0, column) if titles else 0]
-        if not len(titles) == 0:
-            ax.set_title(standardize_dataset_names(titles[column]))
-
-        for row in range(len(k_selection)):
-            if not row == len(k_selection) - 1:
-                axs[row, column].set_xticks([])
-
-            if row % 2 == 0:
-                axs[row, column].yaxis.tick_right()
-
-    plot_filename = os.path.join(*['experiments', 'figure_2_activities.png'])
-
-    fig.savefig(plot_filename, bbox_inches='tight')
-    plt.show()
-
-elif args.type == 'weights':
-    task_name = 'heidelberg'  # 's_mnist'
-    w_of_interest = ['input_weights', 'recurrent_weights', 'tau', 'tau_adaptation', 'thr', 'beta', 'n_std',
-                     'conv1d_0/kernel', 'conv1d_0/bias', 'conv1d_1/kernel', 'conv1d_1/bias', 'decoder/kernel:0',
-                     'decoder/bias'
-                     ]
-
-    plot_names = {'input_weights': r'$W_{in}$', 'recurrent_weights': r'$W_{rec}$', 'tau': r'$\tau_v$',
-                  'tau_adaptation': r'$\tau_b$', 'thr': r'$b_0$', 'beta': r'$\beta$', 'n_std': r'$\sigma$',
-                  'conv1d_0/kernel': r'$c_1$-$k$', 'conv1d_0/bias': r'$c_1$-$b$', 'conv1d_1/kernel': r'$c_2$-$k$',
-                  'conv1d_1/bias': r'$c_2$-$b$', 'decoder/kernel:0': r'$l$-$k$', 'decoder/bias': r'$l$-$b$'
-                  }
-
-    # w_of_interest = ['input_weights', 'recurrent_weights', 'decoder/bias']
-    # w_of_interest = ['conv1d_1/bias', 'decoder/kernel:0', 'decoder/bias']
-    # w_of_interest = ['decoder/bias']
-    # ['encoder_0_0/highdamp_a_lsnn_6/input_weights:0', 'encoder_0_0/highdamp_a_lsnn_6/recurrent_weights:0',
-    # 'encoder_0_0/highdamp_a_lsnn_6/tau:0', 'encoder_0_0/highdamp_a_lsnn_6/tau_adaptation:0',
-    # 'encoder_0_0/highdamp_a_lsnn_6/thr:0', 'encoder_0_0/highdamp_a_lsnn_6/beta:0',
-    # 'encoder_0_0/highdamp_a_lsnn_6/n_std:0', 'conv1d_12/kernel:0', 'conv1d_12/bias:0',
-    # 'conv1d_13/kernel:0', 'conv1d_13/bias:0', 'decoder/kernel:0', 'decoder/bias:0', 'total:0', 'count:0']
-
-    filename = os.path.join(EXPERIMENTS, 'woi.pickle')
-
-    if not os.path.isfile(filename):
-
-        woi = {}
-        for w_name in w_of_interest:
-
-            ws = {}
-            for d in ds:
-                # break
-                d_path = os.path.join(EXPERIMENTS, d)
-                config_path = os.path.join(d_path, '1', 'config.json')
-
-                with open(config_path) as f:
-                    config = json.load(f)
-
-                if conditions_weights(config, task_name):
-                    print('-----------------------------')
-                    print(config['task_name'])
-                    print(config['comments'])
-                    model_path = os.path.join(d_path, 'trained_models', 'train_model.h5')
-                    model_args = ['task_name', 'net_name', 'n_neurons', 'tau', 'input_scaling', 'n_dt_per_step',
-                                  'neutral_phase_length', 'reg_cost', 'lr', 'batch_size', 'stack', 'loss_name',
-                                  'embedding', 'skip_inout', 'spike_dropout', 'spike_dropin', 'optimizer_name',
-                                  'lr_schedule', 'weight_decay', 'clipnorm', 'initializer', 'comments']
-                    kwargs = {k: config[k] for k in model_args}
-
-                    # task definition
-                    maxlen = 100
-                    if 'maxlen:' in config['comments']:
-                        maxlen = int(
-                            [s for s in config['comments'].split('_') if 'maxlen:' in s][0].replace('maxlen:', ''))
-                    gen_val = Task(n_dt_per_step=config['n_dt_per_step'], batch_size=config['batch_size'],
-                                   steps_per_epoch=config['steps_per_epoch'], category_coding=config['category_coding'],
-                                   name=config['task_name'], train_val_test='val',
-                                   neutral_phase_length=config['neutral_phase_length'], maxlen=maxlen)
-
-                    final_epochs = gen_val.epochs
-                    final_steps_per_epoch = gen_val.steps_per_epoch
-                    tau_adaptation = int(gen_val.in_len / 2)  # 200 800 4000
-                    kwargs.update(
-                        {'in_len': gen_val.in_len, 'n_in': gen_val.in_dim, 'out_len': gen_val.out_len,
-                         'n_out': gen_val.out_dim,
-                         'tau_adaptation': tau_adaptation, 'final_epochs': gen_val.epochs,
-                         'final_steps_per_epoch': gen_val.steps_per_epoch})
-
-                    train_model = build_model(**kwargs)
-                    train_model.load_weights(model_path)
-                    w = 0
-
-                    w_names = [copy.deepcopy(w.name) for w in train_model.weights]
-                    conv_names = sorted(set([wn.split('/')[0] for wn in w_names if 'conv' in wn]))
-
-                    conv_names = {k: 'conv1d_{}'.format(i) for i, k in enumerate(conv_names)}
-
-                    for weight in train_model.weights:
-                        wn = copy.deepcopy(weight.name)
-
-                        if 'conv' in wn:
-
-                            for k in conv_names.keys():
-                                if wn.split('/')[0] == k:
-                                    wn = wn.replace(k, conv_names[k])
-
-                        if w_name in wn:
-                            w = weight.numpy()
-                            # w = np.random.rand(30, 30)
-
-                    nbeta = [x for x in config['comments'].split('_') if 'noisebeta' in x][0].replace('noisebeta:', '')
-                    nbeta = float(nbeta) if not nbeta in ['learned', 'none'] else nbeta
-                    if nbeta == 'learned':
-                        nbeta = 111
-                    elif nbeta == 'none':
-                        nbeta = 222
-
-                    ws[nbeta] = w
-
-            ws = dict(sorted(ws.items()))
-            ws = {str(k).replace('111', 'learned').replace('222', 'none'): v for k, v in ws.items()}
-            woi[w_name] = ws
-
-        with open(filename, 'wb') as handle:
-            pickle.dump(woi, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    else:
-        with open(filename, 'rb') as handle:
-            woi = pickle.load(handle)
-
-    from scipy.stats import gaussian_kde
-
-    fig, axs = plt.subplots(len(woi), len(woi[list(woi.keys())[0]]), figsize=(20, 10),
-                            gridspec_kw={'hspace': 0.7, 'wspace': 0.0})
-
-    for row, (w_name, ws) in tqdm(enumerate(woi.items())):
-
-        print(w_name)
-        if w_name in w_of_interest:
-            ps = []
-            for column, k in enumerate(ws.keys()):
-                ax = axs[(row, column) if len(woi) > 1 else column]
-
-                fw = ws[k].flatten()
-                ax.hist(fw, bins=50, alpha=.4, density=True)
-
-                prob_density = gaussian_kde(fw)
-                x_fine = np.linspace(np.min(fw), np.max(fw), 100)
-                probs = prob_density(x_fine)
-                ax.plot(x_fine, probs, 'b', '.', linewidth=1)
-
-                if row == 0:
-                    ax.set_title(r'$\rho={}$'.format(k))
-
-                for j, k2 in enumerate(ws.keys()):
-                    if j > column and not k == 'learned' and not k2 == 'learned':
-                        _, p = mannwhitneyu(fw, ws[k2].flatten())
-                        ps.append(p)
-
-                # plt.colorbar()
-                p25, p50, p75 = np.percentile(fw, [5, 50, 95], axis=0)
-                ax.set_xticks([p25, p50, p75])
-                x_amplitude = p75 - p25
-                ax.set_xlim(p25 - 0.2 * x_amplitude, p75 + 0.2 * x_amplitude)
-                # ax.set_ylim(0., 0.12)
-
-                if not column == 0:
-                    ax.set_yticks([])
-                # else:
-                #     ax.set_yticks([0., 0.1])
-
-            ax = axs[(row, 0) if len(woi) > 1 else 0]
-            ax.set_ylabel('{}\n{}'.format(plot_names[w_name], significance_to_star(np.min(ps))))
-
-    fig.align_ylabels(axs[:])
-
-    time_string = timeStructured()
-    plot_filename = os.path.join(*['experiments', '{}_figure_weights_p.png'.format(time_string)])
-    fig.savefig(plot_filename, bbox_inches='tight')
-    plt.show()
 
 elif args.type == 'robustness':
     # pass

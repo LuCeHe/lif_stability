@@ -1,5 +1,5 @@
 import tensorflow as tf
-from sg_design_lif.neural_models.lsnn import baseLSNN
+from lif_stability.neural_models.lsnn import baseLSNN
 
 
 class Izhikevich(baseLSNN):

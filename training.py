@@ -4,17 +4,15 @@ import pandas as pd
 
 from pyaromatics.keras_tools.esoteric_tasks import language_tasks
 from pyaromatics.keras_tools.silence_tensorflow import silence_tf
+
 silence_tf()
 
 import tensorflow as tf
 
-from sg_design_lif.neural_models.adaptsg import adapt_sg_shape
-from sg_design_lif.neural_models.find_sparsities import reduce_model_firing_activity
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from pyaromatics.keras_tools.esoteric_callbacks.several_validations import MultipleValidationSets
-from sg_design_lif.config.config import default_config
+from lif_stability.config.config import default_config
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 os.environ["TF_GPU_ALLOCATOR"] = "cuda_malloc_async"
@@ -22,10 +20,6 @@ os.environ["TF_CPP_VMODULE"] = "gpu_process_state=10,gpu_cudamallocasync_allocat
 
 tf.compat.v1.enable_eager_execution()
 
-from tensorflow.keras.callbacks import ReduceLROnPlateau
-
-from pyaromatics.keras_tools.convergence_metric import convergence_estimation
-from pyaromatics.keras_tools.esoteric_callbacks.gradient_tensorboard import ExtendedTensorBoard
 from pyaromatics.keras_tools.esoteric_initializers import esoteric_initializers_list, get_initializer
 from pyaromatics.keras_tools.esoteric_callbacks import *
 from pyaromatics.keras_tools.plot_tools import plot_history
@@ -33,8 +27,8 @@ from pyaromatics.stay_organized.VeryCustomSacred import CustomExperiment, Choose
 from pyaromatics.stay_organized.utils import setReproducible, str2val, NumpyEncoder
 
 from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import Task, checkTaskMeanVariance
-from sg_design_lif.visualization_tools.training_tests import Tests
-from sg_design_lif.neural_models.full_model import build_model
+from lif_stability.visualization_tools.training_tests import Tests
+from lif_stability.neural_models.full_model import build_model
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)
@@ -68,9 +62,7 @@ def config():
     # zero_mean_isotropic zero_mean learned positional normal onehot zero_mean_normal
     embedding = 'learned:None:None:{}'.format(n_neurons) if task_name in language_tasks else False
 
-    # comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_adjfi:0.7_adjff:.01_v0m_test_annealing'
     comments = '7_embproj_noalif_nogradreset_dropout:.3_timerepeat:2_mlminputs'
-    # comments = '8_embproj_nogradreset_dropout:.3_timerepeat:2_readaptsg:3_asgname:movedfastsigmoid'
 
     # optimizer properties
     lr = None  # 7e-4
@@ -168,7 +160,6 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
     train_model.summary()
 
     history_path = other_dir + '/log.csv'
-    val_data = gen_val.__getitem__()
 
     checkpoint_filepath = os.path.join(models_dir, 'checkpoint')
     callbacks = [
@@ -191,67 +182,11 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
             )
         )
 
-    if 'tenb' in comments:
-        callbacks.append(
-            ExtendedTensorBoard(validation_data=val_data, log_dir=other_dir, histogram_freq=2),
-        )
-
-    if 'roplateau' in comments:
-        callbacks.append(
-            ReduceLROnPlateau(monitor='val_loss', factor=0.95, patience=15, min_lr=lr / 1000),
-        )
-
-    # plots before training
-    # Tests(task_name, gen_val, train_model, images_dir, save_pickle=False, subdir_name='nontrained')
-    # sys.exit("Error message")
-
-    # evaluation = train_model.evaluate(gen_val, return_dict=True, verbose=True)
-
-    if 'adjfi' in comments:
-        new_model_args = copy.deepcopy(model_args)
-        new_model_args['comments'] = new_model_args['comments'].replace('adjff:', '')
-
-        tf.keras.backend.clear_session()
-        del train_model
-
-        train_model = build_model(**new_model_args)
-
-        target_firing_rate = str2val(comments, 'adjfi', float, default=.1)
-        adjfi_epochs = 2 if 'test' in comments else 15
-        sparsification_results = reduce_model_firing_activity(
-            train_model, target_firing_rate, gen_train, epochs=adjfi_epochs
-        )
-        results.update(sparsification_results)
-        weights = train_model.get_weights()
-        tf.keras.backend.clear_session()
-        del train_model
-
-        train_model = build_model(**model_args)
-        train_model.set_weights(weights)
-
-    if 'readaptsg' in comments:
-        readapt = str2val(comments, 'readaptsg', int, default=3)
-        final_epochs = int(final_epochs / readapt)
-    else:
-        readapt = 1
-
-    for _ in range(readapt):
-        if 'adaptsg' in comments:
-            adapt_comments = adapt_sg_shape(gen_train, train_model, comments)
-            model_args['comments'] = adapt_comments
-
-            weights = train_model.get_weights()
-            tf.keras.backend.clear_session()
-            del train_model
-
-            train_model = build_model(**model_args)
-            train_model.set_weights(weights)
-
-        train_model.fit(
-            gen_train, batch_size=batch_size, validation_data=gen_val, epochs=final_epochs,
-            steps_per_epoch=steps_per_epoch,
-            callbacks=callbacks
-        )
+    train_model.fit(
+        gen_train, batch_size=batch_size, validation_data=gen_val, epochs=final_epochs,
+        steps_per_epoch=steps_per_epoch,
+        callbacks=callbacks
+    )
 
     actual_epochs = 0
     if final_epochs > 0:
@@ -282,21 +217,10 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
             plot_filename = os.path.join(images_dir, f'history_{i}.png')
             plot_history(histories=history_dict, plot_filename=plot_filename, epochs=final_epochs)
 
-            # plot only validation curves
-            # history_dict = {k: history_df[k].tolist() if 'val' in k else [] for k in subkeys}
-            # plot_filename = os.path.join(images_dir, f'history_val_{i}.png')
-            # plot_history(histories=history_dict, plot_filename=plot_filename, epochs=final_epochs)
-
         removable_checkpoints = sorted([d for d in os.listdir(models_dir) if 'checkpoint' in d])
         for d in removable_checkpoints: os.remove(os.path.join(models_dir, d))
 
-        try:
-            results['convergence'] = convergence_estimation(history_dict['val_loss'])
-        except Exception as e:
-            results['convergence'] = -1
-
     print('Fitting done!')
-    # if not task_name == 'ptb':
     if save_model:
         train_model_path = os.path.join(models_dir, 'train_model.h5')
         train_model.save(train_model_path)

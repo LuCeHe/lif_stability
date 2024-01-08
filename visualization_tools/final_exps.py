@@ -1,7 +1,7 @@
 import numpy as np
 import os, itertools, argparse, time, json, datetime
 from pyaromatics.stay_organized.submit_jobs import run_experiments
-from sg_design_lif.neural_models import possible_pseudod
+from lif_stability.neural_models import possible_pseudod
 
 
 def final_experiments(seed):

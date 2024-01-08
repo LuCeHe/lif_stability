@@ -3,7 +3,7 @@ from torch import nn as nn
 
 import numpy as np
 
-from sg_design_lif.fluctuations.stork import core
+from lif_stability.fluctuations.stork import core
 
 
 class CellGroup(core.NetworkNode):

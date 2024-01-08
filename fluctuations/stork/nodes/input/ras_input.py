@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from sg_design_lif.fluctuations.stork.nodes.input.base import InputGroup
+from lif_stability.fluctuations.stork.nodes.input.base import InputGroup
 
 
 class RasInputGroup(InputGroup):

@@ -19,18 +19,18 @@ from torch.nn import init
 
 from pyaromatics.stay_organized.utils import NumpyEncoder, str2val
 from pyaromatics.torch_tools.esoteric_optimizers.adabelief import AdaBelief
-from sg_design_lif.fluctuations.examples.fluctuation_dataloaders import datasets_available, load_dataset
-from sg_design_lif.fluctuations.examples.fluctuation_default_config import default_config
+from lif_stability.fluctuations.examples.fluctuation_dataloaders import datasets_available, load_dataset
+from lif_stability.fluctuations.examples.fluctuation_default_config import default_config
 
-from sg_design_lif.fluctuations.stork.models import RecurrentSpikingModel
-from sg_design_lif.fluctuations.stork.nodes import InputGroup, ReadoutGroup, LIFGroup, MaxPool2d
-from sg_design_lif.fluctuations.stork.connections import Connection, Conv2dConnection, ConvConnection
-from sg_design_lif.fluctuations.stork.generators import StandardGenerator
-from sg_design_lif.fluctuations.stork.initializers import FluctuationDrivenCenteredNormalInitializer, DistInitializer, \
+from lif_stability.fluctuations.stork.models import RecurrentSpikingModel
+from lif_stability.fluctuations.stork.nodes import InputGroup, ReadoutGroup, LIFGroup, MaxPool2d
+from lif_stability.fluctuations.stork.connections import Connection, Conv2dConnection, ConvConnection
+from lif_stability.fluctuations.stork.generators import StandardGenerator
+from lif_stability.fluctuations.stork.initializers import FluctuationDrivenCenteredNormalInitializer, DistInitializer, \
     FluctuationDrivenNormalInitializer
-from sg_design_lif.fluctuations.stork.layers import ConvLayer
+from lif_stability.fluctuations.stork.layers import ConvLayer
 
-import sg_design_lif.fluctuations.stork as stork
+import lif_stability.fluctuations.stork as stork
 from pyaromatics.torch_tools.esotorch_layers.torch_sgs import ConditionedSG
 
 FILENAME = os.path.realpath(__file__)

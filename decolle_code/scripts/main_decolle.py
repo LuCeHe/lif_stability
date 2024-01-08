@@ -16,11 +16,11 @@ import torch
 
 from pyaromatics.stay_organized.utils import NumpyEncoder, str2val
 from pyaromatics.torch_tools.esoteric_optimizers.adabelief import AdaBelief
-from sg_design_lif.decolle_code.decolle.base_model import LIFLayerPlus, frDECOLLELoss
-from sg_design_lif.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
-from sg_design_lif.decolle_code.torchneuromorphic.dvs_gestures import dvsgestures_dataloaders
-from sg_design_lif.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss
-from sg_design_lif.decolle_code.decolle.utils import train, test, accuracy, save_checkpoint, \
+from lif_stability.decolle_code.decolle.base_model import LIFLayerPlus, frDECOLLELoss
+from lif_stability.decolle_code.torchneuromorphic.nmnist import nmnist_dataloaders
+from lif_stability.decolle_code.torchneuromorphic.dvs_gestures import dvsgestures_dataloaders
+from lif_stability.decolle_code.decolle.lenet_decolle_model import LenetDECOLLE, DECOLLELoss
+from lif_stability.decolle_code.decolle.utils import train, test, accuracy, save_checkpoint, \
     load_model_from_checkpoint, prepare_experiment, write_stats, cross_entropy_one_hot
 
 CDIR = os.path.dirname(os.path.realpath(__file__))
@@ -139,7 +139,7 @@ def main(args):
     print('Learning rate = {}'.format(lr))
 
     if hasattr(params['learning_rate'], '__len__'):
-        from sg_design_lif.decolle_code.decolle.utils import MultiOpt
+        from lif_stability.decolle_code.decolle.utils import MultiOpt
 
         opts = []
         for i in range(len(lr)):
@@ -180,7 +180,7 @@ def main(args):
     net.init_parameters(data_batch[:32])
 
     if not 'test' in args.comments:
-        from sg_design_lif.decolle_code.decolle.init_functions import init_LSUV
+        from lif_stability.decolle_code.decolle.init_functions import init_LSUV
         init_LSUV(net, data_batch[:32])
 
     ##Resume if necessary

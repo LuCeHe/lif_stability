@@ -6,7 +6,7 @@ from skopt import gp_minimize
 from skopt.space import Real
 
 from pyaromatics.stay_organized.skopt_tools import tqdm_skopt
-from sg_design_lif.neural_models.full_model import build_model
+from lif_stability.neural_models.full_model import build_model
 
 
 def gp_objective(space, comments, ptoopt, target_firing_rate, net_hyp, batch, words):

@@ -1,6 +1,6 @@
 import numpy as np
 
-from sg_design_lif.fluctuations.stork.nodes.lif.base import LIFGroup
+from lif_stability.fluctuations.stork.nodes.lif.base import LIFGroup
 
 
 class AdaptiveLIFGroup(LIFGroup):

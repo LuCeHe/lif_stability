@@ -8,7 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from sg_design_lif.fluctuations.stork.datasets import HDF5Dataset, DatasetView
+from lif_stability.fluctuations.stork.datasets import HDF5Dataset, DatasetView
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)

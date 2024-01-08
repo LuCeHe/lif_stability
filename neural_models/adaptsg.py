@@ -9,8 +9,8 @@ from pyaromatics.keras_tools.esoteric_layers.surrogated_step import ChoosePseudo
 from pyaromatics.keras_tools.esoteric_tasks.time_task_redirection import Task
 from pyaromatics.keras_tools.test_sg_shapes import get_asg_shape
 
-from sg_design_lif.neural_models.full_model import build_model
-from sg_design_lif.visualization_tools.training_tests import get_test_model
+from lif_stability.neural_models.full_model import build_model
+from lif_stability.visualization_tools.training_tests import get_test_model
 
 FILENAME = os.path.realpath(__file__)
 CDIR = os.path.dirname(FILENAME)

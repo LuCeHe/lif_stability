@@ -19,7 +19,7 @@ import tensorflow as tf
 #from typeguard import typechecked
 from typing import Union, Callable, Type
 
-from sg_design_lif.tf_tools.types import FloatTensorLike
+from lif_stability.tf_tools.types import FloatTensorLike
 
 
 def _ref(var):

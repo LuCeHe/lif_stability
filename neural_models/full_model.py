@@ -1,21 +1,23 @@
 from tensorflow.python.keras.metrics import sparse_categorical_accuracy, sparse_categorical_crossentropy
 
-from anthe_official.neural_models_tf import HSoftPOS
-
 from pyaromatics.keras_tools.esoteric_layers import *
 from pyaromatics.keras_tools.esoteric_layers.combine_tensors import CombineTensors
-from lru_unofficial.src.lru_unofficial.tf.linear_recurrent_unit import ResLRUCell, LinearRecurrentUnitCell, \
-    ResLRUFFN, LinearRecurrentUnitFFN
-# from pyaromatics.keras_tools.esoteric_models.model import modifiedModel
+
+try:
+    from lru_unofficial.src.lru_unofficial.tf.linear_recurrent_unit import ResLRUCell, LinearRecurrentUnitCell, \
+        ResLRUFFN, LinearRecurrentUnitFFN
+except ImportError as e:
+    print('If you want to use LRU variants do ```pip instal lruun```')
+
 from pyaromatics.keras_tools.esoteric_optimizers.optimizer_selection import get_optimizer
 from pyaromatics.keras_tools.esoteric_tasks import language_tasks
 from pyaromatics.stay_organized.utils import str2val
 from pyaromatics.keras_tools.esoteric_losses.loss_redirection import get_loss
 from pyaromatics.keras_tools.esoteric_losses.advanced_losses import *
 
-import sg_design_lif.neural_models as models
-from sg_design_lif.neural_models.ind_rnn_cell import IndRNNCell
-from sg_design_lif.neural_models.lmu import LMUCell
+import lif_stability.neural_models as models
+from lif_stability.neural_models.ind_rnn_cell import IndRNNCell
+from lif_stability.neural_models.lmu import LMUCell
 
 metrics = [
     sparse_categorical_accuracy,
@@ -29,74 +31,6 @@ metrics = [
 
 non_recurrent_models = ['reslruffn', 'lruffn']
 
-
-def layers_combination(output_cell, all_outputs, in_expert, comments, i, n_neurons, tff, drate):
-    if 'addrestrellis' in comments:
-        output_cell = tf.keras.layers.Add()([output_cell, in_expert])
-
-    elif 'combinedconcrestrellis' in comments and len(all_outputs) > 1:
-        sigmoidal_gating = True if 'sigcombined' in comments else False
-        axis = 2 if 'trellis2' in comments else None
-        ct = CombineTensors(n_tensors=len(all_outputs[:-1]), sigmoidal_gating=sigmoidal_gating, axis=axis)(
-            all_outputs[:-1])
-        output_cell = Concatenate(axis=-1)([output_cell, ct])
-
-    elif 'combinedrestrellis' in comments and len(all_outputs) > 1:
-        sigmoidal_gating = True if 'sigcombined' in comments else False
-        axis = 2 if 'trellis2' in comments else None
-        output_cell = CombineTensors(
-            n_tensors=len(all_outputs), sigmoidal_gating=sigmoidal_gating, axis=axis
-        )(all_outputs)
-
-    elif 'concrestrellis' in comments:
-        output_cell = Concatenate(axis=-1)([output_cell, in_expert[:, :, :n_neurons]])
-
-    if 'transformer' in comments:
-
-        if 'dilation' in comments:
-            dilation = 2 ** i
-        else:
-            dilation = 1
-
-        if 'drop1' in comments:
-            output_cell = tf.keras.layers.Dropout(drate)(output_cell)
-
-        conv = tff(n_neurons, dilation, comments)(output_cell)
-
-        if 'drop2' in comments:
-            conv = tf.keras.layers.Dropout(drate)(conv)
-
-        if 'appenddff' in comments:
-            all_outputs.append(conv)
-
-        if 'combineddff' in comments and len(all_outputs) > 1:
-            sigmoidal_gating = True if 'sigcombined' in comments else False
-            axis = 2 if 'dff2' in comments else None
-            output_cell = CombineTensors(
-                n_tensors=len(all_outputs), sigmoidal_gating=sigmoidal_gating, axis=axis
-            )(all_outputs)
-        else:
-            output_cell = conv + output_cell
-
-    return output_cell, all_outputs
-
-
-def TransformerFF(n_neurons, dilation, comments):
-    conv1 = tf.keras.layers.SeparableConv1D(filters=int(1.2 * n_neurons), kernel_size=4, dilation_rate=dilation,
-                                            padding='causal', depth_multiplier=1)
-
-    if 'nospikedff' in comments:
-        spikes = lambda x: x
-    else:
-        spikes = lambda x: SurrogatedStep(string_config=comments)(x)
-    output_shape = 2 * n_neurons if 'conc' in comments else n_neurons
-    conv2 = tf.keras.layers.SeparableConv1D(filters=output_shape, kernel_size=4, dilation_rate=dilation,
-                                            padding='causal', depth_multiplier=1)
-
-    def call(inputs):
-        return conv2(spikes(conv1(inputs)))
-
-    return call
 
 
 class Expert:
@@ -261,20 +195,16 @@ class ModelBuilder:
 
         self.emb = []
         if not self.embedding is False:
-            if 'hsoftpos' in comments:
-                self.emb = HSoftPOS(vocab_size, n_neurons)
+            self.emb = SymbolAndPositionEmbedding(
+                maxlen=in_len, vocab_size=vocab_size, embed_dim=n_neurons, embeddings_initializer=initializer,
+                from_string=embedding, name=embedding.replace(':', '_')
+            )
+            self.emb.sym_emb.build(None)
 
-            else:
-                self.emb = SymbolAndPositionEmbedding(
-                    maxlen=in_len, vocab_size=vocab_size, embed_dim=n_neurons, embeddings_initializer=initializer,
-                    from_string=embedding, name=embedding.replace(':', '_')
-                )
-                self.emb.sym_emb.build(None)
-
-                mean = np.mean(np.mean(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
-                var = np.mean(np.var(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
-                comments = str2val(comments, 'taskmean', replace=mean)
-                comments = str2val(comments, 'taskvar', replace=var)
+            mean = np.mean(np.mean(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
+            var = np.mean(np.var(self.emb.sym_emb.embeddings, axis=-1), axis=-1)
+            comments = str2val(comments, 'taskmean', replace=mean)
+            comments = str2val(comments, 'taskvar', replace=var)
 
             self.emb.build(None)
             comments = str2val(comments, 'embdim', replace=self.emb.embed_dim)
@@ -370,7 +300,8 @@ class ModelBuilder:
         optimizer_name = str2val(self.comments, 'optimizer', output_type=str, default=self.optimizer_name)
         lr_schedule = str2val(self.comments, 'lrs', output_type=str, default=self.lr_schedule)
         optimizer = get_optimizer(optimizer_name=optimizer_name, lr_schedule=lr_schedule,
-                                  total_steps=self.final_epochs*self.final_steps_per_epoch, lr=self.lr, weight_decay=self.weight_decay,
+                                  total_steps=self.final_epochs * self.final_steps_per_epoch, lr=self.lr,
+                                  weight_decay=self.weight_decay,
                                   clipnorm=self.clipnorm, exclude_from_weight_decay=exclude_from_weight_decay)
 
         # eagerly = True if not self.ostack in [5, 7] else False
@@ -437,9 +368,8 @@ class ModelBuilder:
 
 def build_model(task_name, net_name, n_neurons, lr, stack,
                 loss_name, embedding, optimizer_name, lr_schedule, weight_decay, clipnorm,
-                initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size,final_steps_per_epoch=1,
+                initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size, final_steps_per_epoch=1,
                 initial_state=None, seed=None, get_embedding=False, timesteps=None):
-
     model_builder = ModelBuilder(task_name, net_name, n_neurons, lr, stack,
                                  loss_name, embedding, optimizer_name, lr_schedule, weight_decay, clipnorm,
                                  initializer, comments, in_len, n_in, out_len, n_out, final_epochs, vocab_size,

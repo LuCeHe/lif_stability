@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 
-from sg_design_lif.visualization_tools.plotting_tools import smart_plot, bpc_prior
-from sg_design_lif.visualization_tools.save_text import save_sentences
-from sg_design_lif.neural_models.full_model import build_model
+from lif_stability.visualization_tools.plotting_tools import smart_plot, bpc_prior
+from lif_stability.visualization_tools.save_text import save_sentences
+from lif_stability.neural_models.full_model import build_model
 
 logger = logging.getLogger('mylogger')
 exclude_layers = ['Squeeze', 'multiply', 'add_loss_layer', 'add_metrics_layer', 'softmax', 'target_words', 'dropout',

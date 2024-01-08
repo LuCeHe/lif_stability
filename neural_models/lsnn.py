@@ -1,16 +1,13 @@
 from pyaromatics.keras_tools.esoteric_initializers import PluriInitializerI
 from pyaromatics.keras_tools.esoteric_layers import SurrogatedStep
-import tensorflow_probability as tfp
 import tensorflow as tf
 import numpy as np
 import os
 
 # from pyaromatics.keras_tools.esoteric_layers.surrogated_step import *
 from pyaromatics.stay_organized.utils import str2val
-from sg_design_lif.neural_models.optimize_dampening_sharpness import optimize_dampening, optimize_sharpness, \
+from lif_stability.neural_models.optimize_dampening_sharpness import optimize_dampening, optimize_sharpness, \
     optimize_tail
-
-tfd = tfp.distributions
 
 
 def variance_distance(tensor_1, tensor_2):
@@ -124,9 +121,6 @@ class baseLSNN(tf.keras.layers.Layer):
             thr = self.thr if not 'multreset' in self.config else 0
             dampening = optimize_dampening(self.recurrent_weights, thr=thr, decay=decay_v, w_in=self.input_weights,
                                            dampening_in=dampening_in, od_type=od_type)
-        # print('dampening', np.mean(dampening))
-        # print('dampening', np.mean(dampening))
-        # print('         ', dampening)
 
         if 'conditionIV' in self.config and not 'optimizetail' in self.config:
             assert 'exponentialpseudod' in self.config, \
@@ -145,13 +139,10 @@ class baseLSNN(tf.keras.layers.Layer):
             tail = optimize_tail(
                 self.recurrent_weights, self.input_weights, decay_v, self.thr, dampening, sharpness_in, dampening_in
             )
-            print('????????????')
-            print(tail)
             self.config = str2val(self.config, 'tailvalue', replace=np.mean(tail))
 
         # self.inh_exc = tf.ones(self.num_neurons)
         self._beta = tf.concat([tf.zeros(self.n_regular), tf.ones(n_rec - self.n_regular) * self.beta], axis=0)
-
 
         if 'conditionIV' in self.config or 'conditionIII' in self.config:
             dpath = os.path.join(exp, 'trained_models', 'dampening_stacki{}.npy'.format(stacki))
@@ -276,7 +267,6 @@ class baseLSNN(tf.keras.layers.Layer):
         if not training is None:
             tf.keras.backend.set_learning_phase(training)
 
-
         if not 'reoldspike' in self.config:
             old_z = states[0]
             old_v = states[1]
@@ -304,11 +294,7 @@ class baseLSNN(tf.keras.layers.Layer):
         z, new_last_spike_distance = self.refract(z, last_spike_distance)
 
         fr = tf.reduce_mean(z)
-        # ff_loss = tf.square(fr - self.target_firing_rate)
-        # print(self.target_firing_rate, fr, self.loss_switch)
         self.add_metric(fr, aggregation='mean', name='firing_rate_' + self.name)
-        # self.add_loss(self.loss_switch * ff_loss)
-        # self.add_metric(self.loss_switch * ff_loss, aggregation='mean', name='adjff_' + self.name)
 
         output, new_state = self.prepare_outputs(new_v, old_v, z, old_z, new_a, old_a, new_last_spike_distance,
                                                  last_spike_distance, self.athr, v_sc)
@@ -374,21 +360,12 @@ class aLSNN(baseLSNN):
             stacki = str2val(self.config, 'stacki', int, default=0)
             v0m = str2val(self.config, f'v0m{stacki}', float, default=0)
             initializer = tf.keras.initializers.RandomNormal(mean=v0m)
-            # initializer = tf.keras.initializers.Constant(value=-1.)
-            # initializer = tf.keras.initializers.RandomUniform(minval=v0m - 0.05, maxval=v0m + 0.05, seed=None)
             self.internal_current = self.add_weight(shape=(self.num_neurons,), initializer=initializer,
                                                     name='internal_current', trainable=True)
-
-            # print(stacki, v0m, np.mean(self.internal_current))
-
-        if 'bistabilizer' in self.config:
-            initializer = tf.keras.initializers.RandomNormal(stddev=1. / tf.sqrt(tf.cast(n_input, tf.float32)))
-            self.bistabilizer = self.add_weight(shape=(self.num_neurons,), initializer=initializer, name='bistabilizer')
 
         super().build(input_shape)
 
         self._beta = self.beta
-
 
 
 class maLSNN(aLSNN):
@@ -412,10 +389,6 @@ class maLSNN(aLSNN):
 
             elif 'noiserho:gaussian' in kwargs['config']:
                 self.rho = tf.random.normal((kwargs['num_neurons'],)).numpy().tolist()
-
-            elif 'noiserho:cauchy' in kwargs['config']:
-                dist = tfd.Cauchy(loc=0., scale=1.)
-                self.rho = dist.sample((kwargs['num_neurons'],)).numpy().tolist()
 
             else:
                 self.rho = float([i.replace('noiserho:', '')
@@ -484,8 +457,9 @@ class maLSNNb(maLSNN):
         kwargs['config'] = kwargs['config'] + '_gaussbeta'
         super().__init__(*args, **kwargs)
 
-class maLSNNc(maLSNN):
-    def __init__(self, *args, **kwargs):
-        kwargs['config'] = kwargs['config'] + '_mgausspseudod_learnsharp_learndamp'
-        super().__init__(*args, **kwargs)
 
+
+class maLIF(maLSNN):
+    def __init__(self, *args, **kwargs):
+        kwargs['config'] = kwargs['config'] + '_noalif'
+        super().__init__(*args, **kwargs)

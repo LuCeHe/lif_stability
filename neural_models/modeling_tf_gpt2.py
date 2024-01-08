@@ -3,7 +3,7 @@ from transformers.activations_tf import get_tf_activation
 from transformers.generation_tf_utils import shape_list
 from transformers.modeling_tf_utils import TFConv1D, input_processing
 
-from sg_design_lif.neural_models.configuration_gpt2_2 import GPT2Config
+from lif_stability.neural_models.configuration_gpt2_2 import GPT2Config
 
 
 class TFAttention(tf.keras.layers.Layer):

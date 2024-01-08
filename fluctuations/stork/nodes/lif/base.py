@@ -4,8 +4,8 @@ import numpy as np
 import torch
 from torch.nn import Parameter
 
-from sg_design_lif.fluctuations.stork import activations
-from sg_design_lif.fluctuations.stork.nodes.base import CellGroup
+from lif_stability.fluctuations.stork import activations
+from lif_stability.fluctuations.stork.nodes.base import CellGroup
 
 
 class LIFGroup(CellGroup):
