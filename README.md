@@ -9,10 +9,11 @@ Run the following commands to reproduce the results:
 - ```plots.py``` to plot the results and the figures.
 
 Figure 1 can be generated running ```plot_sgs.py```. To generate the experiments
-for Figure 2, run
+for Figure 2, run as one line
 
 ```
-python training.py with task_name=##x## net_name=##y## epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
+python training.py with task_name=##x## net_name=##y## 
+     epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
      lr=##z## comments=embproj_nogradreset_dropout:.3_timerepeat:2_##w## 
 ```
 
