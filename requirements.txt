@@ -1,4 +1,4 @@
-git+https://github.com/LuCeHe/pyaromatics
+git+https://github.com/LuCeHe/py-aromatics
 aiohttp
 astunparse
 async_timeout
