@@ -183,7 +183,6 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
             )
         )
 
-
     if 'adjfi' in comments:
         # Pretrain biases to achieve desired initial firing rates for Figure 3.
         new_model_args = copy.deepcopy(model_args)
@@ -218,8 +217,6 @@ def main(epochs, steps_per_epoch, batch_size, GPU, task_name, comments,
         steps_per_epoch=steps_per_epoch,
         callbacks=callbacks
     )
-
-
 
     actual_epochs = 0
     if final_epochs > 0:

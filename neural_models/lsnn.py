@@ -136,8 +136,6 @@ class baseLSNN(tf.keras.layers.Layer):
                                            sharpness_in=sharpness_in, os_type=os_type, config=self.config)
             self.lsnn_results.update({f'sharpness_{self.name}': sharpness})
 
-
-
         if 'conditionIV' in self.config and 'optimizetail' in self.config:
             assert 'ntailpseudod' in self.config, \
                 "Condition IV optimizetail has been coded only for ntailpseudod SG !"
