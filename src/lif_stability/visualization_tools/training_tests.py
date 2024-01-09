@@ -14,91 +14,6 @@ exclude_layers = ['Squeeze', 'multiply', 'add_loss_layer', 'add_metrics_layer', 
                   'input_spikes']
 
 
-def Tests_tf1(x, y, mask, gen, train_tensors, train_tensors_grads, sess, images_dir, rnn):
-    task_name = gen.name
-    val_batch = gen.data_generation()
-
-    batch_size = val_batch['input_spikes'].shape[0]
-    val_dict = {x: val_batch['input_spikes'], y: val_batch['target_output'], mask: val_batch['mask']}
-    trt, gs = sess.run([train_tensors, train_tensors_grads], feed_dict=val_dict)
-
-    task = {'input': val_batch['input_spikes'], 'target_output': val_batch['target_output']}
-    task.update(trt)
-    trained_images_dir = os.path.join(*[images_dir, 'trained'])
-    os.mkdir(trained_images_dir)
-    for batch_sample in tqdm(range(min(batch_size, 8))):
-        pathplot = os.path.join(*[trained_images_dir, 'plot_s{}.png'.format(batch_sample)])
-        smart_plot(task, pathplot, batch_sample)
-
-    with open(trained_images_dir + '/png_content.dat', 'wb') as outfile:
-        pickle.dump(task, outfile, protocol=pickle.HIGHEST_PROTOCOL)
-
-    text_path = os.path.join(*[trained_images_dir, 'text.png'])
-    save_sentences(task, text_path.replace('.png', ''), gen)
-
-    # task specific tests
-    if task_name == 'ptb':
-        bpc_prior(gen)
-
-    if task_name == 'time_ae_merge':
-
-        for batch_flag in gen.batch_types:
-            try:
-                length = len(rnn.cell.switch_off)
-                logger.warning(rnn.cell.switch_off)
-                new_switch_off = np.ones(length).astype(float)
-                rnn.cell.switch_off = new_switch_off
-                logger.warning(rnn.cell.switch_off)
-            except Exception as e:
-                logger.warning(e)
-                logger.warning('Neurons were not switched off successfully!!')
-            logger.warning(batch_flag)
-            gen.batch_flag = batch_flag
-            mixed_batch = gen.data_generation()
-            val_dict = {x: mixed_batch['input_spikes'],
-                        y: mixed_batch['target_output'],
-                        mask: mixed_batch['mask']}
-
-            # test behavior of the full neural network
-            trt, gs = sess.run([train_tensors, train_tensors_grads], feed_dict=val_dict)
-
-            task = {'input': mixed_batch['input_spikes'], 'target_output': mixed_batch['target_output']}
-            task.update(trt)
-            trained_images_dir = os.path.join(*[images_dir, '{}_trained_on'.format(batch_flag)])
-            os.mkdir(trained_images_dir)
-            for batch_sample in tqdm(range(min(batch_size, 8))):
-                pathplot = os.path.join(*[trained_images_dir, 'plot_s{}.png'.format(batch_sample)])
-                smart_plot(task, pathplot, batch_sample)
-
-            text_path = os.path.join(*[trained_images_dir, 'text.png'])
-            save_sentences(task, text_path.replace('.png', ''), gen)
-
-            # test behavior of the full neural network when neurons are switched off
-            for i in range(1):
-                gen.batch_flag = batch_flag
-                try:
-                    length = len(rnn.cell.switch_off)
-                    logger.warning(rnn.cell.switch_off)
-                    new_switch_off = np.random.choice(2, length).astype(float)
-                    rnn.cell.switch_off = new_switch_off
-                    logger.warning(rnn.cell.switch_off)
-                except Exception as e:
-                    logger.warning(e)
-                    logger.warning('Neurons were not switched off successfully!!')
-
-                trt, gs = sess.run([train_tensors, train_tensors_grads], feed_dict=val_dict)
-
-                task = {'input': mixed_batch['input_spikes'], 'target_output': mixed_batch['target_output']}
-                task.update(trt)
-                trained_images_dir = os.path.join(*[images_dir, '{}_trained_off_{}'.format(batch_flag, i)])
-                os.mkdir(trained_images_dir)
-                for batch_sample in tqdm(range(min(batch_size, 8))):
-                    pathplot = os.path.join(*[trained_images_dir, 'plot_s{}.png'.format(batch_sample)])
-                    smart_plot(task, pathplot, batch_sample)
-
-                text_path = os.path.join(*[trained_images_dir, 'text.png'])
-                save_sentences(task, text_path.replace('.png', ''), gen)
-
 
 def get_test_model(original_model):
     intermediate_layers = []
@@ -119,25 +34,6 @@ def get_test_model(original_model):
 
     test_model = tf.keras.models.Model(original_model.input, intermediate_layers, name='test_model')
     return test_model
-
-
-def do_grad_tests_old(train_model, batch, task):
-    batch = [tf.convert_to_tensor(tf.cast(b, tf.float32), dtype=tf.float32) for b in batch[0]],
-    with tf.GradientTape(persistent=True) as tape:
-        tape.watch(batch)
-        cargo = train_model.layers[0](batch[0][0])
-        for layer in train_model.layers[1:-4]:
-            new_cargo = layer(cargo)
-            if 'encoder' in layer.name:
-                try:
-                    new_cargo = new_cargo[0]
-                    grad = tape.gradient(new_cargo, cargo)
-                    task.update({layer.name + '_grad': grad})
-                except Exception as e:
-                    print(e)
-
-            cargo = new_cargo
-    return task
 
 
 def do_grad_tests(model_args, batch, task, batch_size, seed=None):
@@ -315,110 +211,6 @@ def Tests(task_name, gen, train_model, images_dir, max_pics=3, subdir_name='trai
     return test_results
 
 
-def checkWeightDistribution(model, gen_test, do_smart_plot):
-    batch = gen_test.data_generation()
-    # prediction = model.predict(batch[0], batch_size=gen_test.batch_size)
-    # print(prediction)
-    if do_smart_plot:
-        task = {k: v for k, v in batch.copy().items() if not k in ['mask', 'sentences']}
-        trt = model.predict((batch['input_spikes'], batch['mask']),
-                            batch_size=gen_test.batch_size)
-        trt = {name: pred for name, pred in zip(model.output_names, trt)}
-
-        task.update(trt)
-        pathplot = os.path.join(*[GOOD_EXPS, 'plot.png'])
-        smart_plot(task, pathplot)
-
-    for layer in model.layers:
-        weights = layer.get_weights()
-        print(layer.name)
-
-    l = model.get_layer('encoder_0')
-    weights = l.get_weights()
-    names = [w.name for w in l.weights]
-
-    n_features = len(weights)
-    fig, axs = plt.subplots(n_features, 1)
-    for n, k, ax in zip(names, weights, axs.tolist()):
-        x = k if len(k.shape) == 1 else k.flatten()
-        x = x[~np.isnan(x)]
-
-        # the histogram of the data
-        ax.hist(x, 50, density=True)
-        ax.set_ylabel(n)
-
-    plt.show()
-
-
-class PlotCallback(tf.keras.callbacks.Callback):
-    def __init__(self, gen_val, test_model, grads_model=None, print_every=1,
-                 images_dir='', text_dir='', task_name=''):
-        self.gen_val = gen_val
-        self.val_batch = gen_val.data_generation()
-        # self.val_batch = (self.val_batch[0][0], self.val_batch[1])
-        self.test_model, self.grads_model = test_model, grads_model
-        self.print_every = print_every
-        self.images_dir, self.text_dir, self.task_name = images_dir, text_dir, task_name
-
-    def plot(self, epoch):
-        task = {k: v for k, v in self.val_batch.copy().items() if not k in ['mask', 'sentences']}
-        trt = self.test_model.predict((self.val_batch['input_spikes'], self.val_batch['mask']),
-                                      batch_size=self.gen_val.batch_size)
-        trt = {name: pred for name, pred in zip(self.test_model.output_names, trt)}
-
-        task.update(trt)
-        pathplot = os.path.join(*[self.images_dir, 'plot_iter_{}.png'.format(epoch)])
-        smart_plot(task, pathplot)
-
-        text_path = os.path.join(*[self.text_dir, 'sentences_iter_{}'.format(epoch)])
-        save_sentences(task, text_path, self.gen_val)
-
-        if not self.grads_model is None:
-            task = self.val_batch
-            gs = self.grads_model.predict(task)
-            task.update(gs)
-            pathplot = os.path.join(*[self.images_dir, 'grads_plot_iter_{}.png'.format(epoch)])
-            smart_plot(task, pathplot)
-            del gs
-
-        del task, trt
-
-    def on_epoch_begin(self, epoch, logs=None):
-        if epoch == 0:
-            self.plot(-1)
-
-    def on_epoch_end(self, epoch, logs=None):
-        if epoch % self.print_every == 0:
-            self.plot(epoch)
-
-
-def tests_on_weights(keras_model, save_dir=None):
-    import pandas as pd
-    from scipy.stats import skew
-
-    df = pd.DataFrame()
-
-    for w in keras_model.trainable_weights:
-        if len(w.shape) == 2:
-            plt.figure()
-            # w = np.random.rand(20, 30)
-            plt.imshow(w)
-            plt.colorbar()
-            _, sv, _ = np.linalg.svd(w)
-            sk = skew(w.numpy().flatten())
-            row_df = pd.DataFrame([[w.name, np.mean(w), np.std(w), np.min(w), np.max(w), sk, np.min(sv), np.max(sv)]])
-            df = pd.concat([row_df, df], ignore_index=True)
-            if not save_dir is None:
-                pathplot = os.path.join(save_dir, w.name.replace('/', '_').replace(':', '_') + '.png')
-                plt.savefig(pathplot, bbox_inches='tight')
-
-    df.rename(columns={0: 'name', 1: 'mean', 2: 'variance', 3: 'min', 4: 'max', 5: 'skewness', 6: 'min_sing_value',
-                       7: 'max_sing_value'}, inplace=True)
-    if not save_dir is None:
-        pathplot = os.path.join(save_dir, 'weights_statistics.txt')
-        with open(pathplot, "w") as text_file:
-            text_file.write(df.to_string())
-
 
 def check_assumptions(task):
     cresults = {}
@@ -481,11 +273,3 @@ def check_assumptions(task):
 
     return cresults
 
-
-if __name__ == '__main__':
-    i = tf.keras.layers.Input((30,))
-    o = tf.keras.layers.Dense(300)(i)
-    o = tf.keras.layers.Dense(200)(o)
-    model = tf.keras.models.Model(i, o)
-
-    tests_on_weights(model)
