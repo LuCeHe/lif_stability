@@ -12,9 +12,9 @@ setup(
     description='Official Repo for Stabilizing Spiking Neuron Training',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/lucehe/stable-spike',
+    url='https://github.com/lucehe/stable_spike',
     project_urls = {
-        "Bug Tracker": "https://github.com/lucehe/stable-spike/issues"
+        "Bug Tracker": "https://github.com/lucehe/stable_spike/issues"
     },
     license='MIT',
     python_requires=">=3.6",
