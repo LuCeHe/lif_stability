@@ -1,7 +1,6 @@
 # Stabilizing Spiking Neuron Training
 
-This is the official repository of the [Stabilizing Spiking Neuron Training](https://arxiv.org/abs/2202.00282) 
-article, submitted to IEEE.
+This is the official repository of the article [Stabilizing Spiking Neuron Training](https://arxiv.org/abs/2202.00282), submitted to IEEE.
 
 
 ![Drag Racing](src/stablespike/visualization_tools/conds.png)
