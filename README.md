@@ -4,19 +4,24 @@ This is the official repository of the [Stabilizing Spiking Neuron Training](htt
 article, submitted to IEEE.
 
 
-![Drag Racing](visualization_tools/conds.png)
+![Drag Racing](src/stablespike/visualization_tools/conds.png)
 
-
-Run the following commands to reproduce the results:
-
-- ```training.py``` for each individual experiments;
-- ```plots.py``` to plot the results and the figures.
+The scripts and folders mentioned in the following can be found inside ```stable_spike/src/stablespike```.
+Run the codes after doing ```pip install -r requirements.txt```.
+The experiments for the last two tables require minor modifications of the repositories
+of the article [Synaptic Plasticity Dynamics for Deep Continuous Local Learning (DECOLLE)](https://www.frontiersin.org/articles/10.3389/fnins.2020.00424/full)
+whose original code can be found [here](https://github.com/nmi-lab/decolle-public), and of the article
+[Fluctuation-driven initialization for spiking neural network training](https://iopscience.iop.org/article/10.1088/2634-4386/ac97bb)
+whose original code can be found [here](https://github.com/fmi-basel/stork).
+For simplicity, and in case their code evolves in the future, we copied their code
+in this repository, adding our minor modifications, 
+since it could avoid future incompatibilities.
 
 Figure 1 can be generated running ```plot_sgs.py```. To generate the experiments
 for Figure 2, run as one line
 
 ```
-python stablespike/training.py with task_name=##x## net_name=##y## seed=##s##
+python training.py with task_name=##x## net_name=##y## seed=##s##
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
      lr=##z## comments=embproj_nogradreset_timerepeat:2_##w## 
 ```
@@ -37,7 +42,7 @@ and ```##w##``` is used to specify the Surrogate Gradient (SG) shape, and should
 For Figure 3, run 
 
 ```
-python stablespike/training.py with task_name=heidelberg net_name=maLSNN seed=##s##
+python training.py with task_name=heidelberg net_name=maLSNN seed=##s##
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None lr=None
      comments=noalif_nogradreset_multreset2_dropout:.3_timerepeat:2_annealing_v0m_adjfi:##x##_adjff:.01 
 ```
@@ -49,7 +54,7 @@ stands for adjust the initial firing rate while ```adjff``` stands for adjust th
 For Figure 4, run
 
 ```
-python stablespike/training.py with task_name=heidelberg net_name=maLSNN seed=##s##
+python training.py with task_name=heidelberg net_name=maLSNN seed=##s##
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None lr=None
      comments=noalif_exponentialpseudod_##x## 
 ```
@@ -66,7 +71,7 @@ with ```##x##``` as one of these strings: ```conditionI```,
 Figure 5, for the color curves, run
 
 ```
-python stablespike/training.py with task_name=heidelberg net_name=maLSNN 
+python training.py with task_name=heidelberg net_name=maLSNN 
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
      lr=None comments=embproj_noalif_nogradreset_timerepeat:2_##w## 
 ```
@@ -81,15 +86,15 @@ in ```[1.0100, 1.0226, 1.0514, 1.1165, 1.2643, 1.5994, 2.3593, 4.0823, 7.9894, 1
 For the dashed line run 
 
 ```
-python stablespike/training.py with task_name=heidelberg net_name=maLSNN 
+python training.py with task_name=heidelberg net_name=maLSNN 
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
      lr=None comments=embproj_noalif_nogradreset_timerepeat:2_conditionIII 
      
-python stablespike/training.py with task_name=heidelberg net_name=maLSNN 
+python training.py with task_name=heidelberg net_name=maLSNN 
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
      lr=None comments=embproj_noalif_nogradreset_timerepeat:2_exponentialpseudod_conditionIV 
      
-python stablespike/training.py with task_name=heidelberg net_name=maLSNN 
+python training.py with task_name=heidelberg net_name=maLSNN 
      epochs=None steps_per_epoch=None batch_size=None stack=None n_neurons=None 
      lr=None comments=embproj_noalif_nogradreset_timerepeat:2_ntailpseudod_conditionIV_optimizetail 
 ```
@@ -101,7 +106,7 @@ and the third one the predicted tail fatness.
 To reproduce Table 1, run
 
 ```
-python stablespike/decolle/scripts/main_decolle.py --datasetname=dvs --seed=##s##
+python decolle/scripts/main_decolle.py --datasetname=dvs --seed=##s##
      --comments=##x## 
 ```
 
@@ -113,7 +118,7 @@ default setting.
 To reproduce Table 2, run
 
 ```
-python stablespike/fluctuations/examples/main_fluctuations.py --dataset=##d## --seed=##s##
+python fluctuations/examples/main_fluctuations.py --dataset=##d## --seed=##s##
      --epochs=-1 --comments=##x## 
 ```
 
