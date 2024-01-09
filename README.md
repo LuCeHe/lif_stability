@@ -7,7 +7,8 @@ article, submitted to IEEE.
 ![Drag Racing](src/stablespike/visualization_tools/conds.png)
 
 The scripts and folders mentioned in the following can be found inside ```stable_spike/src/stablespike```.
-Run the codes after doing ```pip install -r requirements.txt```.
+Run the codes after doing ```pip install -r requirements.txt```. You can install
+it as a package with ```pip install git+https://github.com/LuCeHe/stable_spike```.
 The experiments for the last two tables require minor modifications of the repositories
 of the article [Synaptic Plasticity Dynamics for Deep Continuous Local Learning (DECOLLE)](https://www.frontiersin.org/articles/10.3389/fnins.2020.00424/full)
 whose original code can be found [here](https://github.com/nmi-lab/decolle-public), and of the article
