@@ -18,7 +18,8 @@ setup(
     },
     license='MIT',
     python_requires=">=3.6",
-    packages=find_packages(),
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     install_requires=[],
     classifiers=[
         "Development Status :: 3 - Alpha",
