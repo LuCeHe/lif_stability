@@ -5,16 +5,16 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
     
 setup(
-    name='stablespikes',
+    name='stablespike',
     version='0.0.2',
     author='Luca Herrtti',
     author_email='luca.herrtti@gmail.com',
     description='Official Repo for Stabilizing Spiking Neuron Training',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/lucehe/stable-spikes',
+    url='https://github.com/lucehe/stable-spike',
     project_urls = {
-        "Bug Tracker": "https://github.com/lucehe/stable-spikes/issues"
+        "Bug Tracker": "https://github.com/lucehe/stable-spike/issues"
     },
     license='MIT',
     python_requires=">=3.6",
