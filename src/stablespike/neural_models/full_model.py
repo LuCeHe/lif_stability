@@ -16,7 +16,6 @@ from pyaromatics.keras_tools.esoteric_losses.advanced_losses import *
 
 import stablespike.neural_models as models
 from stablespike.neural_models.ind_rnn_cell import IndRNNCell
-from stablespike.neural_models.lmu import LMUCell
 
 metrics = [
     sparse_categorical_accuracy,
@@ -29,7 +28,6 @@ metrics = [
 ]
 
 non_recurrent_models = ['reslruffn', 'lruffn']
-
 
 
 class Expert:
@@ -107,16 +105,6 @@ class Expert:
 
         elif net_name == 'lruffn':
             rnn = LinearRecurrentUnitFFN(num_neurons=n_neurons)
-
-        elif net_name == 'LMU':
-            memory_d = n_neurons - 2
-            order = 2
-            theta = 50
-            hidden_cell = None
-            cell = LMUCell(memory_d, order, theta, hidden_cell, trainable_theta=True, discretizer='euler')
-            rnn = tf.keras.layers.RNN(cell, return_state=True, return_sequences=True, name='encoder' + ij,
-                                      stateful=stateful)
-            rnn.build((batch_size, maxlen, nin))
 
         else:
             raise NotImplementedError
