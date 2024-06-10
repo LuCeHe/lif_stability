@@ -26,7 +26,7 @@ class baseLSNN(tf.keras.layers.Layer):
         return dict(list(base_config.items()) + list(self.init_args.items()))
 
     def __init__(self, num_neurons=None, tau=20., beta=1.8, tau_adaptation=20,
-                 dampening_factor=1., ref_period=-1, thr=.01, inh_exc=1., spike_dropout=None, spike_dropin=None,
+                 dampening_factor=1., ref_period=-1, thr=.01, inh_exc=1.,
                  n_regular=None, internal_current=0, initializer='orthogonal',
                  config=None, v_eq=0,
                  **kwargs):
@@ -38,8 +38,8 @@ class baseLSNN(tf.keras.layers.Layer):
             num_neurons=num_neurons, tau=tau, tau_adaptation=tau_adaptation,
             ref_period=ref_period, n_regular=n_regular, thr=thr,
             dampening_factor=dampening_factor, beta=beta, inh_exc=inh_exc,
-            spike_dropout=spike_dropout, spike_dropin=spike_dropin, v_eq=v_eq,
-            internal_current=internal_current, initializer=initializer, config=config)
+            v_eq=v_eq, internal_current=internal_current, initializer=initializer, config=config
+        )
         self.__dict__.update(self.init_args)
 
         if self.ref_period > 0:
@@ -78,7 +78,8 @@ class baseLSNN(tf.keras.layers.Layer):
             sharpness_in = 0 if stacki == 0 or not 'deltain' in self.config else np.load(spath)
 
         input_init = self.initializer
-
+        recurrent_init = self.initializer
+        mean_rec = 0
         if '_conditionI_' in self.config:
             if not 'multreset' in self.config:
                 mean_rec = 1 / (n_rec - 1) * (3 - 2 * decay_v) * self.thr
@@ -89,14 +90,8 @@ class baseLSNN(tf.keras.layers.Layer):
             else:
                 mean_rec = 2 / (n_rec - 1) * (1 - decay_v) * self.thr
             recurrent_init = PluriInitializerI(mean=mean_rec)
-        else:
-            recurrent_init = self.initializer
-            mean_rec = 0
 
-        if not 'convWin' in self.config:
-            self.input_weights = self.add_weight(shape=(n_in, n_rec), initializer=input_init, name='input_weights')
-        else:
-            self.input_weights = tf.eye(n_rec)
+        self.input_weights = self.add_weight(shape=(n_in, n_rec), initializer=input_init, name='input_weights')
 
         if '_conditionII_' in self.config:
             assert 'taskmean' in self.config and 'taskvar' in self.config
@@ -174,25 +169,6 @@ class baseLSNN(tf.keras.layers.Layer):
 
     def current_mod(self, i_in):
         return i_in
-
-    def dropin_dropout(self, z):
-        if not self.spike_dropout is None:
-            # dropout activity
-            is_train = tf.cast(tf.keras.backend.learning_phase(), tf.float32)
-            batch_size = tf.shape(z)[0]
-
-            spike_dropout = tf.cast(self.spike_dropout, tf.float32)
-            p = tf.tile([[spike_dropout, 1 - spike_dropout]], [batch_size, 1])
-            mask = tf.cast(tf.random.categorical(tf.math.log(p), self.num_neurons), dtype=tf.float32)
-            z = is_train * mask * z + (1 - is_train) * z
-
-            # dropin activity
-            spike_dropin = tf.cast(self.spike_dropin, tf.float32)
-            p = tf.tile([[spike_dropin, 1 - spike_dropin]], [batch_size, 1])
-            mask = 1 - tf.cast(tf.random.categorical(tf.math.log(p), self.num_neurons), dtype=tf.float32)
-            z = is_train * (mask + z) + (1 - is_train) * z
-            z = tf.clip_by_value(z, clip_value_min=0, clip_value_max=1)
-        return z
 
     def refract(self, z, last_spike_distance):
         new_last_spike_distance = last_spike_distance
@@ -299,8 +275,6 @@ class baseLSNN(tf.keras.layers.Layer):
 
         z, v_sc = self.spike(new_v, self.athr, last_spike_distance, old_v, old_a, new_a)
 
-        z = self.dropin_dropout(z)
-
         # refractoriness
         z, new_last_spike_distance = self.refract(z, last_spike_distance)
 
@@ -341,18 +315,6 @@ class aLSNN(baseLSNN):
     LSNN where all parameters can be learned
     """
 
-    def current_mod(self, i_in):
-        if 'bistabilizer' in self.config:
-            """
-            Inspired by
-            'A bio-inspired bistable recurrent cell allows for long-lasting memory'
-            https://arxiv.org/pdf/2006.05252.pdf
-            """
-
-            return i_in - tf.math.softplus(self.bistabilizer) * tf.math.tanh(i_in)
-        else:
-            return i_in
-
     def build(self, input_shape):
         n_input = input_shape[-1]
 
@@ -391,12 +353,9 @@ class maLSNN(aLSNN):
     """
     multiplicative gaussian noise aLSNN
     The idea is to have a different type of noise in the LSNN and the unit to learn to control it
-
-    use it with dropout and dropin equal to 0 at the beginning
     """
 
     def __init__(self, *args, **kwargs):
-
         self.rho = None
 
         if 'noiserho:' in kwargs['config']:
